@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8">
+    <link href="{{styleUri}}" rel="stylesheet">
+    <meta http-equiv="Content-Security-Policy"
+      content="
+      default-src 'none';
+      img-src {{cspSource}} https:;
+      style-src {{cspSource}};
+      font-src {{cspSource}};
+      script-src 'nonce-{{nonce}}';
+      ">
+</head>
+
+<body>
+
+<div class="accordion">
+
+    <!-- 서버 상태 -->
+    <div class="panel">
+
+        <button class="panel-header active">
+            서버 상태 확인
+        </button>
+
+        <div class="panel-content show">
+
+            <div class="placeholder">
+                서버 연결 상태를 표시합니다.
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 프로젝트 인덱싱 -->
+    <div class="panel">
+
+        <button class="panel-header">
+            프로젝트 인덱싱 확인
+        </button>
+
+        <div class="panel-content">
+
+            <div class="placeholder">
+                프로젝트 인덱싱 상태를 표시합니다.
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 히스토리 -->
+    <div class="panel">
+
+        <button class="panel-header">
+            질의응답 히스토리
+        </button>
+
+        <div class="panel-content">
+
+            <div class="placeholder">
+                이전 대화를 표시합니다.
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script nonce="{{nonce}}" src="{{scriptUri}}"></script>
+
+</body>
+</html>

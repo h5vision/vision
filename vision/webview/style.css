@@ -1,0 +1,81 @@
+html,
+body{
+
+    padding:0;
+    margin:0;
+
+    background:var(--vscode-sideBar-background);
+
+    color:var(--vscode-foreground);
+
+    font-family:var(--vscode-font-family);
+
+}
+
+.accordion{
+
+    width:100%;
+
+}
+
+.panel{
+
+    border-bottom:1px solid var(--vscode-panel-border);
+
+}
+
+.panel-header{
+
+    width:100%;
+
+    padding:12px;
+
+    background:none;
+
+    border:none;
+
+    color:inherit;
+
+    text-align:left;
+
+    cursor:pointer;
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
+
+.panel-header::before{
+
+    content:"▷ ";
+
+}
+
+.panel-header.active::before{
+
+    content:"▽ ";
+
+}
+
+.panel-content{
+
+    display:none;
+
+    padding:12px;
+
+}
+
+.panel-content.show{
+
+    display:block;
+
+}
+
+.placeholder{
+
+    opacity:.7;
+
+    font-size:12px;
+
+}

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="48"
+     height="48"
+     viewBox="0 0 48 48"
+     fill="none">
+
+    <!-- < -->
+    <path
+        d="M18 12 L8 24 L18 36"
+        stroke="currentColor"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+    <!-- > -->
+    <path
+        d="M30 12 L40 24 L30 36"
+        stroke="currentColor"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+    <!-- ⩒ -->
+    <path
+        d="M20 18 L24 28 L28 18"
+        stroke="currentColor"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+</svg>
