@@ -14,3 +14,44 @@ headers.forEach(header => {
     });
 
 });
+
+const vscode = acquireVsCodeApi();
+
+window.addEventListener("message", event => {
+
+    const message = event.data;
+
+    switch (message.command) {
+
+        case "backendStatus":
+
+            updateBackendStatus(
+                message.data
+            );
+
+            break;
+
+    }
+
+});
+
+function updateBackendStatus(status) {
+
+    const el =
+        document.getElementById(
+            "backend-status"
+        );
+
+    if (status.connected) {
+
+        el.textContent = "🟢 Connected";
+
+    } else {
+
+        el.textContent = "🔴 " + status.message;
+
+    }
+
+}
+
+setInterval(() => {vscode.postMessage({ command: "checkBackendStatus" });}, 30000);
