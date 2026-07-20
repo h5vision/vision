@@ -38,9 +38,9 @@ function updateBackendStatus(status) {
     const el = document.getElementById("backend-status");
 
     if (status.connected) {
-        el.textContent = "🟢 " + status.message;
+        el.textContent = "🟢 " + 'Server ' + status.message;
     } else {
-        el.textContent = "🔴 " + status.message;
+        el.textContent = "🔴 " + 'Server ' + status.message;
     }
 
 }

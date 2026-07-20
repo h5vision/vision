@@ -15,7 +15,7 @@ export class ChatService {
     ): Promise<ChatResponse> {
 
         return await this.backendService.post(
-            "/generate",
+            "/v1/chat",
             request
         ) as ChatResponse;
 

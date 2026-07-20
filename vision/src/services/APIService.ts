@@ -6,7 +6,7 @@ export interface BackendStatus {
 export class APIService {
 
     constructor(
-        private readonly baseUrl: string = "http://localhost:8888"
+        private readonly baseUrl: string = "http://192.168.0.7:8000"
     ) {}
 
     async checkHealth(): Promise<BackendStatus> {
@@ -14,14 +14,14 @@ export class APIService {
         try {
 
             const response = await fetch(
-                `${this.baseUrl}/health`
+                `${this.baseUrl}/v1/health`
             );
 
             if (!response.ok) {
 
                 return {
                     connected: false,
-                    message: "Server Error"
+                    message: "Error"
                 };
 
             }
