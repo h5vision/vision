@@ -3,10 +3,10 @@ export interface BackendStatus {
     message: string;
 }
 
-export class BackendService {
+export class APIService {
 
     constructor(
-        private readonly baseUrl: string
+        private readonly baseUrl: string = "http://localhost:8888"
     ) {}
 
     async checkHealth(): Promise<BackendStatus> {

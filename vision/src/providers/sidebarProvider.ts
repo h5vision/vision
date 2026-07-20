@@ -1,15 +1,13 @@
 import * as vscode from "vscode";
 
-import { BackendService } from "../services/APIService";
+import { APIService } from "../services/APIService";
 import { getWebviewContent } from "./sidebarContents";
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
 
     private view?: vscode.WebviewView;
 
-    private backend = new BackendService(
-        "http://localhost:8888"
-    );
+    private backend = new APIService();
 
     constructor(
         private readonly extensionUri: vscode.Uri
@@ -59,7 +57,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     }
 
     /**
-     * JS에게 메시지 전달
+     * sidebar JavaScript에게 메시지 전달
      */
     private sendMessage(
         command: string,

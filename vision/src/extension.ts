@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';  		// Node.js의 path 모듈을 가져옵니다. 파일 경로를 다루는 데 사용됩니다.
 import { SidebarProvider } from "./providers/sidebarProvider";	// SidebarProvider를 가져옵니다.
 import { getHtmlContent } from "./openGuide";	// guideBook.html 파일을 읽어오는 함수를 가져옵니다.
-
+import {participant} from "./chat/chatParticipantProvider";	// ChatParticipantProvider를 가져옵니다.
 
 // 이 메서드는 확장 프로그램이 활성화될 때 호출됩니다. 확장 프로그램이 처음으로 명령을 실행할 때 활성화됩니다.
 export function activate(context: vscode.ExtensionContext) {
@@ -47,6 +47,8 @@ export function activate(context: vscode.ExtensionContext) {
             provider
         )
     );
+	
+	context.subscriptions.push(participant);
 }
 
 // 이 메서드는 확장 프로그램이 비활성화될 때 호출됩니다.

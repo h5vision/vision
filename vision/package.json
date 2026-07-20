@@ -9,7 +9,10 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished",
+    "onChatParticipant:vision.chat"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -36,7 +39,16 @@
           "name": " Overview"
         }
       ]
-    }
+    },
+    "chatParticipants": [
+      {
+        "id": "vision.chat",
+        "name": "vision",
+        "fullName": "Vision Assistant",
+        "description": "Ask Vision about your project",
+        "isSticky": true
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
