@@ -25,9 +25,7 @@ window.addEventListener("message", event => {
 
         case "backendStatus":
 
-            updateBackendStatus(
-                message.data
-            );
+            updateBackendStatus(message.data);
 
             break;
 
@@ -37,21 +35,16 @@ window.addEventListener("message", event => {
 
 function updateBackendStatus(status) {
 
-    const el =
-        document.getElementById(
-            "backend-status"
-        );
+    const el = document.getElementById("backend-status");
 
     if (status.connected) {
-
-        el.textContent = "🟢 Connected";
-
+        el.textContent = "🟢 " + status.message;
     } else {
-
         el.textContent = "🔴 " + status.message;
-
     }
 
 }
+
+vscode.postMessage({ command: "checkBackendStatus" });
 
 setInterval(() => {vscode.postMessage({ command: "checkBackendStatus" });}, 30000);

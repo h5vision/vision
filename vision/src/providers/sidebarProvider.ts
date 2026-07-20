@@ -81,13 +81,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
      */
     private async checkBackend() {
 
-        const result =
-            await this.backend.checkHealth();
+        const result = await this.backend.checkHealth();
 
-        this.sendMessage(
-            "backendStatus",
-            result
-        );
+        this.sendMessage("backendStatus", result);
 
     }
 
