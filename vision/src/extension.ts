@@ -6,7 +6,7 @@ import { getHtmlContent } from "./providers/guideContents";	// guideBook.html �
 import {participant} from "./chat/chatParticipantProvider";	// ChatParticipantProvider를 가져옵니다.
 
 // 이 메서드는 확장 프로그램이 활성화될 때 호출됩니다. 확장 프로그램이 처음으로 명령을 실행할 때 활성화됩니다.
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 
 	// 진단 정보를 출력하거나 오류를 출력하려면 콘솔을 사용하세요. 
 	// 이 코드 줄은 확장 프로그램이 활성화될 때 한 번만 실행됩니다.
@@ -49,6 +49,7 @@ export function activate(context: vscode.ExtensionContext) {
     );
 	
 	// ChatParticipantProvider를 구독에 추가하여 확장 프로그램이 비활성화될 때 정리할 수 있도록 합니다.
+	await vscode.commands.executeCommand("workbench.action.chat.open");
 	context.subscriptions.push(participant);
 }
 
