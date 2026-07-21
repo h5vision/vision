@@ -6,7 +6,7 @@ export interface BackendStatus {
 export class APIService {
 
     constructor(
-        private readonly baseUrl: string = "http://192.168.0.7:8000"
+        private readonly baseUrl: string = "http://192.168.0.7:8000" 
     ) {}
 
     async checkHealth(): Promise<BackendStatus> {
