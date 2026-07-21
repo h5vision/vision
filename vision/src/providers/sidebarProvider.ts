@@ -1,32 +1,20 @@
 import * as vscode from "vscode";
 
-import { APIService } from "../services/APIService";
 import { getWebviewContent } from "./sidebarContents";
+import { SidebarController } from "../controller/sidebarController";
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
 
     private view?: vscode.WebviewView;
 
-    private backend = new APIService();
+    constructor( private readonly extensionUri: vscode.Uri ) {};
 
-    constructor(
-        private readonly extensionUri: vscode.Uri
-    ) {}
-
-    resolveWebviewView(
-        webviewView: vscode.WebviewView
-    ) {
+    resolveWebviewView( webviewView: vscode.WebviewView ) {
 
         this.view = webviewView;
-
         webviewView.webview.options = {
-
             enableScripts: true,
-
-            localResourceRoots: [
-                this.extensionUri
-            ]
-
+            localResourceRoots: [this.extensionUri]
         };
 
         webviewView.webview.html =
@@ -35,54 +23,14 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 this.extensionUri
             );
 
+         // Controller 생성
+        const controller = new SidebarController(webviewView);
+
+        // 메시지 연결
         webviewView.webview.onDidReceiveMessage(
-            async (message) => {
-
-                switch (message.command) {
-
-                    case "checkBackend":
-
-                        await this.checkBackend();
-
-                        break;
-
-                }
-
+            async message => {
+                await controller.handle(message);
             }
         );
-
-        // 처음 열렸을 때 자동 확인
-        this.checkBackend();
-
-    }
-
-    /**
-     * sidebar JavaScript에게 메시지 전달
-     */
-    private sendMessage(
-        command: string,
-        data: any
-    ) {
-
-        this.view?.webview.postMessage({
-
-            command,
-
-            data
-
-        });
-
-    }
-
-    /**
-     * 백엔드 상태 확인
-     */
-    private async checkBackend() {
-
-        const result = await this.backend.checkHealth();
-
-        this.sendMessage("backendStatus", result);
-
-    }
-
+    };
 };

@@ -29,4 +29,4 @@ export function getWebviewContent(
         .replace("{{scriptUri}}", scriptUri.toString());
     
     return html;
-}
+};

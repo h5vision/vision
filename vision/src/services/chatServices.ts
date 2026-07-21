@@ -3,9 +3,7 @@ import { ChatRequest, ChatResponse } from "../types/chat";
 
 export class ChatService {
 
-    constructor(
-        private readonly APIService: APIService
-    ) {}
+    constructor( private readonly APIService: APIService ) {};
 
     /**
      * 사용자 메시지를 Backend로 전달
@@ -15,6 +13,5 @@ export class ChatService {
             "/v1/chat",
             request
         ) as ChatResponse;
-    }
-
-}
+    };
+};

@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { ChatService } from "../services/chatServices";
 import { APIService } from "../services/APIService";
-import {getSessionId} from "../utils/session";
+import { getSessionId } from "../utils/session";
 
 export class ChatHandler {
 
@@ -21,7 +21,7 @@ export class ChatHandler {
 
         try {
 
-            stream.progress("Vision가 답변을 생성하고 있습니다...");
+            stream.progress("VisionAI가 답변을 생성하고 있습니다...");
 
             const response = await chatService.sendMessage({
                 project_id: "vision",

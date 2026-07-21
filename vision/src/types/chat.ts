@@ -21,7 +21,7 @@ export interface ChatRequest {
     message: string;
     session_id: string;
     top_k: number;
-    history: [ChatMessage] | [];
+    history: ChatMessage[];
 }
 
 export interface SourceDocument {

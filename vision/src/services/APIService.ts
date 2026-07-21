@@ -6,7 +6,7 @@ export interface BackendStatus {
 export class APIService {
 
     constructor(
-        private readonly baseUrl: string = "http://192.168.0.7:8000" 
+        private readonly baseUrl: string = "https://api.blakeedenparker.cloud" 
     ) {}
 
     async checkHealth(): Promise<BackendStatus> {
@@ -17,7 +17,7 @@ export class APIService {
                 `${this.baseUrl}/v1/health`
             );
 
-            if (!response.ok) {
+            if (!response.status) {
 
                 return {
                     connected: false,
@@ -28,7 +28,7 @@ export class APIService {
 
             return {
                 connected: true,
-                message: "Connected"
+                message: "Connected", 
             };
 
         }

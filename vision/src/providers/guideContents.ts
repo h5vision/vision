@@ -18,5 +18,5 @@ export function getHtmlContent(context: vscode.ExtensionContext): string {
             <p>경로: ${htmlPath}</p>
         </body>
         </html>`;
-    }
-}
+    };
+};
