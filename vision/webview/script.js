@@ -51,7 +51,7 @@ setInterval(() => {vscode.postMessage({ command: "checkBackend" });}, 3 * 60 * 1
 
 
 // project indexing 기능 
-vscode.postMessage({commend:"initialProjectIndexing"});
+vscode.postMessage({command:"initialProjectIndexing"});
 
 const indexingButton = document.getElementById("project-indexing-btn");
 indexingButton.addEventListener("click", () => {

@@ -28,11 +28,20 @@ export interface ProjectMetadata {
     dirTree: DirectoryNode;
 }
 
+export interface ProjectIndexingData {
+  project_id: string;
+  documents: DirectoryNode[];
+  metadata: {
+     additionalProp1: ProjectMetadata | null;
+  }
+}
+
 export interface DirectoryNode {
     name: string;
     path: string;
     type: "file" | "directory";
 
+    language?: string;
     size?: number;
     modifiedTime?: Date;
     children?: DirectoryNode[];

@@ -60,4 +60,13 @@ export class DirectoryTreeService {
         return node;
 
     }
+    public flattenFiles(node: DirectoryNode): DirectoryNode[] {
+
+        if (node.type === "file") {
+            return [node];
+        }
+
+        return (node.children ?? [])
+            .flatMap(child => this.flattenFiles(child));
+    }
 }
