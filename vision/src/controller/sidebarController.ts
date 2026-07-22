@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 
 import { SidebarMessage, SidebarCommand } from "../types/sidebarMessage";
 
-import { APIHandler } from "./handlers/APIhandler";
+import { APIHandler } from "./handlers/APIHandler";
 import { HistoryHandler } from "./handlers/historyHandler";
 import { IndexingHandler } from "./handlers/indexingHandler";
 

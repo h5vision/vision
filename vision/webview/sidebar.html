@@ -1,81 +1,61 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}} 'nonce-{{nonce}}'; script-src {{cspSource}} 'nonce-{{nonce}}';">
     <link href="{{styleUri}}" rel="stylesheet">
-    <meta http-equiv="Content-Security-Policy"
-      content="
-      default-src 'none';
-      img-src {{cspSource}} https:;
-      style-src {{cspSource}};
-      font-src {{cspSource}};
-      script-src 'nonce-{{nonce}}';
-      ">
 </head>
-
 <body>
-
-<div class="accordion">
-
-    <!-- 서버 상태 -->
-    <div class="panel">
-
-        <button class="panel-header active">
-            서버 상태 확인
-        </button>
-
-        <div class="panel-content show">
-
-            <div class="placeholder">
-                <p id="backend-status">연결 확인 중...</p>
-            </div>
-
+    <!-- 1. 서버 상태 확인 카드 -->
+    <div class="card">
+        <div class="card-header">
+            <span>🖥️ 서버 상태 확인</span>
+            <button id="reconnect-btn" class="icon-btn" title="재연결">🔄</button>
         </div>
-
+        <div class="status-row">
+            <span id="backend-status">🟡 Server Connecting...</span>
+        </div>
+        <div class="status-row">
+            <span>📦 모델: <span class="badge">Llama-3-Instruct-8B</span></span>
+        </div>
     </div>
 
-    <!-- 프로젝트 인덱싱 -->
-    <div class="panel">
-
-        <button class="panel-header">
-            프로젝트 인덱싱 확인
-        </button>
-
-        <div class="panel-content">
-
-            <div class="placeholder">
-                <div class="indexing-section">
-                    <button id="project-indexing-btn">
-                        프로젝트 인덱싱 실행
-                    </button>
-                </div>
-            </div>
-
+    <!-- 2. 프로젝트 인덱싱 확인 카드 -->
+    <div class="card">
+        <div class="card-header">
+            <span>📂 프로젝트 인덱싱</span>
+            <button id="project-indexing-btn" class="icon-btn" title="인덱싱 실행" style="font-size: 11px; padding: 2px 6px; cursor: pointer;">🔄 실행</button>
+        </div>
+        <div class="status-row" style="justify-content: space-between;">
+            <span>🔄 인덱싱 대기 중</span>
+            <span style="font-weight: bold; color: #4CAF50;">0%</span>
+        </div>
+        
+        <!-- 프로그레스 바 -->
+        <div class="progress-container">
+            <div class="progress-bar" style="width: 0%;"></div>
         </div>
 
-    </div>
-
-    <!-- 히스토리 -->
-    <div class="panel">
-
-        <button class="panel-header">
-            질의응답 히스토리
-        </button>
-
-        <div class="panel-content">
-
-            <div class="placeholder">
-                이전 대화를 표시합니다.
+        <!-- 에러 토글 영역 -->
+        <div style="margin-top: 6px;">
+            <button id="error-toggle-btn" class="error-toggle-btn">⚠️ 실패 파일: 0건 [목록 보기 ▼]</button>
+            <div id="errorListContent" class="error-list" style="display: none;">
+                • 현재 실패한 파일이 없습니다.
             </div>
-
         </div>
-
     </div>
 
-</div>
+    <!-- 3. 질의응답 히스토리 카드 (기본 접힘 상태) -->
+    <div class="card">
+        <div id="history-header" class="card-header">
+            <span>💬 질의응답 히스토리</span>
+            <span id="history-arrow">▼</span>
+        </div>
+        <div id="history-content">
+            <div style="padding: 4px 0; opacity: 0.8;">• 이전 대화 기록이 여기에 표시됩니다.</div>
+        </div>
+    </div>
 
-<script nonce="{{nonce}}" src="{{scriptUri}}"></script>
-
+    <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
 </body>
 </html>

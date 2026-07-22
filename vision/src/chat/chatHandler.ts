@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { ChatService } from "../services/chatServices";
 import { APIService } from "../services/APIService";
+import { DatabaseService } from "../services/historyService";
 import { getSessionId } from "../utils/session";
 
 export class ChatHandler {
@@ -23,13 +24,16 @@ export class ChatHandler {
 
             stream.progress("VisionAI가 답변을 생성하고 있습니다...");
 
-            const response = await chatService.sendMessage({
-                project_id: "vision",
+            const message = {
+                project_id: "FastAPI",
                 message: request.prompt,
                 session_id: getSessionId(),
                 top_k: 3,
                 history: []
-            });
+            };
+            
+            console.log(message);
+            const response = await chatService.sendMessage(message);
             console.log(response);
 
             stream.markdown(response.answer);

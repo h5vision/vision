@@ -12,11 +12,11 @@ export class APIHandler {
     ) {}
 
     public async handle(message: SidebarMessage) {
-        console.log('checkBackend');
+        
+        console.log(message.command);
 
         // CheckBackend 기능 추가
         const response = await this.APIService.checkHealth();
-        console.log(response);
 
         this.view.webview.postMessage({
             command: "backendStatus",

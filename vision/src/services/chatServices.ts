@@ -1,5 +1,6 @@
 import { APIService } from "./APIService";
-import { ChatRequest, ChatResponse } from "../types/chat";
+import { ChatRequest, ChatResponse, ChatMessage } from "../types/chat";
+import * as fs from 'fs';
 
 export class ChatService {
 
@@ -14,4 +15,12 @@ export class ChatService {
             request
         ) as ChatResponse;
     };
+
+    /**
+     * Chat Request를 history에 저장
+     */
+    async saveHistory(content: ChatMessage) {
+        
+    }
+
 };
