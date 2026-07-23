@@ -19,8 +19,21 @@
       {
         "command": "vision.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "vision.explainFile",
+        "title": "vision: 이 코드 설명해줘"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "vision.explainFile",
+          "group": "navigation",
+          "when": "editorHasSelection || editorTextFocus"
+        }
+      ]
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -51,9 +64,10 @@
     ]
   },
   "scripts": {
+    "copy-assets": "node scripts/copy-assets.js",
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "npm run copy-assets && tsc -p ./",
+    "watch": "npm run copy-assets && tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test"

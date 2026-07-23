@@ -17,6 +17,11 @@ export function getWebviewContent(
             vscode.Uri.joinPath(extensionUri, "webview", "style.css")
         );
 
+    const codiconUri = 
+        webview.asWebviewUri(
+            vscode.Uri.joinPath(extensionUri, "media", "codicon", "codicon.css")
+        );
+
     const scriptUri =
         webview.asWebviewUri(
             vscode.Uri.joinPath(extensionUri, "webview", "script.js")
@@ -26,6 +31,7 @@ export function getWebviewContent(
         .replaceAll("{{cspSource}}", webview.cspSource)
         .replaceAll("{{nonce}}", nonce)
         .replace("{{styleUri}}", styleUri.toString())
+        .replace("{{codiconUri}}", codiconUri.toString())
         .replace("{{scriptUri}}", scriptUri.toString());
     
     return html;

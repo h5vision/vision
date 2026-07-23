@@ -2,57 +2,44 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}} 'nonce-{{nonce}}'; script-src {{cspSource}} 'nonce-{{nonce}}';">
+    <meta http-equiv="Content-Security-Policy" 
+    content="
+        default-src 'none'; 
+        style-src {{cspSource}} 'nonce-{{nonce}}'; 
+        script-src {{cspSource}} 'nonce-{{nonce}}';
+        font-src {{cspSource}} 'nonce-{{nonce}}';
+    ">
     <link href="{{styleUri}}" rel="stylesheet">
+    <link href="{{codiconUri}}" rel="stylesheet">
+    <link href="${codiconUri}" rel="stylesheet">
 </head>
 <body>
     <!-- 1. 서버 상태 확인 카드 -->
     <div class="card">
         <div class="card-header">
-            <span>🖥️ 서버 상태 확인</span>
+            <span><i class="codicon codicon-vm"></i> 서버 상태 확인</span>
             <button id="reconnect-btn" class="icon-btn" title="재연결">🔄</button>
         </div>
         <div class="status-row">
             <span id="backend-status">🟡 Server Connecting...</span>
         </div>
         <div class="status-row">
-            <span>📦 모델: <span class="badge">Llama-3-Instruct-8B</span></span>
+            <i class="codicon codicon-plug"></i> &nbsp; <span id="endpoint">http://localhost:8000</span>
+            <button id="edit-endpoint-btn" class="icon-btn" title="주소 변경"><i class="codicon codicon-edit"></i></button>
+        </div>
+        <div class="status-row">
+            <i class="codicon codicon-hubot"></i> &nbsp; <span> 모델: <span class="badge">Llama-3-Instruct-8B</span></span>
         </div>
     </div>
 
-    <!-- 2. 프로젝트 인덱싱 확인 카드 -->
+    <!-- 2. 프로젝트 목록 카드 (기존 인덱싱 및 히스토리 자리 대체) -->
     <div class="card">
         <div class="card-header">
-            <span>📂 프로젝트 인덱싱</span>
-            <button id="project-indexing-btn" class="icon-btn" title="인덱싱 실행" style="font-size: 11px; padding: 2px 6px; cursor: pointer;">🔄 실행</button>
+            <span>📁 프로젝트 목록</span>
+            <button id="refresh-projects-btn" class="icon-btn" title="목록 새로고침" style="font-size: 11px; padding: 2px 6px; cursor: pointer;">🔄 새로고침</button>
         </div>
-        <div class="status-row" style="justify-content: space-between;">
-            <span>🔄 인덱싱 대기 중</span>
-            <span style="font-weight: bold; color: #4CAF50;">0%</span>
-        </div>
-        
-        <!-- 프로그레스 바 -->
-        <div class="progress-container">
-            <div class="progress-bar" style="width: 0%;"></div>
-        </div>
-
-        <!-- 에러 토글 영역 -->
-        <div style="margin-top: 6px;">
-            <button id="error-toggle-btn" class="error-toggle-btn">⚠️ 실패 파일: 0건 [목록 보기 ▼]</button>
-            <div id="errorListContent" class="error-list" style="display: none;">
-                • 현재 실패한 파일이 없습니다.
-            </div>
-        </div>
-    </div>
-
-    <!-- 3. 질의응답 히스토리 카드 (기본 접힘 상태) -->
-    <div class="card">
-        <div id="history-header" class="card-header">
-            <span>💬 질의응답 히스토리</span>
-            <span id="history-arrow">▼</span>
-        </div>
-        <div id="history-content">
-            <div style="padding: 4px 0; opacity: 0.8;">• 이전 대화 기록이 여기에 표시됩니다.</div>
+        <div id="project-list-content" class="project-list" style="margin-top: 6px;">
+            <div style="padding: 4px 0; opacity: 0.8;">• 등록된 프로젝트 목록이 없습니다.</div>
         </div>
     </div>
 
