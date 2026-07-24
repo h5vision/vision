@@ -4,7 +4,9 @@ import * as fs from 'fs';
 
 export class ChatService {
 
-    constructor( private readonly APIService: APIService ) {};
+    constructor( 
+        private readonly APIService: APIService
+    ) {};
 
     /**
      * 사용자 메시지를 Backend로 전달
@@ -15,12 +17,5 @@ export class ChatService {
             request
         ) as ChatResponse;
     };
-
-    /**
-     * Chat Request를 history에 저장
-     */
-    async saveHistory(content: ChatMessage) {
-        
-    }
 
 };

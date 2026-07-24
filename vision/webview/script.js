@@ -64,6 +64,7 @@ function updateBackendStatus(status) {
 }
 
 vscode.postMessage({ command: "checkBackend" });
+vscode.postMessage({ command: "getProjectInfo" });
 
 setInterval(() => {vscode.postMessage({ command: "checkBackend" });}, 30 * 1000);
 
@@ -78,8 +79,15 @@ window.addEventListener("message", event => {
             updateBackendStatus(message.data);
             break;
 
-        case "displayProject":
-            // 프로젝트 인덱싱 진행 후 sidebar에 출력하는 기능을 입력합니다. 
+        case "showProjectInfo":
+            const el = document.getElementById('project-current');
+            const data = message.data;
+            let git = '';
+            if (data.git) {git = "✅";} else {git = "❌";}
+            const prj_info = `${data.name}, git: ${git}`;
+            el.textContent = prj_info;
             break;
+
     }
 });
+

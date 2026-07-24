@@ -1,6 +1,7 @@
 {
   "name": "vision",
   "displayName": "vision",
+  "publisher":"Team-vision",
   "description": "On-premise sLLM Coding Assistance and Intelligence",
   "version": "0.0.1",
   "engines": {

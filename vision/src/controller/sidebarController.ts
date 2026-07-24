@@ -5,12 +5,14 @@ import { SidebarMessage, SidebarCommand } from "../types/sidebarMessage";
 import { APIHandler } from "./handlers/APIHandler";
 import { HistoryHandler } from "./handlers/historyHandler";
 import { IndexingHandler } from "./handlers/indexingHandler";
+import { ProjectInfoHandler } from "./handlers/projectInfoHandler";
 
 export class SidebarController {
 
     private readonly APIHandler: APIHandler;
     private readonly historyHandler: HistoryHandler;
     private readonly indexingHandler: IndexingHandler;
+    private readonly projectInfoHandler: ProjectInfoHandler;
 
     constructor(
         private readonly view: vscode.WebviewView
@@ -18,6 +20,7 @@ export class SidebarController {
         this.APIHandler = new APIHandler(view);
         this.historyHandler = new HistoryHandler(view);
         this.indexingHandler = new IndexingHandler(view);
+        this.projectInfoHandler = new ProjectInfoHandler(view);
     }
 
     public async handle(message: SidebarMessage) {
@@ -32,6 +35,9 @@ export class SidebarController {
 
             case SidebarCommand.LoadHistory:
                 return this.historyHandler.handle(message);
+
+            case SidebarCommand.GetProjectInfo:
+                return this.projectInfoHandler.handle(message);
         }
     }
 }

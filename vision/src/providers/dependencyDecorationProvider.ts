@@ -9,26 +9,28 @@ export class dependencyDecorationProvider implements vscode.FileDecorationProvid
     provideFileDecoration(uri: vscode.Uri): vscode.ProviderResult<vscode.FileDecoration> {
         const filePath = uri.path.toLowerCase();
 
-        // controller: 빨강 + 숫자 '1'
+        // controller: 빨강
+        // 화면에 작업 중인 파일에 대해 의존도가 높은 파일들 표시
         if (filePath.includes('controller')) {
             return {
                 color: new vscode.ThemeColor('errorForeground'), // 빨강
-                badge: '1',
-                tooltip: '중요도: 높음 (빨강)'
+                badge: '※',
+                tooltip: '의존도 높음'
             };
         // services: 주황 + 숫자 '2'
-        } else if (filePath.includes('services')) {
-            return {
-                color: new vscode.ThemeColor('editorWarning.foreground'), // 주황
-                badge: '2',
-                tooltip: '중요도: 보통 (주황)'
-            };
-        // utils: 파랑 + 숫자 '3'
+        // } else if (filePath.includes('services')) {
+        //     return {
+        //         color: new vscode.ThemeColor('editorWarning.foreground'), // 주황
+        //         badge: '2',
+        //         tooltip: '중요도: 보통 (주황)'
+        //     };
+        // utils: 파랑
+        // sLLM의 답변 출처가 되는 파일들을 표시
         } else if (filePath.includes('utils')) {
             return {
                 color: new vscode.ThemeColor('charts.blue'), // 파랑 (시인성 좋음)
-                badge: '3',
-                tooltip: '중요도: 낮음 (파랑)'
+                badge: '§',
+                tooltip: '답변 출처'
             };
         }
 

@@ -11,7 +11,6 @@
     ">
     <link href="{{styleUri}}" rel="stylesheet">
     <link href="{{codiconUri}}" rel="stylesheet">
-    <link href="${codiconUri}" rel="stylesheet">
 </head>
 <body>
     <!-- 1. 서버 상태 확인 카드 -->
@@ -37,6 +36,9 @@
         <div class="card-header">
             <span>📁 프로젝트 목록</span>
             <button id="refresh-projects-btn" class="icon-btn" title="목록 새로고침" style="font-size: 11px; padding: 2px 6px; cursor: pointer;">🔄 새로고침</button>
+        </div>
+        <div class="project-list" style="margin-top:6px;">
+            현재 프로젝트: <span id="project-current"></span>
         </div>
         <div id="project-list-content" class="project-list" style="margin-top: 6px;">
             <div style="padding: 4px 0; opacity: 0.8;">• 등록된 프로젝트 목록이 없습니다.</div>

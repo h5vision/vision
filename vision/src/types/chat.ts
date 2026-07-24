@@ -20,8 +20,8 @@ export interface ChatRequest {
     project_id: string;
     message: string;
     session_id: string;
-    top_k: number;
-    history: ChatMessage[];
+    top_k?: number;
+    history?: ChatMessage[];
 }
 
 export interface SourceDocument {

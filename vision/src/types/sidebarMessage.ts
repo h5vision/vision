@@ -6,7 +6,9 @@ export enum SidebarCommand {
 
     InitialProjectIndexing = "initialProjectIndexing",
 
-    LoadHistory = "loadHistory"
+    LoadHistory = "loadHistory",
+
+    GetProjectInfo = "getProjectInfo"
 
 }
 

@@ -1,11 +1,12 @@
 // 'vscode' 모듈에는 VS Code 확장 API가 포함되어 있습니다. 이 모듈을 가져오면 편집기와 상호 작용할 수 있습니다.
 import * as vscode from 'vscode';
 import * as path from 'path';  		// Node.js의 path 모듈을 가져옵니다. 파일 경로를 다루는 데 사용됩니다.
+import * as fs from "fs";
 import { SidebarProvider } from "./providers/sidebarProvider";	// SidebarProvider를 가져옵니다.
 import { getHtmlContent } from "./providers/guideContents";		// guideBook.html 파일을 읽어오는 함수를 가져옵니다.
-import { participant } from "./chat/chatParticipantProvider";	// ChatParticipantProvider를 가져옵니다.
+import { ChatHandler } from './chat/chatHandler';	// chatParticipant 등록을 위한 chatHandler를 가져옵니다. 
 import { dependencyDecorationProvider } from "./providers/dependencyDecorationProvider";
-import { DatabaseService } from './services/historyService';
+import { HistoryService } from './services/historyService';
 
 // 이 메서드는 확장 프로그램이 활성화될 때 호출됩니다. 확장 프로그램이 처음으로 명령을 실행할 때 활성화됩니다.
 export async function activate(context: vscode.ExtensionContext) {
@@ -49,8 +50,26 @@ export async function activate(context: vscode.ExtensionContext) {
 	
 	// Extension을 실행할 때 vscode chat 창을 자동으로 열어줍니다. 
 	await vscode.commands.executeCommand("workbench.action.chat.open");
-	// ChatParticipantProvider를 구독에 추가하여 확장 프로그램이 비활성화될 때 정리할 수 있도록 합니다.
-	context.subscriptions.push(participant);
+	
+	// vscode 내의 Storage에 history.db 파일을 만듭니다. 
+	
+	const storagePath = path.join(context.globalStorageUri.fsPath);
+	try {
+		if (!fs.existsSync(storagePath)) {
+			fs.mkdirSync(storagePath,{recursive:true});
+		}
+		const dbPath = path.join(storagePath, 'history.db');
+		const historyService = new HistoryService(dbPath);
+		if (historyService) {
+			console.log('history.db has been initialized');
+		}
+
+		// ChatParticipantProvider를 구독에 추가하여 확장 프로그램이 비활성화될 때 정리할 수 있도록 합니다.
+		const chatHandler = new ChatHandler(historyService);
+		vscode.chat.createChatParticipant("vision.chat", chatHandler.handle);
+	} catch(err) {
+		console.log(err);
+	}
 
 
 	// 현재 함수/변수에 대한 의존성을 vscode Explorer 창의 파일들에 색상으로 표시합니다. 
@@ -75,13 +94,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
         if (!selectedText || selectedText.trim().length === 0) {
             await vscode.commands.executeCommand('workbench.action.chat.open', {
-            	query: `@vision ${fileName}에 대해 설명해줘.`
+            	query: `@vision ${fileName}에 대해 설명해줘.`,
+				isPartialQuery: false
         	});
+			return;
         }
 
-        // VS Code 챗 창을 열면서 @vision 챗 참여자 입력창에 드래그한 코드 자동 입력
+        // VS Code 챗 창을 열면서 @vision chat view 입력창에 드래그한 코드 자동 입력
         await vscode.commands.executeCommand('workbench.action.chat.open', {
-            query: `@vision 이 코드(파일: ${fileName})를 알기 쉽게 설명해줘:\n\`\`\`\n${selectedText}\n\`\`\``
+            query: `@vision ${fileName}\n\`\`\`\n${selectedText}\n\`\`\``, 
+			isPartialQuery: true
         });
     });
 

@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 
-export class DatabaseService {
+export class HistoryService {
 
     private db: DatabaseSync;
 
@@ -15,7 +15,7 @@ export class DatabaseService {
             CREATE TABLE IF NOT EXISTS chat_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 project_id TEXT,
-                session_id TEXT NOT NULL,
+                session_id TEXT,
                 role TEXT,
                 content TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -24,8 +24,8 @@ export class DatabaseService {
     }
 
     public save(
-        projectId: string,
-        sessionId: string,
+        project_id: string,
+        session_id: string,
         role: string,
         content: string
     ) {
@@ -35,12 +35,7 @@ export class DatabaseService {
             VALUES (?,?,?,?)
         `);
 
-        stmt.run(
-            projectId,
-            sessionId,
-            role,
-            content
-        );
+        console.log(stmt.run(project_id, session_id, role, content));
     }
 
     public load(
