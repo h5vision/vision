@@ -3,23 +3,53 @@ const headers = document.querySelectorAll(".panel-header");
 // DOM이 완전히 로드된 후 이벤트를 안전하게 부착합니다.
 document.addEventListener("DOMContentLoaded", () => {
     
-    // ① 서버 재연결 버튼
+    // 서버 재연결 버튼
     const reconnectBtn = document.getElementById("reconnect-btn");
     if (reconnectBtn) {
         reconnectBtn.addEventListener("click", () => {
-            vscode.postMessage({ command: "reconnectServer" });
+            document.getElementById("backend-status").textContent = '🟡 Server Connecting...';
+            document.getElementById("endpoint").textContent = '';
+            vscode.postMessage({ command: "checkBackend" });
         });
     }
 
-    // ② 프로젝트 인덱싱 실행 버튼
-    const indexingButton = document.getElementById("project-indexing-btn");
-    if (indexingButton) {
-        indexingButton.addEventListener("click", () => {
-            vscode.postMessage({ command: "projectIndexing" });
+    // endpoint 변경 버튼
+    const endpoint = document.getElementById("endpoint");
+    const endpointEditInput = document.getElementById('endpoint-edit-input');
+    const changeEndpoint = document.getElementById('change-endpoint');
+    const cancelEndpoint = document.getElementById('cancel-endpoint');
+    if (endpoint) {
+        endpoint.addEventListener("click", ()=>{
+            endpoint.classList.toggle('hidden');
+            endpointEditInput.classList.toggle('hidden');
+            endpointEditInput.focus();
+            changeEndpoint.classList.toggle('hidden');
+            cancelEndpoint.classList.toggle('hidden');
+            endpointEditInput.value = endpoint.textContent;
+        });
+    };
+    if (endpointEditInput) {
+        endpointEditInput.addEventListener('keydown', (e)=>{
+            if (e.key === 'Enter') {changeEndpoint.click();}
         });
     }
 
-    // ③ 실패 파일 목록 토글
+    if (changeEndpoint) {
+        changeEndpoint.addEventListener("click", ()=>{
+            endpoint.textContent = endpointEditInput.value;
+            endpoint.click();
+            vscode.postMessage({command:"updateEndpoint", data: endpointEditInput.value});
+        });
+    };
+
+    if (cancelEndpoint) {
+        cancelEndpoint.addEventListener("click", ()=>{
+            endpoint.click();
+        });
+    };
+
+
+    // 실패 파일 목록 토글
     const errorToggleBtn = document.getElementById("error-toggle-btn");
     const errorListContent = document.getElementById("errorListContent");
     if (errorToggleBtn && errorListContent) {
@@ -32,21 +62,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ④ 질의응답 히스토리 토글 (기본 접혀있다가 클릭하면 펴짐)
-    const historyHeader = document.getElementById("history-header");
-    const historyContent = document.getElementById("history-content");
-    const historyArrow = document.getElementById("history-arrow");
-    if (historyHeader && historyContent) {
-        historyHeader.addEventListener("click", () => {
-            if (historyContent.style.display === 'none' || historyContent.style.display === '') {
-                historyContent.style.display = 'block';
-                if (historyArrow) {historyArrow.textContent = '▲';}
-            } else {
-                historyContent.style.display = 'none';
-                if (historyArrow) {historyArrow.textContent = '▼';}
-            }
-        });
-    }
 });
 
 const vscode = acquireVsCodeApi();
@@ -54,6 +69,8 @@ const vscode = acquireVsCodeApi();
 function updateBackendStatus(status) {
 
     const el = document.getElementById("backend-status");
+    const el2 = document.getElementById("endpoint");
+    el2.textContent = status.endpoint;
 
     if (status.connected) {
         el.textContent = "🟢 " + status.message + ` [ ${status.latency} ms ]`;
@@ -80,15 +97,16 @@ window.addEventListener("message", event => {
             break;
 
         case "showProjectInfo":
-            const el = document.getElementById('project-current');
-            const elGit = document.getElementById('project-current-git')
+            const el = document.getElementById('current-project-name');
+            const elGit = document.getElementById('current-project-git');
+            const elPath = document.getElementById('current-project-path');
             const data = message.data;
             let git = '';
-            if (data.git) {git = "✅ 사용 중";} else {git = "❌ git 정보없음";}
-            el.textContent = data.name;
+            if (data.git) {git = "✅ 사용 중";} else {git = "❌ 정보없음";}
+            el.textContent = data.name.toUpperCase();
             elGit.textContent = git;
+            elPath.textContent = data.path;
             break;
-
     }
 });
 

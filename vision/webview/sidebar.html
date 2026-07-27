@@ -16,15 +16,19 @@
     <!-- 1. 서버 상태 확인 카드 -->
     <div class="card">
         <div class="card-header">
-            <span><i class="codicon codicon-vm"></i> 서버 상태 확인</span>
-            <button id="reconnect-btn" class="icon-btn" title="재연결">🔄</button>
+            <span><i class="codicon codicon-vm"></i> &nbsp; 서버 상태 확인</span>
+            <button id="reconnect-btn" class="icon-btn" title="재연결">
+                <i class="codicon codicon-sync"></i>
+            </button>
         </div>
         <div class="status-row">
             <span id="backend-status">🟡 Server Connecting...</span>
         </div>
         <div class="status-row">
-            <i class="codicon codicon-plug"></i> &nbsp; <span id="endpoint">http://localhost:8000</span>
-            <button id="edit-endpoint-btn" class="icon-btn" title="주소 변경"><i class="codicon codicon-edit"></i></button>
+            <i class="codicon codicon-plug"></i> &nbsp; <span id="endpoint"> </span>
+            <input type="text" id="endpoint-edit-input" class="hidden">
+            <button id="change-endpoint" class="icon-btn hidden"><i class="codicon codicon-pass"></i></button>
+            <button id="cancel-endpoint" class="icon-btn hidden"><i class="codicon codicon-close"></i></button>
         </div>
         <div class="status-row">
             <i class="codicon codicon-hubot"></i> &nbsp; <span> 모델: <span class="badge">Llama-3-Instruct-8B</span></span>
@@ -34,23 +38,22 @@
     <!-- 2. 현재 프로젝트 정보 카드 (서버 상태 확인 제외함) -->
     <div class="card">
         <div class="card-header">
-            <span>📊 현재 프로젝트 정보</span>
+            <span><i class="codicon codicon-folder-active"></i> &nbsp; 현재 프로젝트 정보</span>
         </div>
         <div id="current-project-info" class="project-info-box">
-            <div>• 선택된 프로젝트: <b id="project-current">없음</b></div>
-            <div>• git 정보: <b id="project-current-git"></b></div>
-            <div style="font-size: 11px; margin-top: 4px; opacity: 0.7;">• 경로: -</div>
+            <div id="current-project-name">없음</div>
+            <div id="current-project-path"></div>
+            <div><i class="codicon codicon-git-branch"></i><b id="current-project-git"></b></div>
         </div>
     </div>
 
     <!-- 2. 프로젝트 목록 카드 (기존 인덱싱 및 히스토리 자리 대체) -->
     <div class="card">
         <div class="card-header">
-            <span>📁 프로젝트 목록</span>
-            <button id="refresh-projects-btn" class="icon-btn" title="목록 새로고침" style="font-size: 11px; padding: 2px 6px; cursor: pointer;">🔄 새로고침</button>
-        </div>
-        <div class="project-list" style="margin-top:6px;">
-            현재 프로젝트: <span id="project-current"></span>
+            <span><i class="codicon codicon-list-unordered"></i> &nbsp; 프로젝트 목록</span>
+            <button id="refresh-projects-btn" class="icon-btn" title="목록 새로고침">
+                <i class="codicon codicon-sync"></i>
+            </button>
         </div>
         <div id="project-list-content" class="project-list" style="margin-top: 6px;">
             <div style="padding: 4px 0; opacity: 0.8;">• 등록된 프로젝트 목록이 없습니다.</div>

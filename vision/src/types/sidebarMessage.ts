@@ -8,7 +8,9 @@ export enum SidebarCommand {
 
     LoadHistory = "loadHistory",
 
-    GetProjectInfo = "getProjectInfo"
+    GetProjectInfo = "getProjectInfo",
+
+    UpdateEndpoint = "updateEndpoint"
 
 }
 

@@ -13,7 +13,7 @@ export class ChatService {
      */
     async sendMessage(request: ChatRequest): Promise<ChatResponse> {
         return await this.APIService.post(
-            "/v1/chat",
+            "/chat",
             request
         ) as ChatResponse;
     };

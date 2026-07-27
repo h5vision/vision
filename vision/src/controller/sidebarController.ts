@@ -38,6 +38,21 @@ export class SidebarController {
 
             case SidebarCommand.GetProjectInfo:
                 return this.projectInfoHandler.handle(message);
+
+            case SidebarCommand.UpdateEndpoint:
+                await vscode.workspace.getConfiguration()
+                    .update(
+                        "vision.endpoint",
+                        message.data,
+                        vscode.ConfigurationTarget.Workspace
+                    );
+
+                vscode.window.showInformationMessage(
+                    "Endpoint가 변경되었습니다."
+                );
+
+                return this.APIHandler.handle(message);
+
         }
     }
 }

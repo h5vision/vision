@@ -16,6 +16,16 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration":{
+      "title":"vision",
+      "properties": {
+        "vision.endpoint":{
+          "type":"string",
+          "default":"https://api.blakeedenparker.cloud/v1",
+          "description": "vision backendAI endpoint"
+        }
+      }
+    },
     "commands": [
       {
         "command": "vision.helloWorld",

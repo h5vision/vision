@@ -17,9 +17,7 @@ export class ProjectInfoHandler {
         console.log(message.command);
         const workspace:any = this.workspaceService.getWorkspace();
         const git = this.gitService.getGitInfo(workspace.path).enabled;
-        const response = {name: workspace.name, git: git};
-
-        // CheckBackend 기능 추가
+        const response = {name: workspace.name, path: workspace.path, git: git};
 
         this.view.webview.postMessage({
             command: "showProjectInfo",

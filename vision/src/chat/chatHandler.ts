@@ -19,6 +19,8 @@ export class ChatHandler {
         const backendService = new APIService();
         const chatService = new ChatService(backendService);
         const previousMessages = context.history.filter(h => h instanceof vscode.ChatRequestTurn);
+        
+        const modelList = {default:"backendai-default", nvidia:"nvidia-default", groq:"groq-default"};
 
         try {
 
@@ -29,7 +31,8 @@ export class ChatHandler {
                 project_id: "FastAPI",
                 message: request.prompt,
                 session_id: session_id,
-                history: []
+                history: [],
+                model_id: modelList.nvidia
             };
             // const history = {
             //     project_id: 'FastAPI',
@@ -37,6 +40,7 @@ export class ChatHandler {
             //     content: request.prompt,
             //     role: 'user'
             // };
+            console.log(message);
             this.historyServcie.save('FastAPI', session_id, 'user', request.prompt);            
             const response = await chatService.sendMessage(message);
             console.log(response);
@@ -55,6 +59,6 @@ export class ChatHandler {
 
         }
 
-    }
+    };
 
 }

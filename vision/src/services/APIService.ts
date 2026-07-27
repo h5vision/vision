@@ -1,3 +1,5 @@
+import * as vscode from 'vscode';
+
 export interface BackendStatus {
     endpoint: string;
     connected: boolean;
@@ -7,21 +9,22 @@ export interface BackendStatus {
 
 export class APIService {
 
-    constructor(
-        private readonly baseUrl: string = "https://api.blakeedenparker.cloud" 
-    ) {}
+    constructor() {}
 
     async checkHealth(): Promise<BackendStatus> {
+        const endpoint = vscode.workspace.getConfiguration().get<string>("vision.endpoint",
+            "http://127.0.0.1:5000"
+        )!;
         let startime = Date.now();
 
         try {
-            const response = await fetch(`${this.baseUrl}/v1/health`);
+            const response = await fetch(`${endpoint}/health`);
             const endtime = Date.now();
             const latency = endtime - startime;
 
-            if (!response.status) {
+            if (!response.ok) {
                 return {
-                    endpoint: 'Error',
+                    endpoint: endpoint,
                     connected: false,
                     message: "Error",
                     latency: -1
@@ -30,7 +33,7 @@ export class APIService {
             console.log(response);
 
             return {
-                endpoint: response.url,
+                endpoint: endpoint,
                 connected: true,
                 message: "Connected",
                 latency: latency
@@ -40,7 +43,7 @@ export class APIService {
         catch {
 
             return {
-                endpoint: 'Offline',
+                endpoint: endpoint,
                 connected: false,
                 message: "Offline", 
                 latency: -1
@@ -51,15 +54,21 @@ export class APIService {
     }
 
     async get(path: string) {
+        const endpoint = vscode.workspace.getConfiguration().get<string>("vision.endpoint",
+            "http://127.0.0.1:5000"
+        )!;
         const response = await fetch(
-            `${this.baseUrl}${path}`
+            `${endpoint}${path}`
         );
         return response.json();
     }
 
     async post(path: string, body: any) {
+        const endpoint = vscode.workspace.getConfiguration().get<string>("vision.endpoint",
+            "http://127.0.0.1:5000"
+        )!;
         const response = await fetch(
-            `${this.baseUrl}${path}`,
+            `${endpoint}${path}`,
             {
                 method: "POST",
                 headers: {
