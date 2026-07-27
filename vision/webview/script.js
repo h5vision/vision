@@ -81,11 +81,12 @@ window.addEventListener("message", event => {
 
         case "showProjectInfo":
             const el = document.getElementById('project-current');
+            const elGit = document.getElementById('project-current-git')
             const data = message.data;
             let git = '';
-            if (data.git) {git = "✅";} else {git = "❌";}
-            const prj_info = `${data.name}, git: ${git}`;
-            el.textContent = prj_info;
+            if (data.git) {git = "✅ 사용 중";} else {git = "❌ git 정보없음";}
+            el.textContent = data.name;
+            elGit.textContent = git;
             break;
 
     }
