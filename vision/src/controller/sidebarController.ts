@@ -50,7 +50,6 @@ export class SidebarController {
                 vscode.window.showInformationMessage(
                     "Endpoint가 변경되었습니다."
                 );
-
                 return this.APIHandler.handle(message);
 
         }

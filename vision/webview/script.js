@@ -1,5 +1,3 @@
-const headers = document.querySelectorAll(".panel-header");
-
 // DOM이 완전히 로드된 후 이벤트를 안전하게 부착합니다.
 document.addEventListener("DOMContentLoaded", () => {
     
@@ -71,12 +69,15 @@ function updateBackendStatus(status) {
 
     const el = document.getElementById("backend-status");
     const el2 = document.getElementById("endpoint");
+    const el3 = document.getElementById("server-status-icon");
     el2.textContent = status.endpoint;
 
     if (status.connected) {
         el.textContent = "🟢 " + status.message + ` [ ${status.latency} ms ]`;
+        el3.classList.replace('codicon-vm', 'codicon-vm-active');
     } else {
         el.textContent = "🔴 " + status.message;
+        el3.classList.replace('codicon-vm-active', 'codicon-vm');
     }
 
 }
@@ -93,11 +94,12 @@ window.addEventListener("message", event => {
 
     switch (message.command) {
 
-        case "backendStatus":
+        case "backendStatus": {
             updateBackendStatus(message.data);
             break;
+        }
 
-        case "showProjectInfo":
+        case "showProjectInfo": {
             const el = document.getElementById('current-project-name');
             const elGit = document.getElementById('current-project-git');
             const elPath = document.getElementById('current-project-path');
@@ -108,6 +110,18 @@ window.addEventListener("message", event => {
             elGit.textContent = git;
             elPath.textContent = data.path;
             break;
+        }
+        
+        case "cardClick": {
+            const targetElement = document.getElementById(message.data);
+            if (targetElement) {
+                targetElement.classList.add('flash-effect');
+                setTimeout(() => {
+                    targetElement.classList.remove('flash-effect');
+                }, 1000);
+            }
+            break;
+        }
     }
 });
 

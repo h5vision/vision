@@ -7,6 +7,7 @@
 export interface ChatMessage {
     role: "user" | "assistant" | "system";
     content: string;
+    endpoint?: string;
 }
 /**
  * Chat API 요청 타입   
@@ -20,9 +21,10 @@ export interface ChatRequest {
     project_id: string;
     message: string;
     session_id: string;
-    model_id: string;
+    model_id?: string;
     top_k?: number;
     history?: ChatMessage[];
+    context?: unknown;
 }
 
 export interface SourceDocument {

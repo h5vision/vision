@@ -48,6 +48,14 @@ export async function activate(context: vscode.ExtensionContext) {
             provider
         )
     );
+
+	// guideBook.html<script>에서 Sidebar script.js로 명령 전달
+	guidepanel.webview.onDidReceiveMessage((message) => {
+		console.log(message.command);
+		if (provider && provider.view) {
+			return provider.view.webview.postMessage(message);
+		}
+	});
 	
 	// Extension을 실행할 때 vscode chat 창을 자동으로 열어줍니다. 
 	await vscode.commands.executeCommand("workbench.action.chat.open");
@@ -95,6 +103,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         if (!selectedText || selectedText.trim().length === 0) {
             await vscode.commands.executeCommand('workbench.action.chat.open', {
+				path: '',
             	query: `@vision ${fileName}에 대해 설명해줘.`,
 				isPartialQuery: false
         	});
@@ -103,6 +112,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         // VS Code 챗 창을 열면서 @vision chat view 입력창에 드래그한 코드 자동 입력
         await vscode.commands.executeCommand('workbench.action.chat.open', {
+			path: '', 
             query: `@vision ${fileName}에 있는 다음 코드에 대해 설명해줘. \n\`\`\`\n${selectedText}\n\`\`\``, 
 			isPartialQuery: true
         });

@@ -1,3 +1,13 @@
+@keyframes flash {
+    0% { background-color: transparent; }
+    50% { background-color: rgba(0, 122, 204, 0.6); } /* VS Code 포인트 컬러 */
+    100% { background-color: transparent; }
+}
+
+.flash-effect {
+    animation: flash 0.5s ease-in-out 2;
+}
+
 body {
     font-family: var(--vscode-font-family);
     color: var(--vscode-foreground);
@@ -45,7 +55,6 @@ body {
     width: 90%;
 }
 
-
 .badge {
     background-color: rgba(255, 255, 255, 0.08);
     padding: 2px 6px;
@@ -53,7 +62,6 @@ body {
     font-family: monospace;
     font-size: 11px;
 }
-
 .icon-btn {
     background: none;
     border: none;
@@ -74,25 +82,9 @@ body {
     overflow-y: auto;
 }
 
-.project-item {
-    padding: 6px 8px;
-    margin-bottom: 4px;
-    background-color: rgba(255, 255, 255, 0.02);
-    border: 1px solid transparent;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
 .project-info-box div {
     margin:4px;
-}
-
-.project-item:hover {
-    background-color: rgba(255, 255, 255, 0.06);
-    border-color: var(--vscode-focusBorder);
+    font-size:12px;
 }
 
 #current-project-name {

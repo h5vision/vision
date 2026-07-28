@@ -5,9 +5,17 @@ import { GitMetadata } from "../../types";
 export class GitService {
 
     public getGitInfo(workspacePath: string): GitMetadata {
+        const enabled = fs.existsSync(path.join(workspacePath, ".git"));
+        if (enabled) {
 
-        return {
-            enabled: fs.existsSync(path.join(workspacePath, ".git"))
-        };
+            
+            return {
+                enabled: enabled
+            };
+        } else {
+            return {
+                enabled: enabled
+            };
+        }
     }
 }

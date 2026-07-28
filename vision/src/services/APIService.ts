@@ -21,34 +21,38 @@ export class APIService {
             const response = await fetch(`${endpoint}/health`);
             const endtime = Date.now();
             const latency = endtime - startime;
-
+            console.log(response);
             if (!response.ok) {
                 return {
                     endpoint: endpoint,
                     connected: false,
-                    message: "Error",
+                    message: "Backend Server Error",
                     latency: -1
                 };
-            };
-            console.log(response);
-
+            }
             return {
                 endpoint: endpoint,
                 connected: true,
                 message: "Connected",
                 latency: latency
             };
-
         }
-        catch {
-
-            return {
-                endpoint: endpoint,
-                connected: false,
-                message: "Offline", 
-                latency: -1
-            };
-
+        catch (error) {
+            if (error instanceof Error) {
+                return {
+                    endpoint: endpoint,
+                    connected: false,
+                    message: error.message.toUpperCase(), 
+                    latency: -1
+                };
+            } else {
+                return {
+                    endpoint: endpoint,
+                    connected: false,
+                    message: String(error).toUpperCase(), 
+                    latency: -1
+                };
+            }
         }
 
     }
@@ -77,6 +81,7 @@ export class APIService {
                 body: JSON.stringify(body)
             }
         );
+        console.log(response);
         return response.json();
     }
 

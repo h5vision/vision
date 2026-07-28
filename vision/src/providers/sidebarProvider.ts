@@ -5,7 +5,7 @@ import { SidebarController } from "../controller/sidebarController";
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
 
-    private view?: vscode.WebviewView;
+    public view?: vscode.WebviewView;
 
     constructor( private readonly extensionUri: vscode.Uri ) {};
 

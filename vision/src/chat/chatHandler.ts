@@ -11,10 +11,10 @@ export class ChatHandler {
     ) {}
 
     public handle: vscode.ChatRequestHandler = async (
-        request,
-        context,
-        stream,
-        token
+        request : vscode.ChatRequest,
+        context : vscode.ChatContext,
+        stream : vscode.ChatResponseStream,
+        token : vscode.CancellationToken
     ) => {
         const backendService = new APIService();
         const chatService = new ChatService(backendService);
@@ -31,7 +31,7 @@ export class ChatHandler {
                 message: request.prompt,
                 session_id: session_id,
                 history: [],
-                model_id: modelList.nvidia
+                top_k: 3
             };
             // const history = {
             //     project_id: 'FastAPI',
@@ -44,7 +44,9 @@ export class ChatHandler {
             const response = await chatService.sendMessage(message);
             console.log(response);
 
-            stream.markdown(response.answer);
+            for await (const fragment of response.answer) {
+                stream.markdown(fragment);
+            }
             this.historyServcie.save('FastAPI', session_id, 'assistant', response.answer);
 
         }

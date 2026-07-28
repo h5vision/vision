@@ -1,6 +1,5 @@
 import { APIService } from "./APIService";
-import { ChatRequest, ChatResponse, ChatMessage } from "../types/chat";
-import * as fs from 'fs';
+import { ChatRequest, ChatResponse} from "../types/chat";
 
 export class ChatService {
 
@@ -12,6 +11,7 @@ export class ChatService {
      * 사용자 메시지를 Backend로 전달
      */
     async sendMessage(request: ChatRequest): Promise<ChatResponse> {
+        console.log(request);
         return await this.APIService.post(
             "/chat",
             request

@@ -3,66 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 기반 코드 분석 도구 - 프로그램 가이드 및 기능 명세서</title>
+    <title>Vision AI Extension - 프로그램 가이드 및 기능 명세서</title>
     <style>
         :root {
-            --bg-color: #f8fafc;
+            --bg-color: #0f172a;
             --sidebar-bg: #1e293b;
-            --sidebar-text: #cbd5e1;
+            --sidebar-text: #94a3b8;
             --sidebar-hover: #334155;
             --sidebar-active: #3b82f6;
-            --main-bg: #ffffff;
-            --text-color: #333333;
-            --border-color: #e2e8f0;
+            --main-bg: #1e293b;
+            --card-bg: #0f172a;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --accent-blue: #3b82f6;
+            --accent-red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Malgun Gothic', sans-serif;
-            color: var(--text-color);
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
             background-color: var(--bg-color);
+            color: var(--text-color);
             display: flex;
             height: 100vh;
             overflow: hidden;
         }
 
-        /* 좌측 사이드바 네비게이션 */
+        /* 좌측 사이드바 */
         sidebar {
-            width: 280px;
+            width: 300px;
             background-color: var(--sidebar-bg);
-            color: var(--sidebar-text);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            border-right: 1px solid #334155;
-            box-shadow: 4px 0 10px rgba(0,0,0,0.05);
             z-index: 10;
         }
 
         .sidebar-brand {
-            padding: 25px 20px;
+            padding: 24px 20px;
             font-size: 16px;
             font-weight: 700;
             color: #ffffff;
-            background-color: #0f172a;
-            border-bottom: 1px solid #334155;
+            background-color: #0b0f19;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .menu-list {
             list-style: none;
-            padding: 0;
-            margin: 0;
+            padding: 15px 10px;
             overflow-y: auto;
             flex: 1;
         }
 
         .menu-item {
-            padding: 14px 20px;
+            padding: 12px 16px;
             cursor: pointer;
-            font-size: 14px;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 13.5px;
+            font-weight: 500;
+            color: var(--sidebar-text);
+            border-radius: 6px;
+            margin-bottom: 4px;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .menu-item:hover {
@@ -74,7 +87,7 @@
             background-color: var(--sidebar-active);
             color: #ffffff;
             font-weight: 600;
-            border-left: 5px solid #93c5fd;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         /* 우측 메인 콘텐츠 영역 */
@@ -88,13 +101,8 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background-color: var(--main-bg);
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         }
 
-        /* 탭별 콘텐츠 스위칭 기본 숨김 처리 */
         .tab-content {
             display: none;
         }
@@ -105,491 +113,255 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
+            from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Cover Page / Header Banner Box */
+        /* 배너 스타일 */
         .header-banner {
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            color: #ffffff;
-            padding: 40px;
+            border: 1px solid var(--border-color);
+            padding: 35px;
+            border-radius: 12px;
             margin-bottom: 30px;
-            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }
-        
+
         .header-banner h1 {
-            margin: 0 0 15px 0;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 700;
-            letter-spacing: -0.5px;
-            color: #f8fafc;
+            margin-bottom: 10px;
+            color: #ffffff;
         }
 
-        .header-banner p.subtitle {
-            margin: 0;
-            font-size: 15px;
-            color: #cbd5e1;
-            font-weight: 300;
+        .header-banner p {
+            color: var(--text-muted);
+            font-size: 14px;
         }
 
-        .meta-info {
-            margin-top: 20px;
-            font-size: 13px;
-            color: #94a3b8;
-            border-top: 1px solid #334155;
-            padding-top: 15px;
-        }
-
-        .meta-info span {
-            margin-right: 25px;
-        }
-
-        /* Heading Styles */
-        h2 {
-            font-size: 20px;
-            color: #1e293b;
-            border-left: 5px solid #3b82f6;
-            padding-left: 12px;
-            margin-top: 20px;
-            margin-bottom: 20px;
-        }
-
-        /* Overview Section */
-        .overview-box {
-            background-color: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 20px;
+        /* 카드 그리드 레이아웃 */
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
             margin-bottom: 30px;
         }
 
-        .overview-box p {
-            margin: 0 0 10px 0;
-        }
-        .overview-box p:last-child {
-            margin: 0;
-        }
-
-        /* Table Responsive Wrapper */
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            margin-bottom: 35px;
-            -webkit-overflow-scrolling: touch;
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, border-color 0.2s;
+            cursor: pointer;
         }
 
-        /* Table Design */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 800px;
+        .card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent-blue);
         }
 
-        th {
-            background-color: #f1f5f9;
-            color: #1e293b;
-            font-weight: 600;
-            text-align: left;
-            padding: 12px 16px;
-            font-size: 14px;
-            border-top: 2px solid #cbd5e1;
-            border-bottom: 2px solid #cbd5e1;
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        td {
-            padding: 14px 16px;
+        .card p, .card ul {
             font-size: 13.5px;
-            border-bottom: 1px solid #e2e8f0;
-            vertical-align: top;
+            color: var(--text-muted);
             line-height: 1.5;
         }
 
-        /* Column Widths */
-        .col-name { width: 22%; font-weight: 600; color: #0f172a; }
-        .col-desc { width: 43%; color: #334155; }
-        .col-remarks { width: 23%; color: #475569; font-size: 12.5px; }
-        .col-status { width: 12%; text-align: center; }
-
-        /* Badge Styles */
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            font-size: 12px;
-            font-weight: 600;
-            border-radius: 4px;
-            text-align: center;
-            white-space: nowrap;
+        .card ul {
+            padding-left: 18px;
+            margin-top: 8px;
         }
 
-        .badge-confirmed { background-color: #dcfce7; color: #15803d; }
-        .badge-pending { background-color: #fef3c7; color: #d97706; }
-        .badge-excluded { background-color: #f1f5f9; color: #64748b; }
-        .badge-special { background-color: #e0f2fe; color: #0369a1; }
+        .card li {
+            margin-bottom: 4px;
+        }
 
-        .category-title-badge {
-            background-color: #e2e8f0;
-            color: #334155;
-            padding: 6px 12px;
-            border-radius: 4px;
+        /* 강조 색상 클래스 */
+        .highlight-red {
+            color: var(--accent-red);
+            font-weight: 600;
+        }
+
+        .highlight-blue {
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        /* 테이블 디자인 */
+        h2 {
+            font-size: 18px;
+            color: #ffffff;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-responsive {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background-color: #111827;
+            color: #cbd5e1;
+            font-weight: 600;
+            padding: 14px 18px;
             font-size: 13px;
-            font-weight: bold;
-            display: inline-block;
-            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 14px 18px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border-color);
+            color: #cbd5e1;
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
         }
     </style>
 </head>
 <body>
 
-    <!-- 좌측 사이드바 네비게이션 메뉴 (클릭 가능) -->
+    <!-- 좌측 사이드바 네비게이션 -->
     <sidebar>
-        <div class="sidebar-brand">📖 가이드 & 명세서</div>
+        <div class="sidebar-brand">
+            <span>⚡ Vision AI Guide</span>
+        </div>
         <ul class="menu-list">
-            <li class="menu-item active" onclick="switchTab('home', this)">🏠 홈 및 전체 개요</li>
-            <li class="menu-item" onclick="switchTab('sec-a', this)">A. 프로젝트 인덱싱</li>
-            <li class="menu-item" onclick="switchTab('sec-b', this)">B. 질의응답</li>
-            <li class="menu-item" onclick="switchTab('sec-c', this)">C. 출처·코드 탐색</li>
-            <li class="menu-item" onclick="switchTab('sec-d', this)">D. 설정·상태</li>
-            <li class="menu-item" onclick="switchTab('sec-e', this)">E. 시스템·AI</li>
-            <li class="menu-item" onclick="switchTab('sec-f', this)">F. 웹</li>
-            <li class="menu-item" onclick="switchTab('sec-x', this)">X. 범위 제외</li>
+            <li class="menu-item active" onclick="switchTab('overview', this, 'tab-overview')">📊 1. Extension Overview</li>
+            <li class="menu-item" onclick="switchTab('assistant', this, 'tab-assistant')">💬 2. Vision Assistant & 탐색기</li>
+            <li class="menu-item" onclick="switchTab('quickask', this, 'tab-quickask')">⚡ 3. 코드 빠른 질문 (Quick Ask)</li>
+            <li class="menu-item" onclick="switchTab('details', this, 'tab-details')">📋 4. 상세 기능 명세서</li>
         </ul>
     </sidebar>
 
-    <!-- 우측 메인 콘텐츠 뷰어 영역 -->
+    <!-- 우측 메인 콘텐츠 영역 -->
     <main>
         <div class="container">
 
-            <!-- 1. 홈 / 개요 화면 -->
-            <div id="home" class="tab-content active">
+            <!-- 1. Extension Overview (화면 1) -->
+            <div id="overview" class="tab-content active">
                 <div class="header-banner">
-                    <h1>AI 기반 사내 코드 분석 및 질의응답 시스템</h1>
-                    <p class="subtitle">VS Code Extension & AI 백엔드 통합 프로그램 가이드 및 기능 정의서 (v1.0)</p>
-                    <div class="meta-info">
-                        <span><strong>문서 구분:</strong> 요구사항 정의 및 개발 가이드 문서</span>
-                        <span><strong>대상 플랫폼:</strong> VS Code Extension, AI Self-Hosted Backend</span>
+                    <h1>Extension Overview (확장 프로그램 화면 구성)</h1>
+                    <p>화면 구성도 기반의 확장 프로그램 초기 대시보드 영역입니다.</p>
+                </div>
+                <div class="grid-cards">
+                    <div class="card" onclick="sendAction('server-status')">
+                        <h3>🟢 서버 상태 및 연결 정보</h3>
+                        <p>Extension과 백엔드 서버의 연결 상태 및 응답 속도, 서버 URL, sLLM 연결 상태와 모델명 정보를 확인합니다.</p>
+                    </div>
+                    <div class="card" onclick="sendAction('project-info')">
+                        <h3>📂 현재 프로젝트 정보</h3>
+                        <p>선택된 프로젝트의 이름과 경로 정보, 그리고 Git 연동 정보를 직관적으로 표시합니다.</p>
+                    </div>
+                    <div class="card" onclick="sendAction('project-list')">
+                        <h3>🔄 프로젝트 목록</h3>
+                        <p>사내 서버와 연동되어 관리되고 있는 프로젝트 폴더 목록을 표시하며, 새로고침으로 목록을 갱신합니다.</p>
                     </div>
                 </div>
-                <div class="overview-box">
-                    <p><strong>[환영합니다!]</strong> 좌측 메뉴바를 클릭하시면 각 카테고리별 기능 명세서 상세 내용을 웹사이트처럼 바로 확인하실 수 있습니다.</p>
-                    <p>프로젝트 코드와 문서 자동 인덱싱부터 RAG 기반 답변 생성까지 전체 기능 요건을 간편하게 탐색해 보세요.</p>
+            </div>
+
+            <!-- 2. Vision Assistant & 탐색기 (화면 2) -->
+            <div id="assistant" class="tab-content">
+                <div class="header-banner">
+                    <h1>Vision Assistant & 코드 유지/보수 화면</h1>
+                    <p>AI 채팅과 VS Code 탐색기가 유기적으로 연동되는 화면 구성입니다.</p>
+                </div>
+                <div class="grid-cards">
+                    <div class="card" onclick="sendAction('auto-briefing-click')">
+                        <h3>🤖 초기 자동 브리핑</h3>
+                        <p>프로젝트가 열리면 프로젝트 이름, 구성 정보, 현재 열려 있는 파일의 역할을 AI가 먼저 분석하여 설명해 줍니다.</p>
+                    </div>
+                    <div class="card" onclick="sendAction('open-file-highlight-click')">
+                        <h3><span class="highlight-red">🔴 현재 열린 파일 강조</span></h3>
+                        <p>VS Code 탐색기에서 현재 화면에 열려 있는 파일과 연관성이 높은 파일 이름들을 <span class="highlight-red">빨간색</span>으로 시각적 구분 표시합니다.</p>
+                    </div>
+                    <div class="card" onclick="sendAction('sllm-source-click')">
+                        <h3><span class="highlight-blue">🔵 sLLM 출처 파일 표시</span></h3>
+                        <p>AI가 답변의 근거로 제시한 파일 이름들을 <span class="highlight-blue">파란색</span>으로 표시하여 원본 위치를 직관적으로 추적할 수 있습니다.</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- A. 프로젝트 인덱싱 -->
-            <div id="sec-a" class="tab-content">
-                <div class="category-title-badge">A. 프로젝트 인덱싱</div>
-                <h2>프로젝트 인덱싱 관련 기능 명세</h2>
+            <!-- 3. 코드 빠른 질문 (화면 3) -->
+            <div id="quickask" class="tab-content">
+                <div class="header-banner">
+                    <h1>코드 빠른 질문 (Code Quick Ask)</h1>
+                    <p>코드 작성 및 유지보수 중 빠르게 질문을 던질 수 있는 기능 구성입니다.</p>
+                </div>
+                <div class="grid-cards">
+                    <div class="card" onclick="sendAction('auto-injection-click')">
+                        <h3>🖱️ 자동 코드 인젝션</h3>
+                        <p>코드를 드래그하고 우클릭 메뉴에서 <code style="color:#60a5fa">"vision: 이 코드 설명해줘"</code>를 선택하면, 선택된 파일명과 코드 블록(<code style="color:#60a5fa">@vision</code>)이 VS Code 챗 창에 자동으로 첨부됩니다.</p>
+                    </div>
+                    <div class="card" onclick="sendAction('realtime-ai-click')">
+                        <h3>⚡ 실시간 AI 설명</h3>
+                        <p>전송 시 백엔드와 연동되어 해당 코드에 대한 상세한 AI 설명을 즉시 받아볼 수 있습니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. 상세 기능 명세서 -->
+            <div id="details" class="tab-content">
+                <h2>📋 화면 구성도 기반 기능 명세</h2>
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th class="col-name">기능명</th>
-                                <th class="col-desc">상세 설명</th>
-                                <th class="col-remarks">의존성 및 비고</th>
-                                <th class="col-status">정의 상태</th>
+                                <th>구분</th>
+                                <th>기능명</th>
+                                <th>상세 설명</th>
+                                <th>참고 사항</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="col-name">자동 프로젝트 브리핑</td>
-                                <td class="col-desc">인덱싱 완료 후 프로젝트 목적, 주요 디렉터리, 핵심 모듈, 실행 흐름을 요약한 Markdown 브리핑 1편을 생성하고 표시한다.</td>
-                                <td class="col-remarks">프로젝트 요약 생성·문서 생성·요약 표시를 하나로 통합. /ingest 계약에 종속.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
+                                <td><strong>Overview</strong></td>
+                                <td>서버 및 프로젝트 상태 표시</td>
+                                <td>백엔드 서버 연결 상태, URL, sLLM 모델명 및 프로젝트 목록 관리</td>
+                                <td>초기 대시보드 화면</td>
                             </tr>
                             <tr>
-                                <td class="col-name">인덱스 갱신</td>
-                                <td class="col-desc">프로젝트 코드나 문서가 변경된 뒤 사용자가 재인덱싱을 실행할 수 있게 한다. v1에서는 증분 갱신 대신 전체 재실행으로 단순화한다.</td>
-                                <td class="col-remarks">실시간 자동 갱신과 파일별 증분 인덱싱은 초기 범위에서 제외.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
+                                <td><strong>Assistant</strong></td>
+                                <td>초기 자동 브리핑</td>
+                                <td>프로젝트 열림 시 목적, 디렉터리, 핵심 모듈 요약 제공</td>
+                                <td>AI 채팅 연동</td>
                             </tr>
                             <tr>
-                                <td class="col-name">미인덱싱 감지</td>
-                                <td class="col-desc">프로젝트 폴더가 열리면 해당 프로젝트의 인덱스 존재 여부를 확인하고, 인덱스가 없으면 온보딩 뷰와 인덱싱 실행 안내를 표시한다.</td>
-                                <td class="col-remarks">project_id 또는 workspace 기준 인덱스 존재 여부를 확인.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
+                                <td><strong>탐색기 연동</strong></td>
+                                <td>연관 파일 시각화</td>
+                                <td>현재 열린 파일(<span class="highlight-red">빨간색</span>) 및 sLLM 출처 파일(<span class="highlight-blue">파란색</span>) 구분 표시</td>
+                                <td>VS Code 탐색기</td>
                             </tr>
                             <tr>
-                                <td class="col-name">인덱싱 진행률 표시</td>
-                                <td class="col-desc">인덱싱 작업의 상태와 처리 파일 수를 주기적으로 조회하여 분석 중, 완료, 실패 상태를 표시한다.</td>
-                                <td class="col-remarks">processed, total, state 필드 사용. /ingest 계약 동결에 종속.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">인덱싱 실행</td>
-                                <td class="col-desc">명령 팔레트 또는 온보딩 뷰에서 프로젝트 인덱싱을 실행한다. 서버는 POST /ingest 요청을 비동기 작업으로 접수하고 job_id를 반환한다.</td>
-                                <td class="col-remarks">레포 전체 대상. 코드 Python 우선, 문서 Markdown 우선 처리.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">가이드 인덱스 작성</td>
-                                <td class="col-desc">readme.md(임시)에 선임의 개발 방향, 그리고 수정하면 안되는 코드 등의 가이드를 담아놓는 내용을 작성한다.</td>
-                                <td class="col-remarks">코드작성 관련 질문 전반에 적용</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- B. 질의응답 -->
-            <div id="sec-b" class="tab-content">
-                <div class="category-title-badge">B. 질의응답</div>
-                <h2>질의응답 관련 기능 명세</h2>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="col-name">기능명</th>
-                                <th class="col-desc">상세 설명</th>
-                                <th class="col-remarks">의존성 및 비고</th>
-                                <th class="col-status">정의 상태</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="col-name">오류 상태 표시</td>
-                                <td class="col-desc">서버 미연결, 인덱스 없음, 모델 사용 불가, 요청 실패를 구분하여 표시하고 사용자가 취할 조치를 안내한다.</td>
-                                <td class="col-remarks">오류별 code와 message를 사용하며 단순 실패 문구 하나로 통합하지 않음.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">멀티턴 대화</td>
-                                <td class="col-desc">직전 1~2턴을 다음 요청에 포함하여 후속 질문의 문맥을 유지한다.</td>
-                                <td class="col-remarks">세션 히스토리 안정화 이후 검토. 핵심 데모 범위 아님.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">세션 히스토리 표시</td>
-                                <td class="col-desc">현재 VS Code 세션에서 주고받은 질문과 답변을 목록을 Extension 내부에 저장한다.</td>
-                                <td class="col-remarks">서버 측 영구 대화 저장은 범위 제외.</td>
-                                <td class="col-status"><span class="badge badge-excluded">X</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">근거 없음 안내</td>
-                                <td class="col-desc">검색 결과 유사도가 기준에 미달하면 관련 근거를 찾지 못했다는 안내를 표시하고 근거없는 답변 생성을 제한한다.</td>
-                                <td class="col-remarks">유사도 임계값과 판정 방식은 RAG 품질 검증 후 기술 명세에서 조정.</td>
-                                <td class="col-status"><span class="badge badge-pending">보류</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">단계 표시</td>
-                                <td class="col-desc">질문 처리 중 검색 중, 근거 확인, 답변 생성 중 등의 단계를 표시해 응답 대기 상태를 안내한다.</td>
-                                <td class="col-remarks">실시간 서버 이벤트가 없으면 v1에서는 클라이언트 상태 전환 문구로 구현 가능.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">선택 코드 첨부</td>
-                                <td class="col-desc">에디터에서 선택한 코드 또는 커서 위치의 코드를 질문 컨텍스트에 첨부하고, 파일 경로와 라인 범위를 입력 영역에 배지로 표시한다.</td>
-                                <td class="col-remarks">첨부 상한 200줄. 커서+단축키 트리거 포함. JSON 형식 정의 필요</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">답변 렌더링</td>
-                                <td class="col-desc">서버가 반환한 답변을 VS Code 채팅 영역에 Markdown으로 표시하고 코드 블록을 읽기 쉬운 형태로 렌더링한다.</td>
-                                <td class="col-remarks">코드 블록 syntax highlighting은 프론트 구현에서 조정 가능.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">근거 기반 답변 생성</td>
-                                <td class="col-desc">서버가 질문을 임베딩하여 프로젝트 벡터 인덱스에서 top-k 근거를 검색하고, 근거와 질문을 LLM에 주입해 답변을 생성한다.</td>
-                                <td class="col-remarks">기업 프로젝트 지식은 fine-tuning이 아니라 RAG 검색으로 공급.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">질문 입력·전송</td>
-                                <td class="col-desc">사용자가 VS Code 채팅 사이드바에서 자연어 질문을 입력하면 선택 코드가 있을 경우 code_context와 함께 POST /generate로 전송한다.</td>
-                                <td class="col-remarks">프로젝트 구조, 함수 역할, 기능 흐름, 규약, 오류 관련 질문을 지원.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- C. 출처·코드 탐색 -->
-            <div id="sec-c" class="tab-content">
-                <div class="category-title-badge">C. 출처·코드 탐색</div>
-                <h2>출처·코드 탐색 관련 기능 명세</h2>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="col-name">기능명</th>
-                                <th class="col-desc">상세 설명</th>
-                                <th class="col-remarks">의존성 및 비고</th>
-                                <th class="col-status">정의 상태</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="col-name">연관 파일 표시</td>
-                                <td class="col-desc">현재 파일 또는 선택 코드와 관련성이 높은 파일을 왼쪽의 파일 리스트에 색깔을 넣어서 표시한다.</td>
-                                <td class="col-remarks">정확한 의존성 그래프는 별도 Static Analysis가 필요.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">수정 적용 확인</td>
-                                <td class="col-desc">AI가 제안한 변경 내용을 기존 코드와 비교하는 Diff 형태로 채팅창에 표시하고 사용자가 적용 또는 취소를 선택할 수 있게 한다.</td>
-                                <td class="col-remarks">코드 이해 중심 MVP와 직접 관련성이 낮아 핵심 기능 완료 후 검토.</td>
-                                <td class="col-status"><span class="badge badge-special">확정, 상호의존 기능[1]</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">코드 삽입</td>
-                                <td class="col-desc">답변에 포함된 코드 블록에서 적용을 선택하면 수정된 코드가 적용될 수 있도록 한다.</td>
-                                <td class="col-remarks">자동 적용이 아니라 사용자의 명시적 실행을 전제로 함.</td>
-                                <td class="col-status"><span class="badge badge-special">확정, 상호의존 기능[1]</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">출처 파일 점프</td>
-                                <td class="col-desc">사용자가 답변의 출처를 클릭하면 해당 파일을 열고 관련 코드 라인 또는 문서 위치로 이동한다.</td>
-                                <td class="col-remarks">파일 경로가 현재 workspace 내부에 존재하는지 검증 필요. 우선순위는 아래.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">출처 표시</td>
-                                <td class="col-desc">모든 답변에 근거가 된 파일 경로, 코드 라인, 문서 섹션, 스니펫을 sources 목록으로 표시한다.</td>
-                                <td class="col-remarks">제품 정체성에 해당하는 필수 기능.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- D. 설정·상태 -->
-            <div id="sec-d" class="tab-content">
-                <div class="category-title-badge">D. 설정·상태</div>
-                <h2>설정·상태 관련 기능 명세</h2>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="col-name">기능명</th>
-                                <th class="col-desc">상세 설명</th>
-                                <th class="col-remarks">의존성 및 비고</th>
-                                <th class="col-status">정의 상태</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="col-name">연결·인덱스 상태</td>
-                                <td class="col-desc">상태바와 알림을 통해 서버 연결 상태, 인덱스 존재 여부, 인덱싱 완료 또는 실패 상태를 표시한다.</td>
-                                <td class="col-remarks">상태 표시와 인덱싱 진행률 화면의 역할을 구분.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">엔드포인트 설정</td>
-                                <td class="col-desc">VS Code 설정에서 AI 서버 URL을 변경하여 로컬 서버, 사내 Network 서버, EC2 시뮬레이션 환경을 전환할 수 있게 한다.</td>
-                                <td class="col-remarks">기업 코드와 문서는 외부 상용 LLM API로 전송하지 않음.</td>
-                                <td class="col-status"><span class="badge badge-excluded">X</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- E. 시스템·AI -->
-            <div id="sec-e" class="tab-content">
-                <div class="category-title-badge">E. 시스템·AI</div>
-                <h2>시스템·AI 관련 기능 명세</h2>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="col-name">기능명</th>
-                                <th class="col-desc">상세 설명</th>
-                                <th class="col-remarks">의존성 및 비고</th>
-                                <th class="col-status">정의 상태</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="col-name">학습 파이프라인</td>
-                                <td class="col-desc">공개 코드와 공개 Instruction 데이터를 수집·정제하고 근거 기반 답변 형식으로 변환한 뒤 QLoRA fine-tuning과 평가를 수행한다.</td>
-                                <td class="col-remarks">D8 보강혼합 전략 적용. 기업-데모 레포는 학습이 아니라 인덱싱 대상으로 처리.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">Fine-tuned 모델 서빙</td>
-                                <td class="col-desc">공개 데이터로 fine-tuning한 모델을 외부 상용 LLM API 없이 self-hosted 환경에서 실행하고 /generate 처리에 사용한다.</td>
-                                <td class="col-remarks">Base model, 추론 엔진, 양자화 방식은 D2·D6에 의존.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">/ingest API</td>
-                                <td class="col-desc">프로젝트 인덱싱 요청을 비동기 작업으로 등록해 job_id를 반환하고, 별도 상태 API에서 진행률을 제공한다.</td>
-                                <td class="col-remarks">project_root 전달 방식은 서버 배포 위치와 D6 결정에 따라 재검토.</td>
-                                <td class="col-status"><span class="badge badge-special">기능 확정·계약 초안</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">/generate API</td>
-                                <td class="col-desc">질문과 선택 코드 컨텍스트를 입력받아 검색, LLM 생성, 출처 조립을 수행하고 answer, sources, meta를 반환한다.</td>
-                                <td class="col-remarks">프론트와 AI·백엔드 트랙이 공유하는 핵심 API 계약. 계약 v1 확정</td>
-                                <td class="col-status"><span class="badge badge-special">계약 v1 확정</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">인제스트 파이프라인</td>
-                                <td class="col-desc">프로젝트 코드와 문서를 수집하고 파일 형식에 맞게 청킹한 뒤 임베딩과 출처 Metadata를 생성해 프로젝트 벡터 인덱스에 저장한다.</td>
-                                <td class="col-remarks">저장 대상: 청크 원문, embedding, project_id, file_path, line 또는 section, source_type 등.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정 · v1 완료</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- F. 웹 -->
-            <div id="sec-f" class="tab-content">
-                <div class="category-title-badge">F. 웹</div>
-                <h2>웹 관련 기능 명세</h2>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="col-name">기능명</th>
-                                <th class="col-desc">상세 설명</th>
-                                <th class="col-remarks">의존성 및 비고</th>
-                                <th class="col-status">정의 상태</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="col-name">소개 원페이지</td>
-                                <td class="col-desc">제품 개요, 문제 정의, 핵심 기능, 작동 방식, .vsix 설치 절차와 프로젝트 정보를 제공하는 반응형 웹 원페이지를 제작한다.</td>
-                                <td class="col-remarks">일정 부족 시 정적 원페이지로 축소 가능.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- X. 범위 제외 -->
-            <div id="sec-x" class="tab-content">
-                <div class="category-title-badge">X. 범위 제외</div>
-                <h2>범위 제외 관련 기능 명세</h2>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="col-name">기능명</th>
-                                <th class="col-desc">상세 설명</th>
-                                <th class="col-remarks">의존성 및 비고</th>
-                                <th class="col-status">정의 상태</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="col-name">멀티유저·권한 관리</td>
-                                <td class="col-desc">사용자별 로그인, 역할, 문서 접근 권한에 따라 검색과 답변 범위를 제한하는 기능.</td>
-                                <td class="col-remarks">인증, ACL, 권한 Metadata와 보안 정책이 필요해 현재 데모 범위를 초과.</td>
-                                <td class="col-status"><span class="badge badge-pending">보류</span></td>
-                            </tr>
-                            <tr>
-                                <td class="col-name">자동완성·FIM 인라인 완성</td>
-                                <td class="col-desc">입력 중 다음 코드를 예측하여 제안하는 기능.</td>
-                                <td class="col-remarks">온보딩과 코드 이해 중심의 현행 컨셉과 직접 관련이 없음.</td>
-                                <td class="col-status"><span class="badge badge-confirmed">확정</span></td>
+                                <td><strong>Quick Ask</strong></td>
+                                <td>코드 우클릭 빠른 질문</td>
+                                <td>드래그한 코드와 파일명을 <code style="color:#60a5fa">@vision</code> 형태로 채팅창에 자동 첨부</td>
+                                <td>우클릭 컨텍스트 메뉴</td>
                             </tr>
                         </tbody>
                     </table>
@@ -599,23 +371,33 @@
         </div>
     </main>
 
-    <!-- 클릭 시 화면을 전환해 주는 자바스크립트 엔진 -->
+    <!-- VS Code Webview 통신 및 탭 전환 스크립트 -->
     <script>
-        function switchTab(tabId, element) {
-            // 1. 모든 탭 컨텐츠 영역 숨기기
+        // VS Code API 초기화 (웹뷰 환경에서 백엔드 통신을 위해 필수)
+        const vscode = acquireVsCodeApi();
+
+        // 탭 전환 및 VS Code 백엔드로 상태 알림 전송 함수
+        function switchTab(tabId, element, actionName) {
             const contents = document.querySelectorAll('.tab-content');
             contents.forEach(content => content.classList.remove('active'));
             
-            // 2. 선택한 탭 컨텐츠만 화면에 표시하기
             const targetTab = document.getElementById(tabId);
             if(targetTab) {
                 targetTab.classList.add('active');
             }
             
-            // 3. 사이드바 메뉴 활성화 스타일(active) 이동 처리
             const menuItems = document.querySelectorAll('.menu-item');
             menuItems.forEach(item => item.classList.remove('active'));
             element.classList.add('active');
+
+        }
+
+        // 개별 카드 클릭 시 VS Code 백엔드로 액션 전송 함수
+        function sendAction(actionType) {
+            vscode.postMessage({
+                command: 'cardClick',
+                data: actionType
+            });
         }
     </script>
 </body>

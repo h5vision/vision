@@ -14,9 +14,9 @@
 </head>
 <body>
     <!-- 1. 서버 상태 확인 카드 -->
-    <div class="card">
+    <div class="card" id="server-status">
         <div class="card-header">
-            <span><i class="codicon codicon-vm"></i> &nbsp; 서버 상태 확인</span>
+            <span><i id="server-status-icon" class="codicon codicon-vm"></i> &nbsp; 서버 상태 확인</span>
             <button id="reconnect-btn" class="icon-btn" title="재연결">
                 <i class="codicon codicon-sync"></i>
             </button>
@@ -36,7 +36,7 @@
     </div>
 
     <!-- 2. 현재 프로젝트 정보 카드 (서버 상태 확인 제외함) -->
-    <div class="card">
+    <div class="card" id="project-info">
         <div class="card-header">
             <span><i class="codicon codicon-folder-active"></i> &nbsp; 현재 프로젝트 정보</span>
         </div>
@@ -51,7 +51,7 @@
     </div>
 
     <!-- 2. 프로젝트 목록 카드 (기존 인덱싱 및 히스토리 자리 대체) -->
-    <div class="card">
+    <div class="card" id="project-list">
         <div class="card-header">
             <span><i class="codicon codicon-list-unordered"></i> &nbsp; 프로젝트 목록</span>
             <button id="refresh-projects-btn" class="icon-btn" title="목록 새로고침">
