@@ -36,6 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (changeEndpoint) {
         changeEndpoint.addEventListener("click", ()=>{
+            if (endpoint.textContent === endpointEditInput.value) {cancelEndpoint.click(); return;};
             endpoint.textContent = endpointEditInput.value;
             endpoint.click();
             vscode.postMessage({command:"updateEndpoint", data: endpointEditInput.value});

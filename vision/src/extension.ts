@@ -5,6 +5,7 @@ import * as fs from "fs";
 import { SidebarProvider } from "./providers/sidebarProvider";	// SidebarProvider를 가져옵니다.
 import { getHtmlContent } from "./providers/guideContents";		// guideBook.html 파일을 읽어오는 함수를 가져옵니다.
 import { ChatHandler } from './chat/chatHandler';	// chatParticipant 등록을 위한 chatHandler를 가져옵니다. 
+// vscode의 Explorer에서, 파일의 의존성과 sllm 답변 출처 파일의 파일명에 색을 입히는 provider를 가져옵니다. 
 import { dependencyDecorationProvider } from "./providers/dependencyDecorationProvider";
 import { HistoryService } from './services/historyService';
 
@@ -102,7 +103,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         // VS Code 챗 창을 열면서 @vision chat view 입력창에 드래그한 코드 자동 입력
         await vscode.commands.executeCommand('workbench.action.chat.open', {
-            query: `@vision ${fileName}\n\`\`\`\n${selectedText}\n\`\`\``, 
+            query: `@vision ${fileName}에 있는 다음 코드에 대해 설명해줘. \n\`\`\`\n${selectedText}\n\`\`\``, 
 			isPartialQuery: true
         });
     });

@@ -23,7 +23,6 @@ export class ChatHandler {
         const modelList = {default:"backendai-default", nvidia:"nvidia-default", groq:"groq-default"};
 
         try {
-
             stream.progress("VisionAI가 답변을 생성하고 있습니다...");
             const session_id = getSessionId();
 
@@ -51,9 +50,7 @@ export class ChatHandler {
         }
         catch (err) {
 
-            stream.markdown(
-                "❌ Backend 연결에 실패했습니다."
-            );
+            stream.markdown("❌ Backend 연결에 실패했습니다.");
 
             console.error(err);
 
