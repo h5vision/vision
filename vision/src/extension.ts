@@ -33,11 +33,13 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.ViewColumn.One, 
 		{ 
 			enableScripts: true,
-			localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath))]
+			localResourceRoots: [
+				vscode.Uri.file(path.join(context.extensionPath))
+			]
 		}
 	);
 	// 프로젝트 루트에 있는 진짜 guideBook.html 파일을 읽어서 웹뷰에 주입
-	guidepanel.webview.html = getHtmlContent(context);
+	guidepanel.webview.html = getHtmlContent(context, guidepanel);
 	////
 
 	// SidebarProvider를 등록하여 웹뷰를 표시할 수 있도록 설정

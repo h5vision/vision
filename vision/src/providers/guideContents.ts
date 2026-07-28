@@ -3,12 +3,26 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // 프로젝트 폴더의 guideBook.html 파일을 읽어와 반환하는 함수
-export function getHtmlContent(context: vscode.ExtensionContext): string {
+export function getHtmlContent(
+    context: vscode.ExtensionContext, 
+    guidepanel: vscode.WebviewPanel
+): string {
+
     const htmlPath = path.join(context.extensionPath, 'webview', 'guideBook.html');
+    const webviewImgsFolderUri = path.join(context.extensionPath, 'webview', 'imgs');
+    const imgs = fs.readdirSync(webviewImgsFolderUri);
+    console.log(imgs);
     
     try {
         // guideBook.html 파일 내용을 읽어서 그대로 리턴
-        return fs.readFileSync(htmlPath, 'utf8');
+        let guideHTML = fs.readFileSync(htmlPath, 'utf8');
+        for (let i in imgs) {
+            let url =  vscode.Uri.joinPath(context.extensionUri, "webview", "imgs", imgs[i]);
+            url = guidepanel.webview.asWebviewUri(url);
+            console.log(imgs[i].split('.')[0], url.toString());
+            guideHTML = guideHTML.replace(`{{${imgs[i].split('.')[0]}Url}}`, url.toString());
+        }
+        return guideHTML;
     } catch (error) {
         return `<!DOCTYPE html>
         <html lang="ko">

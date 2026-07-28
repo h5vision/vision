@@ -3,36 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- VS Code 웹뷰 보안 정책(CSP) 설정 -->
-    <meta http-equiv="Content-Security-Policy" 
-    content="default-src 'none'; 
-    img-src * data: https:; 
-    style-src 'unsafe-inline'; 
-    script-src 'unsafe-inline';">
-    
     <title>Vision AI Extension - 프로그램 가이드 및 기능 명세서</title>
     <style>
-    :root {
-        --bg-color: #0b1329;
-        --sidebar-bg: #1e293b;
-        --sidebar-text: #ffffff;      /* 사이드바 일반 텍스트를 선명한 흰색으로 변경 */
-        --sidebar-hover: #334155;
-        --sidebar-active: #28a726;
-        --main-bg: #1e293b;
-        --card-bg: #1e293b;
-        --text-color: #ffffff;
-        --text-muted: #e2e8f0;        /* 부가 설명 텍스트도 밝게 조정 */
-        --border-color: #2563eb;
-        --accent-blue: #2563eb;
-        --accent-red: #ef4444;
-    }
+        :root {
+            --bg-color: #0f172a;
+            --sidebar-bg: #1e293b;
+            --sidebar-text: #94a3b8;
+            --sidebar-hover: #334155;
+            --sidebar-active: #3b82f6;
+            --main-bg: #1e293b;
+            --card-bg: #0f172a;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --accent-blue: #3b82f6;
+            --accent-red: #ef4444;
+        }
 
-    /* 사이드바 카드 헤더 타이틀을 완벽한 흰색으로 강조 */
-    .card-header, .sidebar-brand, h3 {
-        color: #ffffff !important;
-        font-weight: 700 !important;
-    }
         * {
             box-sizing: border-box;
             margin: 0;
@@ -100,7 +87,7 @@
             background-color: var(--sidebar-active);
             color: #ffffff;
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(83, 119, 176, 0.858);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         /* 우측 메인 콘텐츠 영역 */
@@ -132,12 +119,12 @@
 
         /* 배너 스타일 */
         .header-banner {
-            background: linear-gradient(135deg, #537cbd 0%, #325dc3 100%);
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
             border: 1px solid var(--border-color);
             padding: 35px;
             border-radius: 12px;
             margin-bottom: 30px;
-            box-shadow: 0 10px 25px -5px rgba(33, 154, 188, 0.845);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }
 
         .header-banner h1 {
@@ -283,15 +270,15 @@
                     <p>화면 구성도 기반의 확장 프로그램 초기 대시보드 영역입니다.</p>
                 </div>
                 <div class="grid-cards">
-                    <div class="card" onclick="sendAction('server-status-click')">
+                    <div class="card" onclick="sendAction('server-status')">
                         <h3>🟢 서버 상태 및 연결 정보</h3>
                         <p>Extension과 백엔드 서버의 연결 상태 및 응답 속도, 서버 URL, sLLM 연결 상태와 모델명 정보를 확인합니다.</p>
                     </div>
-                    <div class="card" onclick="sendAction('project-info-click')">
+                    <div class="card" onclick="sendAction('project-info')">
                         <h3>📂 현재 프로젝트 정보</h3>
                         <p>선택된 프로젝트의 이름과 경로 정보, 그리고 Git 연동 정보를 직관적으로 표시합니다.</p>
                     </div>
-                    <div class="card" onclick="sendAction('project-list-click')">
+                    <div class="card" onclick="sendAction('project-list')">
                         <h3>🔄 프로젝트 목록</h3>
                         <p>사내 서버와 연동되어 관리되고 있는 프로젝트 폴더 목록을 표시하며, 새로고침으로 목록을 갱신합니다.</p>
                     </div>
@@ -309,59 +296,34 @@
                         <h3>🤖 초기 자동 브리핑</h3>
                         <p>프로젝트가 열리면 프로젝트 이름, 구성 정보, 현재 열려 있는 파일의 역할을 AI가 먼저 분석하여 설명해 줍니다.</p>
                     </div>
-                    
-                    <!-- 현재 열린 파일 강조: screenshot.png -->
                     <div class="card" onclick="sendAction('open-file-highlight-click')">
                         <h3><span class="highlight-red">🔴 현재 열린 파일 강조</span></h3>
                         <p>VS Code 탐색기에서 현재 화면에 열려 있는 파일과 연관성이 높은 파일 이름들을 <span class="highlight-red">빨간색</span>으로 시각적 구분 표시합니다.</p>
-                        
-                        <div style="margin-top: 14px; text-align: center;">
-                            <img src="{{screenUrl}}" alt="현재 열린 파일 강조 예시" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border-color);">
-                        </div>
                     </div>
-                    
-                    <!-- sLLM 출처 파일 표시: css.png 연결 -->
                     <div class="card" onclick="sendAction('sllm-source-click')">
                         <h3><span class="highlight-blue">🔵 sLLM 출처 파일 표시</span></h3>
                         <p>AI가 답변의 근거로 제시한 파일 이름들을 <span class="highlight-blue">파란색</span>으로 표시하여 원본 위치를 직관적으로 추적할 수 있습니다.</p>
-                        
-                        <div style="margin-top: 14px; text-align: center;">
-                            <img src="{{cssUrl}}" alt="sLLM 출처 파일 예시" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border-color);">
-                        </div>
                     </div>
                 </div>
             </div>
 
-           <!-- 3. 코드 빠른 질문 (화면 3) -->
+            <!-- 3. 코드 빠른 질문 (화면 3) -->
             <div id="quickask" class="tab-content">
                 <div class="header-banner">
                     <h1>코드 빠른 질문 (Code Quick Ask)</h1>
                     <p>코드 작성 및 유지보수 중 빠르게 질문을 던질 수 있는 기능 구성입니다.</p>
                 </div>
-
                 <div class="grid-cards">
-                    <!-- 자동 코드 인젝션: vi.png 연결 -->
                     <div class="card" onclick="sendAction('auto-injection-click')">
                         <h3>🖱️ 자동 코드 인젝션</h3>
                         <p>코드를 드래그하고 우클릭 메뉴에서 <code style="color:#60a5fa">"vision: 이 코드 설명해줘"</code>를 선택하면, 선택된 파일명과 코드 블록(<code style="color:#60a5fa">@vision</code>)이 VS Code 챗 창에 자동으로 첨부됩니다.</p>
-                        
-                        <div style="margin-top: 14px; text-align: center;">
-                            <img src="{{viUrl}}" alt="자동 코드 인젝션 예시" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border-color);">
-                        </div>
                     </div>
-
-                    <!-- 실시간 AI 설명: on.png 연결 -->
                     <div class="card" onclick="sendAction('realtime-ai-click')">
                         <h3>⚡ 실시간 AI 설명</h3>
                         <p>전송 시 백엔드와 연동되어 해당 코드에 대한 상세한 AI 설명을 즉시 받아볼 수 있습니다.</p>
-
-                        <div style="margin-top: 14px; text-align: center;">
-                            <img src="{{onUrl}}" alt="실시간 AI 설명 예시" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border-color);">
-                        </div>
                     </div>
                 </div>
             </div>
-
 
             <!-- 4. 상세 기능 명세서 -->
             <div id="details" class="tab-content">
@@ -411,8 +373,10 @@
 
     <!-- VS Code Webview 통신 및 탭 전환 스크립트 -->
     <script>
+        // VS Code API 초기화 (웹뷰 환경에서 백엔드 통신을 위해 필수)
         const vscode = acquireVsCodeApi();
 
+        // 탭 전환 및 VS Code 백엔드로 상태 알림 전송 함수
         function switchTab(tabId, element, actionName) {
             const contents = document.querySelectorAll('.tab-content');
             contents.forEach(content => content.classList.remove('active'));
@@ -425,12 +389,14 @@
             const menuItems = document.querySelectorAll('.menu-item');
             menuItems.forEach(item => item.classList.remove('active'));
             element.classList.add('active');
+
         }
 
+        // 개별 카드 클릭 시 VS Code 백엔드로 액션 전송 함수
         function sendAction(actionType) {
             vscode.postMessage({
                 command: 'cardClick',
-                action: actionType
+                data: actionType
             });
         }
     </script>
