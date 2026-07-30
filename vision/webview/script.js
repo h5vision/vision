@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const reconnectBtn = document.getElementById("reconnect-btn");
     if (reconnectBtn) {
         reconnectBtn.addEventListener("click", () => {
-            document.getElementById("backend-status").textContent = '🟡 Server Connecting...';
+            document.getElementById("backend-status").textContent = '🟡 Server Reconnecting...';
             document.getElementById("endpoint").textContent = '';
             vscode.postMessage({ command: "checkBackend" });
         });
@@ -37,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (endpoint.textContent === endpointEditInput.value) {cancelEndpoint.click(); return;};
             endpoint.textContent = endpointEditInput.value;
             endpoint.click();
+            document.getElementById("backend-status").textContent = '🟡 Server Reconnecting...';
             vscode.postMessage({command:"updateEndpoint", data: endpointEditInput.value});
         });
     };

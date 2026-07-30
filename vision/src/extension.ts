@@ -100,10 +100,10 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         const selection = activeEditor.selection;
-        const selectedText = activeEditor.document.getText(selection);
+        const selectedText = activeEditor.document.getText(selection).trim();
         const fileName = path.basename(activeEditor.document.uri.fsPath);
 
-        if (!selectedText || selectedText.trim().length === 0) {
+        if (!selectedText || selectedText.length === 0) {
             await vscode.commands.executeCommand('workbench.action.chat.open', {
 				path: '',
             	query: `@vision ${fileName}에 대해 설명해줘.`,

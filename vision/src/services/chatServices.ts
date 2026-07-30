@@ -11,7 +11,6 @@ export class ChatService {
      * 사용자 메시지를 Backend로 전달
      */
     async sendMessage(request: ChatRequest): Promise<ChatResponse> {
-        console.log(request);
         return await this.APIService.post(
             "/chat",
             request

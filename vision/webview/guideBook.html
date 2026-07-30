@@ -269,6 +269,8 @@
             <li class="menu-item" onclick="switchTab('assistant', this, 'tab-assistant')">💬 2. Vision Assistant & 탐색기</li>
             <li class="menu-item" onclick="switchTab('quickask', this, 'tab-quickask')">⚡ 3. 코드 빠른 질문 (Quick Ask)</li>
             <li class="menu-item" onclick="switchTab('details', this, 'tab-details')">📋 4. 상세 기능 명세서</li>
+            <li class="menu-item" onclick="switchTab('fastapi-briefing', this, 'tab-fastapi')">🚀 5. FastAPI 프로젝트 브리핑</li>
+            <li class="menu-item" onclick="switchTab('fastapi-trouble', this, 'tab-trouble')">🛠️ 6. 실무 개발 가이드 & 트러블슈팅</li>
         </ul>
     </sidebar>
 
@@ -400,6 +402,131 @@
                                 <td>코드 우클릭 빠른 질문</td>
                                 <td>드래그한 코드와 파일명을 <code style="color:#60a5fa">@vision</code> 형태로 채팅창에 자동 첨부</td>
                                 <td>우클릭 컨텍스트 메뉴</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 5. FastAPI 프로젝트 브리핑 (신규 입사자 온보딩 가이드) -->
+            <div id="fastapi-briefing" class="tab-content">
+                <div class="header-banner">
+                    <h1>🚀 FastAPI 신규 개발자 온보딩 & 프로젝트 브리핑</h1>
+                    <p>Github에 등록된 FastAPI 프로젝트의 구조, 핵심 로직 및 신규 개발자가 반드시 알아야 할 상세 가이드입니다.</p>
+                </div>
+
+                <div class="grid-cards">
+                    <!-- 💡 핵심 브리핑 실행 버튼 카드 추가 -->
+                    <div class="card" onclick="sendAction('start-fastapi-briefing')" style="background: linear-gradient(135deg, #1e3a8a 100%, #1e293b 0%); border: 1px solid #60a5fa;">
+                        <h3>📢 FastAPI 프로젝트 전체 브리핑 실행</h3>
+                        <p>클릭 즉시 VS Code 챗 창을 통해 Github FastAPI 소스 코드 전체 구조와 핵심 로직에 대한 상세 자동 브리핑을 시작합니다.</p>
+                    </div>
+
+                    <div class="card" onclick="sendAction('fastapi-architecture')">
+                        <h3>🏛️ 프로젝트 아키텍처 및 디렉토리 구조</h3>
+                        <p>FastAPI 기반 백엔드의 계층형 구조(Router, Service, Repository, Schema)를 이해하고 각 폴더의 책임을 파악합니다.</p>
+                        <ul>
+                            <li><code>routers/</code>: API 엔드포인트 및 요청/응답 처리</li>
+                            <li><code>services/</code>: 비즈니스 로직 수행</li>
+                            <li><code>models/ schemas/</code>: DB 모델 및 Pydantic 데이터 검증</li>
+                        </ul>
+                    </div>
+
+                    <div class="card" onclick="sendAction('fastapi-dependency')">
+                        <h3>💉 의존성 주입 (Dependency Injection)</h3>
+                        <p>FastAPI의 핵심 기능인 <code>Depends</code>를 활용한 DB 세션 관리, 인증(Authentication) 및 공통 모듈 주입 방식을 확인합니다.</p>
+                    </div>
+
+                    <div class="card" onclick="sendAction('fastapi-workflow')">
+                        <h3>🔄 신규 기능 개발 및 수정 워크플로우</h3>
+                        <p>깃허브 소스 코드를 클론한 후 브랜치 전략에 맞춰 API를 추가하고, Pydantic 모델을 통한 데이터 유효성 검증을 구현하는 절차를 익힙니다.</p>
+                    </div>
+                </div>
+
+                <h2>📋 FastAPI 핵심 구성 요소 명세</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>구분</th>
+                                <th>모듈 / 파일명</th>
+                                <th>역할 및 설명</th>
+                                <th>수정 시 주의사항</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Entrypoint</strong></td>
+                                <td><code>main.py</code></td>
+                                <td>FastAPI 앱 인스턴스 생성, CORS 설정 및 라우터 등록</td>
+                                <td>미들웨어 추가 시 순서 유의</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Validation</strong></td>
+                                <td><code>schemas.py</code></td>
+                                <td>Pydantic 기반의 Request/Response 데이터 구조 정의</td>
+                                <td>API 스펙 변경 시 프론트엔드와 사전 공유</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Database</strong></td>
+                                <td><code>database.py</code></td>
+                                <td>SQLAlchemy 세션 설정 및 Base 모델 정의</td>
+                                <td>비동기(Async) 세션 핸들링 주의</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 6. 실무 개발 가이드 & 트러블슈팅 (신규 추가) -->
+            <div id="fastapi-trouble" class="tab-content">
+                <div class="header-banner">
+                    <h1>🛠️ 실무 개발 가이드 & 트러블슈팅</h1>
+                    <p>신규 개발자가 코드를 수정하고 API를 개발할 때 자주 겪는 예외 처리, 비동기 세션 관리, 테스트 요령을 안내합니다.</p>
+                </div>
+
+                <div class="grid-cards">
+                    <div class="card" onclick="sendAction('fastapi-exception')">
+                        <h3>⚠️ 에러 핸들링 및 예외 처리</h3>
+                        <p><code>HTTPException</code>을 활용한 커스텀 에러 응답 반환 및 전역 예외 처리기를 통해 표준화된 에러 JSON 포맷을 유지합니다.</p>
+                    </div>
+
+                    <div class="card" onclick="sendAction('fastapi-async')">
+                        <h3>⚡ 비동기 프로그래밍 (Async/Await)</h3>
+                        <p>I/O 바운드 작업(DB 쿼리, 외부 API 호출) 시 <code>async def</code>와 일반 <code>def</code>의 차이점 및 SQLAlchemy 비동기 세션 관리 주의사항을 숙지합니다.</p>
+                    </div>
+
+                    <div class="card" onclick="sendAction('fastapi-testing')">
+                        <h3>🧪 API 문서화 및 단위 테스트</h3>
+                        <p>자동 생성되는 Swagger UI(<code>/docs</code>)의 Pydantic <code>Field</code> 예시 작성 팁과 Pytest를 활용한 엔드포인트 테스트 방법을 익힙니다.</p>
+                    </div>
+                </div>
+
+                <h2>📋 실무 필수 체크리스트</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>구분</th>
+                                <th>체크 항목</th>
+                                <th>설명</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Security</strong></td>
+                                <td>환경 변수 관리</td>
+                                <td><code>.env</code> 파일을 통한 비밀키 및 DB 접속 정보 분리 관리</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Validation</strong></td>
+                                <td>Pydantic 타입 힌팅</td>
+                                <td>모든 Request Body 및 Query Parameter에 명확한 타입 정의</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Performance</strong></td>
+                                <td>N+1 쿼리 방지</td>
+                                <td>SQLAlchemy <code>selectinload</code> 또는 <code>joinedload</code> 활용</td>
                             </tr>
                         </tbody>
                     </table>

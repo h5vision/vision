@@ -23,7 +23,7 @@ export interface ChatRequest {
     session_id: string;
     model_id?: string;
     top_k?: number;
-    history?: ChatMessage[];
+    history?: string[];
     context?: unknown;
 }
 
