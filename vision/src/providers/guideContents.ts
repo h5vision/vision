@@ -11,7 +11,6 @@ export function getHtmlContent(
     const htmlPath = path.join(context.extensionPath, 'webview', 'guideBook.html');
     const webviewImgsFolderUri = path.join(context.extensionPath, 'webview', 'imgs');
     const imgs = fs.readdirSync(webviewImgsFolderUri);
-    console.log(imgs);
     
     try {
         // guideBook.html 파일 내용을 읽어서 그대로 리턴
@@ -19,7 +18,6 @@ export function getHtmlContent(
         for (let i in imgs) {
             let url =  vscode.Uri.joinPath(context.extensionUri, "webview", "imgs", imgs[i]);
             url = guidepanel.webview.asWebviewUri(url);
-            console.log(imgs[i].split('.')[0], url.toString());
             guideHTML = guideHTML.replace(`{{${imgs[i].split('.')[0]}Url}}`, url.toString());
         }
         return guideHTML;
@@ -30,6 +28,7 @@ export function getHtmlContent(
         <body>
             <h2>guideBook.html 파일을 찾을 수 없습니다.</h2>
             <p>경로: ${htmlPath}</p>
+            <p>에러 메시지: ${error}
         </body>
         </html>`;
     };

@@ -283,15 +283,15 @@
                     <p>화면 구성도 기반의 확장 프로그램 초기 대시보드 영역입니다.</p>
                 </div>
                 <div class="grid-cards">
-                    <div class="card" onclick="sendAction('server-status-click')">
+                    <div class="card" onclick="sendAction('server-status')">
                         <h3>🟢 서버 상태 및 연결 정보</h3>
                         <p>Extension과 백엔드 서버의 연결 상태 및 응답 속도, 서버 URL, sLLM 연결 상태와 모델명 정보를 확인합니다.</p>
                     </div>
-                    <div class="card" onclick="sendAction('project-info-click')">
+                    <div class="card" onclick="sendAction('project-info')">
                         <h3>📂 현재 프로젝트 정보</h3>
                         <p>선택된 프로젝트의 이름과 경로 정보, 그리고 Git 연동 정보를 직관적으로 표시합니다.</p>
                     </div>
-                    <div class="card" onclick="sendAction('project-list-click')">
+                    <div class="card" onclick="sendAction('project-list')">
                         <h3>🔄 프로젝트 목록</h3>
                         <p>사내 서버와 연동되어 관리되고 있는 프로젝트 폴더 목록을 표시하며, 새로고침으로 목록을 갱신합니다.</p>
                     </div>
@@ -430,7 +430,7 @@
         function sendAction(actionType) {
             vscode.postMessage({
                 command: 'cardClick',
-                action: actionType
+                data: actionType
             });
         }
     </script>
