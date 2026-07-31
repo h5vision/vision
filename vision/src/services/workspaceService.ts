@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { WorkspaceMetadata } from "../../types";
+import { WorkspaceMetadata } from "../types";
 
 export class WorkspaceService {
 

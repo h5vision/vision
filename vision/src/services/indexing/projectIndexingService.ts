@@ -1,7 +1,7 @@
 
 import { ProjectIndexingData } from "../../types/index";
 import { ProjectMetadataService } from "./projectMetadataService";
-import { WorkspaceService } from "./workspaceService";
+import { WorkspaceService } from "../workspaceService";
 import { DirectoryTreeService } from "./directoryTreeService";
 
 

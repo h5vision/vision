@@ -55,6 +55,14 @@
       ]
     },
     "views": {
+      "explorer" : [
+        {
+          "icon":"media/icon.svg",
+          "id":"visionFileView",
+          "name":"< V > Vision Dependency", 
+          "type":"tree"
+        }
+      ],
       "VisionAssistant": [
         {
           "icon": "media/icon.svg",

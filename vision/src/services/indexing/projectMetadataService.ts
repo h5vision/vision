@@ -2,9 +2,9 @@ import * as vscode from "vscode";
 
 import { ProjectMetadata } from "../../types";
 
-import { WorkspaceService } from "./workspaceService";
+import { WorkspaceService } from "../workspaceService";
 import { ConfigFileService } from "./configFileService";
-import { GitService } from "./gitService";
+import { GitService } from "../gitService";
 import { LanguageService } from "./languageService";
 import { DirectoryTreeService } from "./directoryTreeService";
 
@@ -32,7 +32,7 @@ export class ProjectMetadataService {
 
             configFiles: this.configService.getConfigFiles(workspace.path),
 
-            git: this.gitService.getGitInfo(workspace.path),
+            git: {enabled: this.gitService.exists()},
 
             language: this.languageService.getLanguage(workspace.path), 
 

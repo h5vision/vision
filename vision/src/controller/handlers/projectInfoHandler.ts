@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { WorkspaceService } from "../../services/indexing/workspaceService";
-import { GitService } from "../../services/indexing/gitService";
+import { WorkspaceService } from "../../services/workspaceService";
+import { GitService } from "../../services/gitService";
 import {SidebarMessage} from "../../types/sidebarMessage";
 
 export class ProjectInfoHandler {
@@ -13,17 +13,19 @@ export class ProjectInfoHandler {
     ) {}
 
     public async handle(message: SidebarMessage) {
-        
-        console.log(message.command);
-        const workspace:any = this.workspaceService.getWorkspace();
-        const git = this.gitService.getGitInfo(workspace.path).enabled;
-        const response = {name: workspace.name, path: workspace.path, git: git};
+        await this.gitService.initialize();
+        this.gitService.onDidRepositoryReady(()=>{
+            console.log(this.gitService.getRepositoryInfo());
+            console.log(message.command);
+            const workspace:any = this.workspaceService.getWorkspace();
+            const git = this.gitService.exists();
+            const response = {name: workspace.name, path: workspace.path, git: git};
+            console.log(response);
 
-        this.view.webview.postMessage({
-            command: "showProjectInfo",
-            data: response
+            this.view.webview.postMessage({
+                command: "showProjectInfo",
+                data: response
+            });
         });
-
     }
-
 }
