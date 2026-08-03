@@ -12,7 +12,10 @@ export enum SidebarCommand {
 
     GetProjectGitInfo = "getProjectGitInfo",
 
-    UpdateEndpoint = "updateEndpoint"
+    UpdateEndpoint = "updateEndpoint",
+
+    HideGuideBook = "hideGuideBook",
+    ShowGuideBook = "showGuideBook"
 
 }
 

@@ -42,10 +42,12 @@ export class SidebarController {
             case SidebarCommand.GetProjectGitInfo:
                 return this.projectInfoHandler.handleGitInfo(message);
 
+
+
             case SidebarCommand.UpdateEndpoint:
-                await vscode.workspace.getConfiguration()
+                await vscode.workspace.getConfiguration('vision')
                     .update(
-                        "vision.endpoint",
+                        "endpoint",
                         message.data,
                         vscode.ConfigurationTarget.Workspace
                     );
@@ -54,7 +56,6 @@ export class SidebarController {
                     "Endpoint가 변경되었습니다."
                 );
                 return this.APIHandler.handle(message);
-
         }
     }
 }

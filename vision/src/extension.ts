@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';  		// Node.js의 path 모듈을 가져옵니다. 파일 경로를 다루는 데 사용됩니다.
 import * as fs from "fs";
 import { SidebarProvider } from "./providers/sidebarProvider";	// SidebarProvider를 가져옵니다.
+import { GuideProvider } from "./providers/guideProvider";	// GuideProvider를 가져옵니다.
 import { getHtmlContent } from "./providers/guideContents";		// guideBook.html 파일을 읽어오는 함수를 가져옵니다.
 import { ChatHandler } from './chat/chatHandler';	// chatParticipant 등록을 위한 chatHandler를 가져옵니다. 
 // vscode의 Explorer에서, 파일의 의존성과 sllm 답변 출처 파일의 파일명에 색을 입히는 provider를 가져옵니다. 
@@ -26,23 +27,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(disposable);	// 명령을 구독에 추가하여 확장 프로그램이 비활성화될 때 정리할 수 있도록 합니다.
 
 
-	//// 확장 프로그램 실행 시 guideBook.html 파일을 웹뷰로 자동 실행
-	// Test: F5를 눌러 확장 프로그램이 로드되는 순간, guideBook.html 내용을 웹뷰 창으로 자동 실행
-	const guidepanel = vscode.window.createWebviewPanel(
-		'visionGuide', 
-		'Vision Guide', 
-		vscode.ViewColumn.One, 
-		{ 
-			enableScripts: true,
-			localResourceRoots: [
-				vscode.Uri.file(path.join(context.extensionPath))
-			]
-		}
-	);
-	// 프로젝트 루트에 있는 진짜 guideBook.html 파일을 읽어서 웹뷰에 주입
-	guidepanel.webview.html = getHtmlContent(context, guidepanel);
-	////
-
 	// SidebarProvider를 등록하여 웹뷰를 표시할 수 있도록 설정
 	const provider = new SidebarProvider(context.extensionUri);
     context.subscriptions.push(
@@ -52,19 +36,30 @@ export async function activate(context: vscode.ExtensionContext) {
         )
     );
 
-	// guideBook.html<script>에서 Sidebar script.js로 명령 전달
-	guidepanel.webview.onDidReceiveMessage((message) => {
-		console.log(message.command);
-		if (provider && provider.view) {
-			return provider.view.webview.postMessage(message);
-		}
-	});
+	//// guideBook.html을 표시하는 GuideProvider를 등록하여 웹뷰를 표시할 수 있도록 설정
+	const guideProvider = new GuideProvider(
+		context,
+		(message) => provider.view?.webview.postMessage(message)
+	);
+	context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'vision.showGuide',
+            () => guideProvider.showGuide()
+        )
+    );
+
+	// vscode.workspace.getConfiguration('vision').update('showGuideBook', true, vscode.ConfigurationTarget.Global); // 강제 true 설정
+	const GuideBookSetting = vscode.workspace.getConfiguration('vision').get("showGuideBook");
+	if (GuideBookSetting) {
+		await vscode.commands.executeCommand('vision.showGuide');
+	}
+	////
+	
 	
 	// Extension을 실행할 때 vscode chat 창을 자동으로 열어줍니다. 
 	await vscode.commands.executeCommand("workbench.action.chat.open");
 	
 	// vscode 내의 Storage에 history.db 파일을 만듭니다. 
-	
 	const storagePath = path.join(context.globalStorageUri.fsPath);
 	try {
 		if (!fs.existsSync(storagePath)) {
@@ -85,14 +80,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
 
-    // VISION FILES 탭에 전용 파일 목록 프로바이더 등록
+    // Explorer의 <v> File Dependency 탭에 전용 파일 목록 프로바이더 등록
     const dependencyProvider = new FileDependencyProvider();
 	context.subscriptions.push(
         vscode.window.registerTreeDataProvider('visionFileView', dependencyProvider)
     );
 
-	const dependencyService =
-		new DependencyService(dependencyProvider);
+	const dependencyService = new DependencyService(dependencyProvider);
 
 	// 최초 1회
 	dependencyService.refresh();

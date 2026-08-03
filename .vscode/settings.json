@@ -1,3 +1,4 @@
 {
-    "vision.endpoint": "https://api.blakeedenparker.cloud/v1"
+    "vision.endpoint": "https://api.blakeedenparker.cloud/v1",
+    "vision.showGuideBook": true
 }
