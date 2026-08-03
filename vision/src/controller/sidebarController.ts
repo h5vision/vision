@@ -39,6 +39,9 @@ export class SidebarController {
             case SidebarCommand.GetProjectInfo:
                 return this.projectInfoHandler.handle(message);
 
+            case SidebarCommand.GetProjectGitInfo:
+                return this.projectInfoHandler.handleGitInfo(message);
+
             case SidebarCommand.UpdateEndpoint:
                 await vscode.workspace.getConfiguration()
                     .update(

@@ -10,6 +10,8 @@ export enum SidebarCommand {
 
     GetProjectInfo = "getProjectInfo",
 
+    GetProjectGitInfo = "getProjectGitInfo",
+
     UpdateEndpoint = "updateEndpoint"
 
 }

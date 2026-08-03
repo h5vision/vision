@@ -85,6 +85,7 @@ function updateBackendStatus(status) {
 
 vscode.postMessage({ command: "checkBackend" });
 vscode.postMessage({ command: "getProjectInfo" });
+vscode.postMessage({ command: "getProjectGitInfo" });
 
 setInterval(() => {vscode.postMessage({ command: "checkBackend" });}, 30 * 1000);
 
@@ -102,14 +103,19 @@ window.addEventListener("message", event => {
 
         case "showProjectInfo": {
             const el = document.getElementById('current-project-name');
-            const elGit = document.getElementById('current-project-git');
             const elPath = document.getElementById('current-project-path');
+            const data = message.data;
+            el.textContent = data.name.toUpperCase();
+            elPath.textContent = data.path;
+            break;
+        }
+
+        case "showProjectGitInfo": {
+            const el = document.getElementById('current-project-git');
             const data = message.data;
             let git = '';
             if (data.git) {git = "✅ 사용 중";} else {git = "❌ 정보없음";}
-            el.textContent = data.name.toUpperCase();
-            elGit.textContent = git;
-            elPath.textContent = data.path;
+            el.textContent = git;
             break;
         }
         

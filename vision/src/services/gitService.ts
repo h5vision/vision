@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { waitUntil } from "../utils/wait";
 import {
     GitRepositoryInfo,
     GitChangedFile,
@@ -48,7 +49,7 @@ interface Branch {
     behind?: number;
 }
 
-export class GitService {
+export class GitService implements vscode.Disposable {
     
     private readonly _onDidRepositoryReady =
         new vscode.EventEmitter<void>();
@@ -58,54 +59,61 @@ export class GitService {
 
     private git?: GitAPI;
     private repository?: Repository;
-
+    private initializePromise?: Promise<void>;
 
     constructor() {}
 
-    public initialize():void {
-        this.initializeAsync();
+    public dispose() { this._onDidRepositoryReady.dispose(); }
+
+    public initialize(): Promise<void> {
+
+        if (!this.initializePromise) {
+            this.initializePromise = this.doInitialize();
+        }
+
+        return this.initializePromise;
     }
 
-    private async initializeAsync(): Promise<void> {
+    private async doInitialize(): Promise<void> {
 
-        const extension =
-            vscode.extensions.getExtension<GitExtension>("vscode.git");
-        
+        const extension = await waitUntil(() => {
 
-        if (!extension || !extension.isActive) {
-            this.git = undefined;
+            const ext = vscode.extensions.getExtension<GitExtension>("vscode.git");
+
+            if (!ext?.isActive) {
+                return undefined;
+            }
+
+            if (!ext.exports.enabled) {
+                return undefined;
+            }
+
+            return ext;
+        });
+
+        if (!extension) {
+            console.log("Git extension is not available or not active.");
             return;
         }
 
         this.git = extension.exports.getAPI(1);
+
         await this.waitRepositoryReady();
     }
 
     private async waitRepositoryReady(): Promise<void> {
+        if (!this.git) { return; }
 
-        if (!this.git) {return;}
+        this.repository = await waitUntil(
+            () => this.git?.repositories[0]
+        );
 
-        // 최대 5초 대기
-        for (let i = 0; i < 50; i++) {
-
-            if (this.git.repositories.length > 0) {
-
-                this.repository = this.git.repositories[0];
-
-                this._onDidRepositoryReady.fire();
-
-                return;
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 100));
+        if (!this.repository) {
+            return;
         }
-    }
 
-    /**
-     * Workspace의 첫 번째 Repository
-     */
-    private get repo(): Repository | undefined {
-        return this.repository;
+        this._onDidRepositoryReady.fire();
+        
     }
 
     //---------------------------------------
@@ -113,13 +121,12 @@ export class GitService {
     //---------------------------------------
 
     public exists(): boolean {
-        console.log(this.getRepositoryInfo());
-        return this.repo !== undefined;
+        return this.repository !== undefined;
     }
 
     public getRepositoryInfo(): GitRepositoryInfo | undefined {
 
-        const repo = this.repo;
+        const repo = this.repository;
 
         if (!repo) {
             return undefined;
@@ -153,7 +160,7 @@ export class GitService {
 
     public getCurrentBranch(): string {
 
-        return this.repo?.state.HEAD?.name ?? "";
+        return this.repository?.state.HEAD?.name ?? "";
     }
 
     //---------------------------------------
@@ -162,18 +169,18 @@ export class GitService {
 
     public getCurrentCommit(): string {
 
-        return this.repo?.state.HEAD?.commit ?? "";
+        return this.repository?.state.HEAD?.commit ?? "";
     }
 
     public async getRecentCommits(
         limit: number = 20
     ): Promise<GitCommit[]> {
 
-        if (!this.repo) {
+        if (!this.repository) {
             return [];
         }
 
-        return this.repo.log({
+        return this.repository.log({
             maxEntries: limit
         });
     }
@@ -184,11 +191,11 @@ export class GitService {
 
     public getWorkingTreeFiles(): GitChangedFile[] {
 
-        if (!this.repo) {
+        if (!this.repository) {
             return [];
         }
 
-        return this.repo.state.workingTreeChanges.map(change => ({
+        return this.repository.state.workingTreeChanges.map(change => ({
 
             path: change.uri.fsPath,
 
@@ -200,11 +207,11 @@ export class GitService {
 
     public getStagedFiles(): GitChangedFile[] {
 
-        if (!this.repo) {
+        if (!this.repository) {
             return [];
         }
 
-        return this.repo.state.indexChanges.map(change => ({
+        return this.repository.state.indexChanges.map(change => ({
 
             path: change.uri.fsPath,
 
@@ -216,11 +223,11 @@ export class GitService {
 
     public getMergedFiles(): GitChangedFile[] {
 
-        if (!this.repo) {
+        if (!this.repository) {
             return [];
         }
 
-        return this.repo.state.mergeChanges.map(change => ({
+        return this.repository.state.mergeChanges.map(change => ({
 
             path: change.uri.fsPath,
 
@@ -236,11 +243,11 @@ export class GitService {
 
     public async getDiff(path?: string): Promise<string> {
 
-        if (!this.repo) {
+        if (!this.repository) {
             return "";
         }
 
-        return this.repo.diffWithHEAD(path);
+        return this.repository.diffWithHEAD(path);
     }
 
     //---------------------------------------
@@ -249,7 +256,7 @@ export class GitService {
 
     public hasChanges(): boolean {
 
-        const repo = this.repo;
+        const repo = this.repository;
 
         if (!repo) {
             return false;
