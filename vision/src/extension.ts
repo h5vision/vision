@@ -8,6 +8,7 @@ import { ChatHandler } from './chat/chatHandler';	// chatParticipant 등록을 �
 // vscode의 Explorer에서, 파일의 의존성과 sllm 답변 출처 파일의 파일명에 색을 입히는 provider를 가져옵니다. 
 import { FileDependencyProvider } from "./providers/dependencyProvider";
 import { HistoryService } from './services/historyService';
+import { DependencyService } from './services/dependencyService';
 
 // 이 메서드는 확장 프로그램이 활성화될 때 호출됩니다. 확장 프로그램이 처음으로 명령을 실행할 때 활성화됩니다.
 export async function activate(context: vscode.ExtensionContext) {
@@ -85,21 +86,30 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
     // VISION FILES 탭에 전용 파일 목록 프로바이더 등록
-    const fileDependencyProvider = new FileDependencyProvider();
-    context.subscriptions.push(
-        vscode.window.registerTreeDataProvider('visionFileView', fileDependencyProvider)
+    const dependencyProvider = new FileDependencyProvider();
+	context.subscriptions.push(
+        vscode.window.registerTreeDataProvider('visionFileView', dependencyProvider)
     );
-	// 테스트용 파일 목록 주입 (빨간색 연관 파일 2개, 파란색 sLLM 출처 파일 1개 예시)
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (workspaceFolders && workspaceFolders.length > 0) {
-        const rootPath = workspaceFolders[0].uri.fsPath;
-		console.log(rootPath);
-        fileDependencyProvider.updateFiles([
-            { path: path.join(rootPath, 'vision', 'package.json'), label: 'package.json', type: 'red' },
-            { path: path.join(rootPath, 'vision', 'src', 'extension.ts'), label: 'extension.ts', type: 'red' },
-            { path: path.join(rootPath, 'vision', 'src', 'providers', 'sidebarProvider.ts'), label: 'sidebarProvider.ts', type: 'blue' }
-        ]);
-    }
+
+	const dependencyService =
+		new DependencyService(dependencyProvider);
+
+	// 최초 1회
+	dependencyService.refresh();
+
+	// 파일 변경 시
+	context.subscriptions.push(
+		vscode.window.onDidChangeActiveTextEditor(() => {
+			dependencyService.refresh();
+		})
+	);
+
+	// 저장 시
+	context.subscriptions.push(
+		vscode.workspace.onDidSaveTextDocument(() => {
+			dependencyService.refresh();
+		})
+	);
 
 
 	// 우클릭하여 파일에 대한 질문 / 블록 설정한 코드에 대한 질문을 vscode chat view에 주입

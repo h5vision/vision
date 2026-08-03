@@ -59,7 +59,7 @@
         {
           "icon":"media/icon.svg",
           "id":"visionFileView",
-          "name":"< V > Vision Dependency", 
+          "name":"< V > File Dependency", 
           "type":"tree"
         }
       ],
