@@ -50,7 +50,7 @@
         </div>
     </div>
 
-    <!-- 2. 프로젝트 목록 카드 (기존 인덱싱 및 히스토리 자리 대체) -->
+    <!-- 3. 프로젝트 목록 카드 (기존 인덱싱 및 히스토리 자리 대체) -->
     <div class="card" id="project-list">
         <div class="card-header">
             <span><i class="codicon codicon-list-unordered"></i> &nbsp; 프로젝트 목록</span>
@@ -62,6 +62,14 @@
             <div style="padding: 4px 0; opacity: 0.8;">• 등록된 프로젝트 목록이 없습니다.</div>
         </div>
     </div>
+
+    <!-- 💡 4. 가이드북 켜기/끄기 토글 버튼 -->
+    <div class="card" id="guide-toggle">
+        <button id="toggle-guide-btn" class="icon-btn" title="Vision Guide 열기/닫기">
+            <i class="codicon codicon-book"></i> &nbsp; Vision Guide <span id="GuideStatus"></span>
+        </button>
+    </div>
+
 
     <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
 </body>

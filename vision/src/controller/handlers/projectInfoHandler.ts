@@ -17,7 +17,6 @@ export class ProjectInfoHandler {
         console.log(message.command);
         const workspace:any = this.workspaceService.getWorkspace();
         const response = {name: workspace.name, path: workspace.path};
-        console.log(response);
 
         this.view.webview.postMessage({
             command: "showProjectInfo",
@@ -26,17 +25,21 @@ export class ProjectInfoHandler {
     };
 
     public async handleGitInfo(message: SidebarMessage) {
+        this.gitService.dispose();
         console.log(message.command);
+        await this.gitService.initialize();
+        const response = {git: this.gitService.exists(), repository: this.gitService.getRepositoryInfo()};
+        this.view.webview.postMessage({
+            command: "showProjectGitInfo",
+            data: response
+        });
         this.gitService.onDidRepositoryReady(() => {
-            const git = this.gitService.exists();
-            const response = {git: git, repository: this.gitService.getRepositoryInfo()};
-            console.log(response);
-
+            const updatedResponse = {git: this.gitService.exists(), repository: this.gitService.getRepositoryInfo()};
+            console.log("Repository is ready. Updated response:", updatedResponse);
             this.view.webview.postMessage({
                 command: "showProjectGitInfo",
-                data: response
+                data: updatedResponse
             });
         });
-        await this.gitService.initialize();
     }
 }

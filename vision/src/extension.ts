@@ -45,13 +45,28 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand(
             'vision.showGuide',
             () => guideProvider.showGuide()
+        ),
+		vscode.commands.registerCommand(	
+            'vision.toggleGuide',
+            () => guideProvider.toggleGuide()
         )
     );
 
-	// vscode.workspace.getConfiguration('vision').update('showGuideBook', true, vscode.ConfigurationTarget.Global); // 강제 true 설정
 	const GuideBookSetting = vscode.workspace.getConfiguration('vision').get("showGuideBook");
+	console.log("GuideBookSetting:", GuideBookSetting);
 	if (GuideBookSetting) {
-		await vscode.commands.executeCommand('vision.showGuide');
+		await vscode.commands.executeCommand('vision.showGuide').then(() => {
+			console.log("Guidebook has been opened.");
+			provider.view?.webview.postMessage({
+				command: "guideStatus",
+				data: true
+			});
+		});
+	} else {
+		provider.view?.webview.postMessage({
+			command: "guideStatus",
+			data: false
+		});
 	}
 	////
 	

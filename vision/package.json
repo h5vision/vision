@@ -24,10 +24,9 @@
           "default":"https://api.blakeedenparker.cloud/v1",
           "description": "vision backendAI endpoint"
         },
-
         "vision.showGuideBook":{
           "type":"boolean",
-          "default":true,
+          "default":false,
           "description":"Show guidebook when extension is activated"
         }
       }

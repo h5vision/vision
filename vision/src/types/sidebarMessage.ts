@@ -12,11 +12,11 @@ export enum SidebarCommand {
 
     GetProjectGitInfo = "getProjectGitInfo",
 
+    GetGuideStatus = "getGuideStatus",
+
     UpdateEndpoint = "updateEndpoint",
 
-    HideGuideBook = "hideGuideBook",
-    ShowGuideBook = "showGuideBook"
-
+    ToggleGuide = "toggleGuide"
 }
 
 export interface SidebarMessage {

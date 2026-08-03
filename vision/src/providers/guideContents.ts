@@ -20,6 +20,7 @@ export function getHtmlContent(
             url = guidepanel.webview.asWebviewUri(url);
             guideHTML = guideHTML.replace(`{{${imgs[i].split('.')[0]}Url}}`, url.toString());
         }
+
         return guideHTML;
     } catch (error) {
         return `<!DOCTYPE html>

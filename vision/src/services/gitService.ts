@@ -69,6 +69,7 @@ export class GitService implements vscode.Disposable {
 
         if (!this.initializePromise) {
             this.initializePromise = this.doInitialize();
+            console.log("GitService: Initialization started.");
         }
 
         return this.initializePromise;

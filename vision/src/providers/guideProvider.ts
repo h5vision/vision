@@ -5,7 +5,7 @@ import { getHtmlContent } from './guideContents';
 
 export class GuideProvider {
 
-    private panel?: vscode.WebviewPanel;
+    public panel?: vscode.WebviewPanel;
 
     constructor(
         private readonly context: vscode.ExtensionContext,
@@ -43,6 +43,25 @@ export class GuideProvider {
         this.panel.onDidDispose(() => {
             this.panel = undefined;
         });
+
+        this.sendMessage({
+            command: "guideStatus",
+            data: true
+        });
+    }
+
+    public toggleGuide(): void {
+
+        if (this.panel) {
+            this.panel.dispose();
+            this.sendMessage({
+                command: "guideStatus",
+                data: false
+            });
+            return;
+        }
+
+        this.showGuide();
     }
 
     private registerMessageHandler() {
@@ -56,7 +75,6 @@ export class GuideProvider {
             switch (message.command) {
 
                 case "hideGuideBook":
-
                     await vscode.workspace
                         .getConfiguration("vision")
                         .update(
@@ -64,14 +82,12 @@ export class GuideProvider {
                             false,
                             vscode.ConfigurationTarget.Global
                         );
-
                     vscode.window.showInformationMessage(
                         "Guidebook 자동표시를 비활성화했습니다."
                     );
                     break;
 
                 case "showGuideBook":
-
                     await vscode.workspace
                         .getConfiguration("vision")
                         .update(
@@ -79,7 +95,6 @@ export class GuideProvider {
                             true,
                             vscode.ConfigurationTarget.Global
                         );
-
                     vscode.window.showInformationMessage(
                         "Guidebook 자동표시를 활성화했습니다."
                     );

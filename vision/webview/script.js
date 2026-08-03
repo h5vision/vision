@@ -16,38 +16,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const endpointEditInput = document.getElementById('endpoint-edit-input');
     const changeEndpoint = document.getElementById('change-endpoint');
     const cancelEndpoint = document.getElementById('cancel-endpoint');
-    if (endpoint) {
-        endpoint.addEventListener("click", ()=>{
-            endpoint.classList.toggle('hidden');
-            endpointEditInput.classList.toggle('hidden');
-            endpointEditInput.focus();
-            changeEndpoint.classList.toggle('hidden');
-            cancelEndpoint.classList.toggle('hidden');
-            endpointEditInput.value = endpoint.textContent;
-        });
-    };
-    if (endpointEditInput) {
-        endpointEditInput.addEventListener('keydown', (e)=>{
-            if (e.key === 'Enter') {changeEndpoint.click();}
-        });
-    }
-
-    if (changeEndpoint) {
-        changeEndpoint.addEventListener("click", ()=>{
-            if (endpoint.textContent === endpointEditInput.value) {cancelEndpoint.click(); return;};
-            endpoint.textContent = endpointEditInput.value;
-            endpoint.click();
-            document.getElementById("backend-status").textContent = '🟡 Server Reconnecting...';
-            vscode.postMessage({command:"updateEndpoint", data: endpointEditInput.value});
-        });
-    };
-
-    if (cancelEndpoint) {
-        cancelEndpoint.addEventListener("click", ()=>{
-            endpoint.click();
-        });
-    };
-
+    endpoint.addEventListener("click", ()=>{
+        endpoint.classList.toggle('hidden');
+        endpointEditInput.classList.toggle('hidden');
+        endpointEditInput.focus();
+        changeEndpoint.classList.toggle('hidden');
+        cancelEndpoint.classList.toggle('hidden');
+        endpointEditInput.value = endpoint.textContent;
+    });
+    endpointEditInput.addEventListener('keydown', (e)=>{
+        if (e.key === 'Enter') {changeEndpoint.click();}
+    });
+    changeEndpoint.addEventListener("click", ()=>{
+        if (endpoint.textContent === endpointEditInput.value) {cancelEndpoint.click(); return;};
+        endpoint.textContent = endpointEditInput.value;
+        endpoint.click();
+        document.getElementById("backend-status").textContent = '🟡 Server Reconnecting...';
+        vscode.postMessage({command:"updateEndpoint", data: endpointEditInput.value});
+    });
+    cancelEndpoint.addEventListener("click", ()=>{
+        endpoint.click();
+    });
 
     // 실패 파일 목록 토글
     const errorToggleBtn = document.getElementById("error-toggle-btn");
@@ -61,6 +50,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    // 💡 [추가 완료] 가이드북 켜기/끄기 토글 버튼 이벤트
+    const toggleGuideBtn = document.getElementById("toggle-guide-btn");
+    toggleGuideBtn.addEventListener("click", () => {
+        vscode.postMessage({ command: "toggleGuide" });
+    });
 
 });
 
@@ -86,6 +81,7 @@ function updateBackendStatus(status) {
 vscode.postMessage({ command: "checkBackend" });
 vscode.postMessage({ command: "getProjectInfo" });
 vscode.postMessage({ command: "getProjectGitInfo" });
+vscode.postMessage({ command: "getGuideStatus" });
 
 setInterval(() => {vscode.postMessage({ command: "checkBackend" });}, 30 * 1000);
 
@@ -128,6 +124,11 @@ window.addEventListener("message", event => {
                 }, 1000);
             }
             break;
+        }
+
+        case "guideStatus": {
+            const guideStatus = message.data;
+            document.getElementById("GuideStatus").textContent = guideStatus ? "닫기" : "열기";
         }
     }
 });

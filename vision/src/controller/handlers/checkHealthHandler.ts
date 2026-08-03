@@ -15,14 +15,11 @@ export class APIHandler {
         
         console.log(message.command);
 
-        // CheckBackend 기능 추가
         const response = await this.APIService.checkHealth();
 
         this.view.webview.postMessage({
             command: "backendStatus",
             data: response
         });
-
     }
-
 }

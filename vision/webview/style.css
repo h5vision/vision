@@ -102,3 +102,16 @@ body {
 .codicon {
     vertical-align: sub;
 }
+
+#toggle-guide-btn {
+    width: 100%; 
+    cursor: pointer; 
+    background-color: var(--vscode-button-secondaryBackground); 
+    color: var(--vscode-button-secondaryForeground); 
+    border: none; 
+    border-radius: 3px;
+}
+#toggle-guide-btn:hover {
+    opacity: 1;
+    color: var(--vscode-focusBorder);
+}

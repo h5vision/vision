@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 
 import { SidebarMessage, SidebarCommand } from "../types/sidebarMessage";
 
-import { APIHandler } from "./handlers/APIHandler";
+import { APIHandler } from "./handlers/checkHealthHandler";
 import { HistoryHandler } from "./handlers/historyHandler";
 import { IndexingHandler } from "./handlers/indexingHandler";
 import { ProjectInfoHandler } from "./handlers/projectInfoHandler";
@@ -41,8 +41,15 @@ export class SidebarController {
 
             case SidebarCommand.GetProjectGitInfo:
                 return this.projectInfoHandler.handleGitInfo(message);
+            
 
-
+            case SidebarCommand.GetGuideStatus:
+                const guideStatus = vscode.workspace.getConfiguration('vision').get('showGuideBook', false);
+                this.view.webview.postMessage({
+                    command: "guideStatus",
+                    data: guideStatus
+                });
+                return;
 
             case SidebarCommand.UpdateEndpoint:
                 await vscode.workspace.getConfiguration('vision')
@@ -51,11 +58,14 @@ export class SidebarController {
                         message.data,
                         vscode.ConfigurationTarget.Workspace
                     );
-
                 vscode.window.showInformationMessage(
                     "Endpoint가 변경되었습니다."
                 );
                 return this.APIHandler.handle(message);
+            
+            case SidebarCommand.ToggleGuide:
+                vscode.commands.executeCommand('vision.toggleGuide');
+                return;
         }
     }
 }
