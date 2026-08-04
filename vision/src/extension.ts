@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from "fs";
 import { SidebarProvider } from "./providers/sidebarProvider";
 import { GuideProvider } from "./providers/guideProvider";	
-import { ChatHandler } from './chat/chatHandler';	
+import { ChatHandler } from './chat/chatHandler_SSE';	
 import { FileDependencyProvider } from "./providers/dependencyProvider";
 import { HistoryService } from './services/historyService';
 import { DependencyService } from './services/dependencyService';

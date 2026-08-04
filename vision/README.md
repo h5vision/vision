@@ -1,71 +1,193 @@
-# vision README
+# Vision - VSCode AI Coding Assistant
 
-This is the README for your extension "vision". After writing up a brief description, we recommend including the following sections.
+> On-premise LLM 기반의 VSCode AI 코딩 어시스턴트
 
-## Features
+## 📖 Overview
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Vision은 VSCode에서 동작하는 AI Coding Assistant Extension입니다.
 
-For example if there is an image subfolder under your extension project workspace:
+기업의 폐쇄망 환경(On-premise)에서도 사용할 수 있도록 설계되었으며, 프로젝트 컨텍스트를 이해하고 개발자의 코딩 작업을 지원하는 것을 목표로 합니다.
 
-\!\[feature X\]\(images/feature-x.png\)
+현재는 다음과 같은 기능을 중심으로 개발 중입니다.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+* Backend AI 서버 연결
+* 프로젝트 인덱싱
+* 프로젝트 의존성 분석
+* AI Chat
+* 문서 번역 및 코드 설명
 
 ---
 
-## Following extension guidelines
+## ✨ Features
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+### 🤖 AI Chat
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+* Backend LLM과 연동
+* Streaming 응답 지원
+* 프로젝트 컨텍스트 기반 질의응답
 
-## Working with Markdown
+### 📂 Project Indexing
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+* 현재 Workspace 분석
+* 프로젝트 구조 인덱싱
+* AI가 프로젝트 전체를 이해할 수 있도록 데이터 생성
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+### 🔍 Dependency Viewer
 
-## For more information
+* 현재 파일이 참조하는 파일
+* 현재 파일을 참조하는 파일
+* Tree View 제공
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+### 🌐 Document Translation
 
-**Enjoy!**
+선택한 문서를 원하는 언어로 번역합니다.
+
+예시
+
+* Korean → English
+* English → Korean
+* Japanese → Korean
+
+### ⚙ Backend Connection
+
+Sidebar에서 Backend 서버 상태를 확인할 수 있습니다.
+
+표시 정보
+
+* Connection Status
+* Endpoint
+* Model Name
+* Latency
+
+---
+
+## 🖥 Architecture
+
+```
+VSCode Extension
+│
+├── Sidebar(Webview)
+│
+├── Commands
+│
+├── TreeView
+│
+├── Backend Service
+│
+└── AI Backend
+        │
+        └── LLM
+```
+
+---
+
+## 📁 Project Structure
+
+```
+vision/
+│
+├── src/
+│   ├── commands/
+│   ├── providers/
+│   ├── services/
+│   ├── webview/
+│   ├── utils/
+│   └── extension.ts
+│
+├── media/
+│
+├── package.json
+│
+└── README.md
+```
+
+---
+
+## 🚀 Getting Started
+
+### Install
+
+```bash
+git clone <repository>
+cd vision
+npm install
+```
+
+### Compile
+
+```bash
+npm run compile
+```
+
+### Run Extension
+
+VSCode에서
+
+```
+F5
+```
+
+를 눌러 Extension Development Host를 실행합니다.
+
+---
+
+## ⚙ Configuration
+
+Vision은 VSCode Settings를 통해 설정할 수 있습니다.
+
+예시
+
+```json
+{
+    "vision.endpoint": "http://localhost:8000",
+    "vision.showGuideBook": true
+}
+```
+
+---
+
+## 📌 Planned Features
+
+* [ ] RAG 기반 프로젝트 검색
+* [ ] Git 변경사항 분석
+* [ ] 코드 리뷰
+* [ ] Commit Message 생성
+* [ ] 프로젝트 요약
+* [ ] 코드 생성
+* [ ] 테스트 코드 생성
+* [ ] 파일 Dependency 시각화 개선
+* [ ] Chat History 저장
+* [ ] Multi Model 지원
+
+---
+
+## 🛠 Tech Stack
+
+### Extension
+
+* TypeScript
+* VSCode Extension API
+* Webview API
+
+### Backend
+
+* REST API
+* Local LLM (On-premise)
+
+---
+
+## 📷 Screenshots
+
+> 추후 추가 예정
+
+---
+
+## 🤝 Contributing
+
+Issue 및 Pull Request는 언제든 환영합니다.
+
+---
+
+## 📄 License
+
+개발 중

@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
+import * as path from "path";
 import { PromptBuilder } from "./promptBuilder";
 import { HistoryService } from "../services/historyService";
 
@@ -15,9 +16,9 @@ export class ChatHandler {
         stream : vscode.ChatResponseStream,
         token : vscode.CancellationToken
     ) => {
-        const messages = [vscode.LanguageModelChatMessage.User(PromptBuilder.build(""))];
-        messages.push(vscode.LanguageModelChatMessage.User(request.prompt));
-          // get all the previous participant messages
+        const messages = [vscode.LanguageModelChatMessage.User(PromptBuilder.build(request.prompt))];
+
+        // get all the previous participant messages
         const previousMessages = context.history.filter(
             h => h instanceof vscode.ChatResponseTurn
         );
@@ -39,7 +40,9 @@ export class ChatHandler {
             messages.push(vscode.LanguageModelChatMessage.User(file));
         }
         console.log(messages);
-        const chatresponse = await request.model.sendRequest(messages, {}, token);
+        const dbPath = path.join(vscode.workspace.workspaceFolders?.[0].uri.fsPath || '', 'request.json');
+        fs.writeFileSync(dbPath, JSON.stringify(messages, null, 2));        
+        const chatresponse = await request.model.sendRequest(messages, {}, token);  
 
         for await (const fragment of chatresponse.text) {
             stream.markdown(fragment);

@@ -25,6 +25,8 @@ export interface ChatRequest {
     top_k?: number;
     history?: string[];
     context?: unknown;
+    role?: "user" | "assistant" | "system";
+    stream?: boolean;
 }
 
 export interface SourceDocument {
@@ -40,4 +42,40 @@ export interface ChatResponse {
     answer: string;
     source: SourceDocument[];
     metadata: unknown;
+}
+
+export interface ChatRequest_SSE {
+    role: "user";
+    content: string;
+    stream: true;
+}
+
+export type ChatStreamEventName =
+    | "meta"
+    | "status"
+    | "delta"
+    | "done"
+    | "error";
+
+export interface ChatStreamData {
+    request_id: string;
+
+    stage?:
+        | "sending"
+        | "reasoning"
+        | "thinking"
+        | "answering"
+        | "failed";
+
+    label?: string;
+    sequence?: number;
+    text?: string;
+
+    answer?: string;
+    source?: SourceDocument[];
+    metadata?: Record<string, unknown>;
+
+    status_code?: number;
+    error?: string;
+    partial?: string;
 }
