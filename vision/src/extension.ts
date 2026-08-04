@@ -1,12 +1,9 @@
-// 'vscode' 모듈에는 VS Code 확장 API가 포함되어 있습니다. 이 모듈을 가져오면 편집기와 상호 작용할 수 있습니다.
 import * as vscode from 'vscode';
-import * as path from 'path';  		// Node.js의 path 모듈을 가져옵니다. 파일 경로를 다루는 데 사용됩니다.
+import * as path from 'path';  		
 import * as fs from "fs";
-import { SidebarProvider } from "./providers/sidebarProvider";	// SidebarProvider를 가져옵니다.
-import { GuideProvider } from "./providers/guideProvider";	// GuideProvider를 가져옵니다.
-import { getHtmlContent } from "./providers/guideContents";		// guideBook.html 파일을 읽어오는 함수를 가져옵니다.
-import { ChatHandler } from './chat/chatHandler';	// chatParticipant 등록을 위한 chatHandler를 가져옵니다. 
-// vscode의 Explorer에서, 파일의 의존성과 sllm 답변 출처 파일의 파일명에 색을 입히는 provider를 가져옵니다. 
+import { SidebarProvider } from "./providers/sidebarProvider";
+import { GuideProvider } from "./providers/guideProvider";	
+import { ChatHandler } from './chat/chatHandler';	
 import { FileDependencyProvider } from "./providers/dependencyProvider";
 import { HistoryService } from './services/historyService';
 import { DependencyService } from './services/dependencyService';
@@ -17,14 +14,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	// 진단 정보를 출력하거나 오류를 출력하려면 콘솔을 사용하세요. 이 코드 줄은 확장 프로그램이 활성화될 때 한 번만 실행됩니다.
 	console.log('Congratulations, your extension "vision" is now active!');
 
-	// 이 명령은 package.json 파일에 정의되어 있습니다. 명령의 구현을 registerCommand로 제공합니다. 
-	// commandId 매개변수는 package.json의 command 필드와 일치해야 합니다.
 	const disposable = vscode.commands.registerCommand('vision.helloWorld', () => {
-		// 여기에 명령이 실행될 때마다 실행되는 코드를 작성하세요
-		// 사용자의 메시지 상자에 'Hello World from vision!'을 표시합니다.
 		vscode.window.showInformationMessage('Hello World from vision!');
 	});
-	context.subscriptions.push(disposable);	// 명령을 구독에 추가하여 확장 프로그램이 비활성화될 때 정리할 수 있도록 합니다.
+	context.subscriptions.push(disposable);
 
 
 	// SidebarProvider를 등록하여 웹뷰를 표시할 수 있도록 설정
@@ -36,7 +29,7 @@ export async function activate(context: vscode.ExtensionContext) {
         )
     );
 
-	//// guideBook.html을 표시하는 GuideProvider를 등록하여 웹뷰를 표시할 수 있도록 설정
+	// guideBook.html을 표시하는 GuideProvider를 등록하여 웹뷰를 표시할 수 있도록 설정
 	const guideProvider = new GuideProvider(
 		context,
 		(message) => provider.view?.webview.postMessage(message)
@@ -68,7 +61,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			data: false
 		});
 	}
-	////
 	
 	
 	// Extension을 실행할 때 vscode chat 창을 자동으로 열어줍니다. 
@@ -97,23 +89,18 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Explorer의 <v> File Dependency 탭에 전용 파일 목록 프로바이더 등록
     const dependencyProvider = new FileDependencyProvider();
-	context.subscriptions.push(
-        vscode.window.registerTreeDataProvider('visionFileView', dependencyProvider)
-    );
+	vscode.window.registerTreeDataProvider("visionFileView", dependencyProvider);
 
 	const dependencyService = new DependencyService(dependencyProvider);
 
-	// 최초 1회
 	dependencyService.refresh();
 
-	// 파일 변경 시
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveTextEditor(() => {
 			dependencyService.refresh();
 		})
 	);
 
-	// 저장 시
 	context.subscriptions.push(
 		vscode.workspace.onDidSaveTextDocument(() => {
 			dependencyService.refresh();

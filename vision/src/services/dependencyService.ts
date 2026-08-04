@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import { FileDependencyProvider } from "../providers/dependencyProvider";
+import * as path from "path";
 
-export interface DependencyFile {
-    path: string;
-    label: string;
-    type: "red" | "blue";
-}
+import { DependencyFile } from "../types/dependency";
+
+import {
+    FileDependencyProvider
+} from "../providers/dependencyProvider";
 
 export class DependencyService {
 
@@ -14,7 +14,7 @@ export class DependencyService {
     ) {}
 
     /**
-     * 현재 활성 Editor 기준으로 Dependency Tree를 갱신
+     * Explorer 갱신
      */
     public async refresh(): Promise<void> {
 
@@ -24,20 +24,212 @@ export class DependencyService {
             this.provider.updateFiles([]);
             return;
         }
+        const symbols = await this.getSymbols(editor.document);
 
-        const files = await this.collectDependencies(editor.document);
+        const result = new Map<string, DependencyFile>();
 
-        this.provider.updateFiles(files);
+        await Promise.all([
+
+            this.collectImports(editor.document, result),
+
+            this.collectDefinitions(editor.document, symbols, result),
+
+            this.collectReferences(editor.document, symbols, result)
+
+        ]);
+
+        this.provider.updateFiles([...result.values()]);
     }
 
     /**
-     * Document 전체의 Dependency 수집
+     * ======================================================
+     * Import
+     * ======================================================
      */
-    private async collectDependencies(
-        document: vscode.TextDocument
-    ): Promise<DependencyFile[]> {
 
-        const dependencies = new Map<string, DependencyFile>();
+    private async collectImports(
+        document: vscode.TextDocument,
+        result: Map<string, DependencyFile>
+    ): Promise<void> {
+
+        // 우선 Language Provider 사용
+        const links =
+            await vscode.commands.executeCommand<vscode.DocumentLink[]>(
+                "vscode.executeLinkProvider",
+                document.uri
+            );
+
+        if (links && links.length > 0) {
+
+            for (const link of links) {
+
+                if (!link.target) {
+                    continue;
+                }
+
+                if (link.target.scheme !== "file") {
+                    continue;
+                }
+
+                result.set(link.target.fsPath, {
+                    path: link.target.fsPath,
+                    label: vscode.workspace.asRelativePath(link.target),
+                    imported: true,
+                    referenced: false
+                });
+            }
+
+            return;
+        }
+
+        // 지원하지 않는 언어라면 Regex 사용
+        await this.collectImportsByRegex(document, result);
+    }
+
+    /**
+     * Regex Fallback
+     */
+    private async collectImportsByRegex(
+        document: vscode.TextDocument,
+        result: Map<string, DependencyFile>
+    ) {
+
+        const currentDir = path.dirname(document.uri.fsPath);
+
+        const regex =
+            /import\s+(?:[\w*\s{},]*)\s+from\s+['"](.+)['"]|export\s+.*?from\s+['"](.+)['"]/g;
+
+        for (let i = 0; i < document.lineCount; i++) {
+
+            const line = document.lineAt(i).text;
+
+            let match: RegExpExecArray | null;
+
+            while ((match = regex.exec(line)) !== null) {
+
+                const importPath = match[1] || match[2];
+
+                if (!importPath.startsWith(".")) {
+                    continue;
+                }
+
+                const file = await this.resolveImport(
+                    currentDir,
+                    importPath
+                );
+
+                if (!file) {
+                    continue;
+                }
+
+                result.set(file, {
+                    path: file,
+                    label: vscode.workspace.asRelativePath(file),
+                    imported: true,
+                    referenced: false
+                });
+            }
+        }
+    }
+
+    /**
+     * ======================================================
+     * Definition
+     * ======================================================
+     */
+
+    private async collectDefinitions(
+        document: vscode.TextDocument,
+        symbols: vscode.DocumentSymbol[],
+        result: Map<string, DependencyFile>
+    ) {
+
+        for (const symbol of symbols) {
+
+            const defs =
+                await vscode.commands.executeCommand<
+                    vscode.Location[] | vscode.LocationLink[]
+                >(
+                    "vscode.executeDefinitionProvider",
+                    document.uri,
+                    symbol.selectionRange.start
+                );
+
+            if (!defs) {
+                continue;
+            }
+
+            for (const def of defs) {
+
+                const uri =
+                    def instanceof vscode.Location
+                        ? def.uri
+                        : def.targetUri;
+
+                if (uri.fsPath === document.uri.fsPath) {
+                    continue;
+                }
+
+                result.set(uri.fsPath, {
+                    path: uri.fsPath,
+                    label: vscode.workspace.asRelativePath(uri),
+                    imported: true,
+                    referenced: false
+                });
+            }
+        }
+    }
+
+    /**
+     * ======================================================
+     * Reference
+     * ======================================================
+     */
+
+    private async collectReferences(
+        document: vscode.TextDocument,
+        symbols: vscode.DocumentSymbol[],
+        result: Map<string, DependencyFile>
+    ) {
+
+        for (const symbol of symbols) {
+
+            const refs =
+                await vscode.commands.executeCommand<vscode.Location[]>(
+                    "vscode.executeReferenceProvider",
+                    document.uri,
+                    symbol.selectionRange.start
+                );
+
+            if (!refs) {
+                continue;
+            }
+
+            for (const ref of refs) {
+
+                if (ref.uri.fsPath === document.uri.fsPath) {
+                    continue;
+                }
+
+                result.set(ref.uri.fsPath, {
+                    path: ref.uri.fsPath,
+                    label: vscode.workspace.asRelativePath(ref.uri),
+                    imported: false,
+                    referenced: true
+                });
+            }
+        }
+    }
+
+    /**
+     * ======================================================
+     * Symbol 수집
+     * ======================================================
+     */
+
+    private async getSymbols(
+        document: vscode.TextDocument
+    ): Promise<vscode.DocumentSymbol[]> {
 
         const symbols =
             await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
@@ -49,125 +241,77 @@ export class DependencyService {
             return [];
         }
 
-        await this.visitSymbols(
-            document.uri,
-            symbols,
-            dependencies
-        );
+        const result: vscode.DocumentSymbol[] = [];
 
-        return [...dependencies.values()];
+        const visit = (items: vscode.DocumentSymbol[]) => {
+
+            for (const item of items) {
+
+                switch (item.kind) {
+
+                    case vscode.SymbolKind.Class:
+                    case vscode.SymbolKind.Interface:
+                    case vscode.SymbolKind.Function:
+                    case vscode.SymbolKind.Method:
+                    case vscode.SymbolKind.Constructor:
+
+                        result.push(item);
+                        break;
+                }
+
+                visit(item.children);
+            }
+        };
+
+        visit(symbols);
+
+        return result;
     }
 
     /**
-     * Symbol Tree 순회
+     * ======================================================
+     * import path resolve
+     * ======================================================
      */
-    private async visitSymbols(
-        uri: vscode.Uri,
-        symbols: vscode.DocumentSymbol[],
-        result: Map<string, DependencyFile>
-    ): Promise<void> {
 
-        for (const symbol of symbols) {
+    private async resolveImport(
+        currentDir: string,
+        importPath: string
+    ): Promise<string | undefined> {
 
-            // 필요한 Symbol만 분석
-            switch (symbol.kind) {
+        const base = path.resolve(currentDir, importPath);
 
-                case vscode.SymbolKind.Class:
-                case vscode.SymbolKind.Interface:
-                case vscode.SymbolKind.Function:
-                case vscode.SymbolKind.Method:
-                case vscode.SymbolKind.Constructor:
+        const candidates = [
 
-                    await Promise.all([
-                        this.collectDefinition(uri, symbol.selectionRange.start, result),
-                        this.collectReference(uri, symbol.selectionRange.start, result)
-                    ]);
+            base,
 
-                    break;
-            }
+            `${base}.ts`,
+            `${base}.tsx`,
+            `${base}.js`,
+            `${base}.jsx`,
 
-            if (symbol.children.length > 0) {
-                await this.visitSymbols(
-                    uri,
-                    symbol.children,
-                    result
+            path.join(base, "index.ts"),
+            path.join(base, "index.tsx"),
+            path.join(base, "index.js"),
+            path.join(base, "index.jsx")
+
+        ];
+
+        for (const candidate of candidates) {
+
+            try {
+
+                await vscode.workspace.fs.stat(
+                    vscode.Uri.file(candidate)
                 );
+
+                return candidate;
+
+            } catch {
+                // ignore
             }
         }
-    }
 
-    /**
-     * Definition 검색
-     */
-    private async collectDefinition(
-        uri: vscode.Uri,
-        position: vscode.Position,
-        result: Map<string, DependencyFile>
-    ): Promise<void> {
-
-        const defs =
-            await vscode.commands.executeCommand<
-                vscode.Location[] | vscode.LocationLink[]
-            >(
-                "vscode.executeDefinitionProvider",
-                uri,
-                position
-            );
-
-        if (!defs) {
-            return;
-        }
-
-        for (const def of defs) {
-
-            const targetUri =
-                def instanceof vscode.Location
-                    ? def.uri
-                    : def.targetUri;
-
-            if (targetUri.fsPath === uri.fsPath) {
-                continue;
-            }
-
-            result.set(targetUri.fsPath, {
-                path: targetUri.fsPath,
-                label: vscode.workspace.asRelativePath(targetUri),
-                type: "red"
-            });
-        }
-    }
-
-    /**
-     * Reference 검색
-     */
-    private async collectReference(
-        uri: vscode.Uri,
-        position: vscode.Position,
-        result: Map<string, DependencyFile>
-    ): Promise<void> {
-
-        const refs =
-            await vscode.commands.executeCommand<vscode.Location[]>(
-                "vscode.executeReferenceProvider",
-                uri,
-                position
-            );
-
-        if (!refs) {
-            return;
-        }
-
-        for (const ref of refs) {
-
-            if (ref.uri.fsPath === uri.fsPath) {
-                continue;
-            }
-
-            result.set(ref.uri.fsPath, {
-                path: ref.uri.fsPath,
-                label: vscode.workspace.asRelativePath(ref.uri),
-                type: "red"
-            });
-        }
+        return undefined;
     }
 }

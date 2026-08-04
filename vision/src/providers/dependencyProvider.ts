@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
+import { DependencyFile } from '../types/dependency';
 
 export class FileDependencyProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | void>();
     readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | void> = this._onDidChangeTreeData.event;
 
-    private files: { path: string; label: string; type: 'red' | 'blue' }[] = [];
+    private files: DependencyFile[] = [];
 
-    public updateFiles(newFiles: { path: string; label: string; type: 'red' | 'blue' }[]) {
+    public updateFiles(newFiles: DependencyFile[]) {
         this.files = newFiles;
         this._onDidChangeTreeData.fire();
     }
@@ -23,12 +24,15 @@ export class FileDependencyProvider implements vscode.TreeDataProvider<vscode.Tr
         const items = this.files.map(file => {
             const item = new vscode.TreeItem(file.label, vscode.TreeItemCollapsibleState.None);
             
-            if (file.type === 'red') {
-                item.description = '[연관]';
-                item.iconPath = new vscode.ThemeIcon('circle-filled', new vscode.ThemeColor('errorForeground'));
-            } else {
-                item.description = '[sLLM 출처]';
+            if (file.imported) {
+                item.description = '[imported]';
+                item.iconPath = new vscode.ThemeIcon('circle-filled', new vscode.ThemeColor('charts.red'));
+            } else if (file.referenced) {
+                item.description = '[referenced]';
                 item.iconPath = new vscode.ThemeIcon('circle-filled', new vscode.ThemeColor('charts.blue'));
+            } else {
+                item.description = '';
+                item.iconPath = new vscode.ThemeIcon('star-filled', new vscode.ThemeColor('charts.yellow'));
             }
 
             item.command = {
