@@ -1,0 +1,108 @@
+# =========================================================
+# Python bytecode / cache
+# =========================================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyright/
+.pytype/
+
+.coverage
+.coverage.*
+htmlcov/
+
+# =========================================================
+# Python virtual environments
+# =========================================================
+.venv/
+venv/
+env/
+ENV/
+.venv-*/
+
+# =========================================================
+# Build / package artifacts
+# =========================================================
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# =========================================================
+# Local environment / secrets
+# =========================================================
+.env
+.env.*
+!.env.example
+!.env.template
+
+*.pem
+*.ppk
+*.key
+
+# =========================================================
+# rag_lab runtime data
+# =========================================================
+
+# Chroma persistent index:
+# chroma.sqlite3, UUID segment directories, embeddings, metadata
+data/index/
+
+# Indexing runtime state
+data/state.json
+
+# Temporary or lock files under data
+data/*.tmp
+data/*.lock
+
+# Keep the data directory itself if needed
+!data/.gitkeep
+
+# =========================================================
+# Runtime logs
+# =========================================================
+logs/
+*.log
+*.pid
+
+# =========================================================
+# Generated AI artifacts — do not put in normal Git
+# =========================================================
+models/
+artifacts/
+outputs/
+checkpoints/
+adapters/
+merged/
+
+*.gguf
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+
+# =========================================================
+# Jupyter
+# =========================================================
+.ipynb_checkpoints/
+
+# =========================================================
+# IDE / OS local files
+# =========================================================
+.idea/
+
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# VS Code local-only settings
+.vscode/*.log
+.vscode/.ropeproject
+
+rag_lab/data/
+*.sqlite3
