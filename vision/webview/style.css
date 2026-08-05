@@ -56,7 +56,6 @@ body {
 }
 
 .badge {
-    background-color: rgba(255, 255, 255, 0.08);
     padding: 2px 6px;
     border-radius: 4px;
     font-family: monospace;
@@ -88,6 +87,16 @@ body {
     border:1px solid var(--vscode-focusBorder);
 }
 
+#current-git-info b {
+    background-color: #32b1ff;
+    color: var(--vscode-editor-background);
+    font-weight: 400;
+    border-radius:20px;
+    padding-bottom:2px;
+    padding-right:5px;
+    padding-left:2px;
+}
+
 /* 새로 추가된 프로젝트 목록 스타일 */
 .project-list {
     font-size: 12px;
@@ -103,7 +112,7 @@ body {
 }
 
 .commit-item {
-    opacity: 0.85;
+    opacity: 0.95;
     padding: 1px 0;
 }
 

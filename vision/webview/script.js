@@ -51,18 +51,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 💡 [추가 완료] 가이드북 켜기/끄기 토글 버튼 이벤트
-    const toggleGuideBtn = document.getElementById("toggle-guide-btn");
-    toggleGuideBtn.addEventListener("click", () => {
-        vscode.postMessage({ command: "toggleGuide" });
-    });
-
     // Project List 새로고침
     const refreshProjectBtn = document.getElementById("refresh-projects-btn");
     refreshProjectBtn.addEventListener("click", () => {
         const prjList = document.getElementById('project-list-content');
         prjList.innerHTML = `<div style="padding: 4px 0; opacity: 0.8;">• 프로젝트 목록을 불러오는 중...</div>`;
         setTimeout(()=>vscode.postMessage({ command: "getProjectList" }), 1000);
+    });
+
+    // 💡 [추가 완료] 가이드북 켜기/끄기 토글 버튼 이벤트
+    const toggleGuideBtn = document.getElementById("toggle-guide-btn");
+    toggleGuideBtn.addEventListener("click", () => {
+        vscode.postMessage({ command: "toggleGuide" });
     });
 
     // 프로젝트 브리핑 by Copilot
@@ -102,7 +102,7 @@ function renderProjectList(projects) {
     }
 
     container.innerHTML = '';
-
+    projects.sort((a, b) => a.id - b.id);
     projects.forEach(proj => {
         const projectItem = document.createElement('div');
         projectItem.className = 'project-item';
@@ -131,17 +131,16 @@ function renderProjectList(projects) {
         commitListEl.className = 'commit-list';
         commitListEl.id = `commits-${proj.id}`;
         commitListEl.style.display = 'none';
-        commitListEl.style.paddingLeft = '16px';
+        commitListEl.style.paddingLeft = '2px';
         commitListEl.style.flexDirection = 'column';
         commitListEl.style.gap = '3px';
-        commitListEl.style.marginTop = '2px';
+        commitListEl.style.marginTop = '0px';
 
-        if (proj.commits && proj.commits.length > 0) {
+        if (proj.commits && proj.commits.length > 0 && !!proj.commits[0]) {
             proj.commits.forEach(commit => {
                 const commitItem = document.createElement('div');
-                commitItem.className = 'commit-item';
-                commitItem.style.opacity = '0.85';
-                commitItem.textContent = `• ${commit}`;
+                commitItem.innerHTML = `<i class="codicon codicon-git-commit"></i> ${commit}`;
+                commitItem.className = 'commit-item badge ellipsis';
                 commitListEl.appendChild(commitItem);
             });
         } else {
@@ -200,14 +199,12 @@ window.addEventListener("message", event => {
         }
 
         case "showProjectGitInfo": {
-            const el = document.getElementById('current-project-info');
             const elgit = document.getElementById('current-git-info');
             const data = message.data;
             let git = '';
             if (data.git) {
                 elgit.textContent = data.repository.branch;
-                elgit.innerHTML = `<i class="codicon codicon-git-branch"></i>&nbsp; branch: <b>${data.repository.branch}</b>`;
-                el.innerHTML += `<div class="ellipsis"><i class="codicon codicon-git-commit"></i>&nbsp; commit: ${data.repository.commit.slice(0,7)}</div>`;
+                elgit.innerHTML = `<i class="codicon codicon-git-branch"></i>&nbsp; ${data.repository.commit.slice(0,7)} &nbsp; <b><i class="codicon codicon-target"></i> ${data.repository.branch}</b>`;
             } else {
                 git = "❌ 정보없음";
                 elgit.textContent = git;
