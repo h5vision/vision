@@ -2,12 +2,16 @@ import * as vscode from "vscode";
 import * as path from "path";
 
 import { DependencyFile } from "../types/dependency";
+import { FileDependencyProvider } from "../providers/dependencyProvider";
 
-import {
-    FileDependencyProvider
-} from "../providers/dependencyProvider";
+interface DependencyCacheEntry {
+    version: number;
+    files: DependencyFile[];
+}
 
 export class DependencyService {
+
+    private readonly dependencyCache = new Map<string, DependencyCacheEntry>();
 
     constructor(
         private readonly provider: FileDependencyProvider
@@ -17,28 +21,38 @@ export class DependencyService {
      * Explorer 갱신
      */
     public async refresh(): Promise<void> {
-
         const editor = vscode.window.activeTextEditor;
 
         if (!editor) {
             this.provider.updateFiles([]);
             return;
         }
-        const symbols = await this.getSymbols(editor.document);
 
+        const document = editor.document;
+        const cacheKey = document.uri.toString();
+        const cached = this.dependencyCache.get(cacheKey);
+
+        if (cached && cached.version === document.version) {
+            this.provider.updateFiles(cached.files);
+            return;
+        }
+
+        const symbols = await this.getSymbols(document);
         const result = new Map<string, DependencyFile>();
 
         await Promise.all([
-
-            this.collectImports(editor.document, result),
-
-            this.collectDefinitions(editor.document, symbols, result),
-
-            this.collectReferences(editor.document, symbols, result)
-
+            this.collectImports(document, result),
+            this.collectDefinitions(document, symbols, result),
+            this.collectReferences(document, symbols, result)
         ]);
 
-        this.provider.updateFiles([...result.values()]);
+        const dependencies = [...result.values()];
+        this.dependencyCache.set(cacheKey, {
+            version: document.version,
+            files: dependencies
+        });
+
+        this.provider.updateFiles(dependencies);
     }
 
     /**
@@ -46,32 +60,22 @@ export class DependencyService {
      * Import
      * ======================================================
      */
-
     private async collectImports(
         document: vscode.TextDocument,
         result: Map<string, DependencyFile>
     ): Promise<void> {
-
-        // 우선 Language Provider 사용
-        const links =
-            await vscode.commands.executeCommand<vscode.DocumentLink[]>(
-                "vscode.executeLinkProvider",
-                document.uri
-            );
+        const links = await vscode.commands.executeCommand<vscode.DocumentLink[]>(
+            "vscode.executeLinkProvider",
+            document.uri
+        );
 
         if (links && links.length > 0) {
-
             for (const link of links) {
-
-                if (!link.target) {
+                if (!link.target || link.target.scheme !== "file") {
                     continue;
                 }
 
-                if (link.target.scheme !== "file") {
-                    continue;
-                }
-
-                result.set(link.target.fsPath, {
+                this.mergeDependency(result, link.target.fsPath, {
                     path: link.target.fsPath,
                     label: vscode.workspace.asRelativePath(link.target),
                     imported: true,
@@ -82,7 +86,6 @@ export class DependencyService {
             return;
         }
 
-        // 지원하지 않는 언어라면 Regex 사용
         await this.collectImportsByRegex(document, result);
     }
 
@@ -93,38 +96,28 @@ export class DependencyService {
         document: vscode.TextDocument,
         result: Map<string, DependencyFile>
     ) {
-
         const currentDir = path.dirname(document.uri.fsPath);
-
         const regex =
-            /import\s+(?:[\w*\s{},]*)\s+from\s+['"](.+)['"]|export\s+.*?from\s+['"](.+)['"]/g;
+            /import\s+(?:[\w*\s{},]+)\s+from\s+['"](.+?)['"]|import\(\s*['"](.+?)['"]\s*\)|require\(\s*['"](.+?)['"]\s*\)|export\s+.*?from\s+['"](.+?)['"]/g;
 
         for (let i = 0; i < document.lineCount; i++) {
-
             const line = document.lineAt(i).text;
-
             let match: RegExpExecArray | null;
 
             while ((match = regex.exec(line)) !== null) {
-
-                const importPath = match[1] || match[2];
-
-                if (!importPath.startsWith(".")) {
+                const importPath = match[1] || match[2] || match[3] || match[4];
+                if (!importPath || !importPath.startsWith(".")) {
                     continue;
                 }
 
-                const file = await this.resolveImport(
-                    currentDir,
-                    importPath
-                );
-
-                if (!file) {
+                const resolved = await this.resolveImport(currentDir, importPath);
+                if (!resolved) {
                     continue;
                 }
 
-                result.set(file, {
-                    path: file,
-                    label: vscode.workspace.asRelativePath(file),
+                this.mergeDependency(result, resolved, {
+                    path: resolved,
+                    label: vscode.workspace.asRelativePath(resolved),
                     imported: true,
                     referenced: false
                 });
@@ -137,40 +130,31 @@ export class DependencyService {
      * Definition
      * ======================================================
      */
-
     private async collectDefinitions(
         document: vscode.TextDocument,
         symbols: vscode.DocumentSymbol[],
         result: Map<string, DependencyFile>
     ) {
-
         for (const symbol of symbols) {
-
-            const defs =
-                await vscode.commands.executeCommand<
-                    vscode.Location[] | vscode.LocationLink[]
-                >(
-                    "vscode.executeDefinitionProvider",
-                    document.uri,
-                    symbol.selectionRange.start
-                );
+            const defs = await vscode.commands.executeCommand<
+                vscode.Location[] | vscode.LocationLink[]
+            >(
+                "vscode.executeDefinitionProvider",
+                document.uri,
+                symbol.selectionRange.start
+            );
 
             if (!defs) {
                 continue;
             }
 
             for (const def of defs) {
-
-                const uri =
-                    def instanceof vscode.Location
-                        ? def.uri
-                        : def.targetUri;
-
+                const uri = def instanceof vscode.Location ? def.uri : def.targetUri;
                 if (uri.fsPath === document.uri.fsPath) {
                     continue;
                 }
 
-                result.set(uri.fsPath, {
+                this.mergeDependency(result, uri.fsPath, {
                     path: uri.fsPath,
                     label: vscode.workspace.asRelativePath(uri),
                     imported: true,
@@ -185,33 +169,28 @@ export class DependencyService {
      * Reference
      * ======================================================
      */
-
     private async collectReferences(
         document: vscode.TextDocument,
         symbols: vscode.DocumentSymbol[],
         result: Map<string, DependencyFile>
     ) {
-
         for (const symbol of symbols) {
-
-            const refs =
-                await vscode.commands.executeCommand<vscode.Location[]>(
-                    "vscode.executeReferenceProvider",
-                    document.uri,
-                    symbol.selectionRange.start
-                );
+            const refs = await vscode.commands.executeCommand<vscode.Location[]>(
+                "vscode.executeReferenceProvider",
+                document.uri,
+                symbol.selectionRange.start
+            );
 
             if (!refs) {
                 continue;
             }
 
             for (const ref of refs) {
-
                 if (ref.uri.fsPath === document.uri.fsPath) {
                     continue;
                 }
 
-                result.set(ref.uri.fsPath, {
+                this.mergeDependency(result, ref.uri.fsPath, {
                     path: ref.uri.fsPath,
                     label: vscode.workspace.asRelativePath(ref.uri),
                     imported: false,
@@ -226,46 +205,56 @@ export class DependencyService {
      * Symbol 수집
      * ======================================================
      */
-
     private async getSymbols(
         document: vscode.TextDocument
     ): Promise<vscode.DocumentSymbol[]> {
-
-        const symbols =
-            await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
-                "vscode.executeDocumentSymbolProvider",
-                document.uri
-            );
+        const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
+            "vscode.executeDocumentSymbolProvider",
+            document.uri
+        );
 
         if (!symbols) {
             return [];
         }
 
         const result: vscode.DocumentSymbol[] = [];
-
         const visit = (items: vscode.DocumentSymbol[]) => {
-
             for (const item of items) {
-
                 switch (item.kind) {
-
                     case vscode.SymbolKind.Class:
                     case vscode.SymbolKind.Interface:
                     case vscode.SymbolKind.Function:
                     case vscode.SymbolKind.Method:
                     case vscode.SymbolKind.Constructor:
-
                         result.push(item);
                         break;
                 }
 
-                visit(item.children);
+                if (item.children.length > 0) {
+                    visit(item.children);
+                }
             }
         };
 
         visit(symbols);
-
         return result;
+    }
+
+    private mergeDependency(
+        result: Map<string, DependencyFile>,
+        key: string,
+        incoming: DependencyFile
+    ) {
+        const existing = result.get(key);
+        if (!existing) {
+            result.set(key, incoming);
+            return;
+        }
+
+        existing.imported = existing.imported || incoming.imported;
+        existing.referenced = existing.referenced || incoming.referenced;
+        existing.llmSource = existing.llmSource || incoming.llmSource;
+        existing.gitRelated = existing.gitRelated || incoming.gitRelated;
     }
 
     /**
@@ -273,40 +262,27 @@ export class DependencyService {
      * import path resolve
      * ======================================================
      */
-
     private async resolveImport(
         currentDir: string,
         importPath: string
     ): Promise<string | undefined> {
-
         const base = path.resolve(currentDir, importPath);
-
         const candidates = [
-
             base,
-
             `${base}.ts`,
             `${base}.tsx`,
             `${base}.js`,
             `${base}.jsx`,
-
             path.join(base, "index.ts"),
             path.join(base, "index.tsx"),
             path.join(base, "index.js"),
             path.join(base, "index.jsx")
-
         ];
 
         for (const candidate of candidates) {
-
             try {
-
-                await vscode.workspace.fs.stat(
-                    vscode.Uri.file(candidate)
-                );
-
+                await vscode.workspace.fs.stat(vscode.Uri.file(candidate));
                 return candidate;
-
             } catch {
                 // ignore
             }

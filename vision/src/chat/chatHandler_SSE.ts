@@ -83,7 +83,7 @@ export class ChatHandler {
         try {
             this.historyService.save(
                 projectName,
-                "frontend-stream",
+                session_id,
                 "user",
                 request.prompt
             );

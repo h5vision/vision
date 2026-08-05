@@ -1,53 +1,6 @@
 import * as vscode from "vscode";
 import { waitUntil } from "../utils/wait";
-import {
-    GitRepositoryInfo,
-    GitChangedFile,
-    GitCommit
-} from "../types/git";
-
-interface GitExtension {
-    enabled: boolean;
-    getAPI(version: 1): GitAPI;
-}
-
-interface GitAPI {
-    repositories: Repository[];
-}
-
-interface Repository {
-
-    rootUri: vscode.Uri;
-    state: RepositoryState;
-
-    log(options?: {
-        maxEntries?: number;
-        path?: string;
-    }): Promise<GitCommit[]>;
-
-    diffWithHEAD(path?: string): Promise<string>;
-}
-
-interface RepositoryState {
-
-    HEAD?: Branch;
-
-    workingTreeChanges: readonly Change[];
-    indexChanges: readonly Change[];
-    mergeChanges: readonly Change[];
-}
-
-interface Change {
-    uri: vscode.Uri;
-    status: number;
-}
-
-interface Branch {
-    name?: string;
-    commit?: string;
-    ahead?: number;
-    behind?: number;
-}
+import {GitAPI, GitChangedFile, GitCommit, GitExtension, GitRepositoryInfo, Repository} from "../types/git";
 
 export class GitService implements vscode.Disposable {
     
@@ -69,7 +22,6 @@ export class GitService implements vscode.Disposable {
 
         if (!this.initializePromise) {
             this.initializePromise = this.doInitialize();
-            console.log("GitService: Initialization started.");
         }
 
         return this.initializePromise;
@@ -108,8 +60,12 @@ export class GitService implements vscode.Disposable {
         this.repository = await waitUntil(
             () => this.git?.repositories[0]
         );
+        
+        const head = await waitUntil(
+            () => this.git?.repositories[0]?.state.HEAD,
+        );
 
-        if (!this.repository) {
+        if (!this.repository || !head) {
             return;
         }
 
@@ -125,7 +81,7 @@ export class GitService implements vscode.Disposable {
         return this.repository !== undefined;
     }
 
-    public getRepositoryInfo(): GitRepositoryInfo | undefined {
+    public async getRepositoryInfo(): Promise<GitRepositoryInfo | undefined> {
 
         const repo = this.repository;
 

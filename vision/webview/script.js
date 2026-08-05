@@ -78,10 +78,90 @@ function updateBackendStatus(status) {
 
 }
 
+// 💡 안전한 이벤트 리스너 방식으로 아코디언을 동적 생성 및 렌더링
+function renderProjectList(projects) {
+    const container = document.getElementById("project-list-content");
+    if (!container) {return;}
+
+    if (!projects || projects.length === 0) {
+        container.innerHTML = '<div style="padding: 4px 0; opacity: 0.8;">• 등록된 프로젝트 목록이 없습니다.</div>';
+        return;
+    }
+
+    container.innerHTML = '';
+
+    projects.forEach(proj => {
+        const projectItem = document.createElement('div');
+        projectItem.className = 'project-item';
+        projectItem.style.marginBottom = '8px';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'project-title';
+        titleEl.style.cursor = 'pointer';
+        titleEl.style.display = 'flex';
+        titleEl.style.alignItems = 'center';
+        titleEl.style.fontWeight = '600';
+        titleEl.style.padding = '4px 0';
+
+        const iconEl = document.createElement('i');
+        iconEl.id = `icon-${proj.id}`;
+        iconEl.className = 'codicon codicon-chevron-right';
+        iconEl.style.marginRight = '4px';
+
+        const textEl = document.createElement('span');
+        textEl.textContent = ` ${proj.name}`;
+
+        titleEl.appendChild(iconEl);
+        titleEl.appendChild(textEl);
+
+        const commitListEl = document.createElement('div');
+        commitListEl.className = 'commit-list';
+        commitListEl.id = `commits-${proj.id}`;
+        commitListEl.style.display = 'none';
+        commitListEl.style.paddingLeft = '16px';
+        commitListEl.style.flexDirection = 'column';
+        commitListEl.style.gap = '3px';
+        commitListEl.style.marginTop = '2px';
+
+        if (proj.commits && proj.commits.length > 0) {
+            proj.commits.forEach(commit => {
+                const commitItem = document.createElement('div');
+                commitItem.className = 'commit-item';
+                commitItem.style.opacity = '0.85';
+                commitItem.textContent = `• ${commit}`;
+                commitListEl.appendChild(commitItem);
+            });
+        } else {
+            const noCommit = document.createElement('div');
+            noCommit.style.opacity = '0.5';
+            noCommit.textContent = '• 커밋 내역 없음';
+            commitListEl.appendChild(noCommit);
+        }
+
+        // 클릭 시 안전하게 토글 실행 (CSP 보안 정책 우회)
+        titleEl.addEventListener('click', () => {
+            const isHidden = commitListEl.style.display === 'none' || commitListEl.style.display === '';
+            if (isHidden) {
+                commitListEl.style.display = 'block';
+                iconEl.classList.replace('codicon-chevron-right', 'codicon-chevron-down');
+            } else {
+                commitListEl.style.display = 'none';
+                iconEl.classList.replace('codicon-chevron-down', 'codicon-chevron-right');
+            }
+        });
+
+        projectItem.appendChild(titleEl);
+        projectItem.appendChild(commitListEl);
+        container.appendChild(projectItem);
+    });
+}
+
 vscode.postMessage({ command: "checkBackend" });
 vscode.postMessage({ command: "getProjectInfo" });
 vscode.postMessage({ command: "getProjectGitInfo" });
 vscode.postMessage({ command: "getGuideStatus" });
+vscode.postMessage({ command: "getProjectList" });
+
 
 setInterval(() => {vscode.postMessage({ command: "checkBackend" });}, 30 * 1000);
 
@@ -107,11 +187,19 @@ window.addEventListener("message", event => {
         }
 
         case "showProjectGitInfo": {
-            const el = document.getElementById('current-project-git');
+            const el = document.getElementById('current-project-info');
+            const elgit = document.getElementById('current-git-info');
             const data = message.data;
             let git = '';
-            if (data.git) {git = "✅ 사용 중";} else {git = "❌ 정보없음";}
-            el.textContent = git;
+            if (data.git) {
+                elgit.textContent = data.repository.branch;
+                elgit.innerHTML = `<i class="codicon codicon-git-branch"></i>&nbsp; branch: <b>${data.repository.branch}</b>`;
+                el.innerHTML += `<div class="ellipsis"><i class="codicon codicon-git-commit"></i>&nbsp; commit: ${data.repository.commit.slice(0,7)}</div>`;
+            } else {
+                git = "❌ 정보없음";
+                elgit.textContent = git;
+            }
+            
             break;
         }
         
@@ -129,6 +217,11 @@ window.addEventListener("message", event => {
         case "guideStatus": {
             const guideStatus = message.data;
             document.getElementById("GuideStatus").textContent = guideStatus ? "닫기" : "열기";
+        }
+
+        case "showProjectList": {
+            renderProjectList(message.data);
+            break;
         }
     }
 });

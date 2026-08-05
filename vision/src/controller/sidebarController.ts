@@ -6,6 +6,7 @@ import { APIHandler } from "./handlers/checkHealthHandler";
 import { HistoryHandler } from "./handlers/historyHandler";
 import { IndexingHandler } from "./handlers/indexingHandler";
 import { ProjectInfoHandler } from "./handlers/projectInfoHandler";
+import { ProjectListHandler } from "./handlers/projectListHandler";
 
 export class SidebarController {
 
@@ -13,6 +14,7 @@ export class SidebarController {
     private readonly historyHandler: HistoryHandler;
     private readonly indexingHandler: IndexingHandler;
     private readonly projectInfoHandler: ProjectInfoHandler;
+    private readonly projectListHandler: ProjectListHandler;
 
     constructor(
         private readonly view: vscode.WebviewView
@@ -21,6 +23,7 @@ export class SidebarController {
         this.historyHandler = new HistoryHandler(view);
         this.indexingHandler = new IndexingHandler(view);
         this.projectInfoHandler = new ProjectInfoHandler(view);
+        this.projectListHandler = new ProjectListHandler(view);
     }
 
     public async handle(message: SidebarMessage) {
@@ -41,6 +44,11 @@ export class SidebarController {
 
             case SidebarCommand.GetProjectGitInfo:
                 return this.projectInfoHandler.handleGitInfo(message);
+
+            case SidebarCommand.GetProjectList: 
+                return this.projectListHandler.handle(message);
+                
+            
             
 
             case SidebarCommand.GetGuideStatus:

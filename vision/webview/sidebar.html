@@ -45,21 +45,22 @@
             <div><i class="codicon codicon-folder-active"></i>&nbsp;
                 <span id="current-project-path"></span>
             </div>
-            <div><i class="codicon codicon-git-branch"></i>&nbsp;
-                <b id="current-project-git"></b></div>
+            <div id="current-git-info"></div>
         </div>
     </div>
 
-    <!-- 3. 프로젝트 목록 카드 (기존 인덱싱 및 히스토리 자리 대체) -->
-    <div class="card" id="project-list">
+    <!-- 3. 프로젝트 목록 카드 -->
+    <div class="card" id="project-list" style="display: flex; flex-direction: column; flex: 1; min-height: 200px;">
         <div class="card-header">
             <span><i class="codicon codicon-list-unordered"></i> &nbsp; 프로젝트 목록</span>
             <button id="refresh-projects-btn" class="icon-btn" title="목록 새로고침">
                 <i class="codicon codicon-sync"></i>
             </button>
         </div>
-        <div id="project-list-content" class="project-list" style="margin-top: 6px;">
-            <div style="padding: 4px 0; opacity: 0.8;">• 등록된 프로젝트 목록이 없습니다.</div>
+        
+        <!-- 자바스크립트가 안전하게 아코디언 목록을 그려 넣을 영역 -->
+        <div id="project-list-content" class="project-list" style="margin-top: 6px; flex: 1; overflow-y: auto;">
+            <div style="padding: 4px 0; opacity: 0.8;">• 프로젝트 목록을 불러오는 중...</div>
         </div>
     </div>
 

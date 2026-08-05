@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { WorkspaceService } from "../../services/workspaceService";
 import { SidebarMessage } from "../../types/sidebarMessage";
 import { GitService } from "../../services/gitService";
+import { waitUntil } from "../../utils/wait";
 
 export class ProjectInfoHandler {
 
@@ -28,11 +29,15 @@ export class ProjectInfoHandler {
         this.gitService.dispose();
         console.log(message.command);
         await this.gitService.initialize();
-        const response = {git: this.gitService.exists(), repository: this.gitService.getRepositoryInfo()};
+        const repo = await this.gitService.getRepositoryInfo();
+        const response = {git: this.gitService.exists(), repository: repo};
         this.view.webview.postMessage({
             command: "showProjectGitInfo",
             data: response
         });
+        console.log("Git info sent to webview:", response);
+        
+        
         this.gitService.onDidRepositoryReady(() => {
             const updatedResponse = {git: this.gitService.exists(), repository: this.gitService.getRepositoryInfo()};
             console.log("Repository is ready. Updated response:", updatedResponse);
