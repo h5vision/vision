@@ -333,12 +333,11 @@
             <span>⚡ Vision AI Guide</span>
         </div>
         <ul class="menu-list">
-            <li class="menu-item active" onclick="switchTab('overview', this, 'tab-overview')">📊 1. Extension Overview</li>
-            <li class="menu-item" onclick="switchTab('assistant', this, 'tab-assistant')">💬 2. Vision Assistant & 탐색기</li>
-            <li class="menu-item" onclick="switchTab('quickask', this, 'tab-quickask')">⚡ 3. 코드 빠른 질문 (Quick Ask)</li>
-            <li class="menu-item" onclick="switchTab('details', this, 'tab-details')">📋 4. 상세 기능 명세서</li>
-            <li class="menu-item" onclick="switchTab('fastapi-briefing', this, 'tab-fastapi')">🚀 5. FastAPI 프로젝트 브리핑</li>
-            <li class="menu-item" onclick="switchTab('fastapi-trouble', this, 'tab-trouble')">🛠️ 6. 실무 개발 가이드 & 트러블슈팅</li>
+            <li class="menu-item active" onclick="switchTab('overview', this)">📊 1. Extension Overview</li>
+            <li class="menu-item" onclick="switchTab('assistant', this)">💬 2. FILE DEPENDENCY 탐색기</li>
+            <li class="menu-item" onclick="switchTab('quickask', this)">⚡ 3. 코드 빠른 질문 (Quick Ask)</li>
+            <li class="menu-item" onclick="switchTab('chatguide', this)">🤖 4. Vision Chat 상세 가이드</li>
+            <li class="menu-item" onclick="switchTab('details', this)">📋 5. 상세 기능 명세서</li>
         </ul>
     </sidebar>
 
@@ -365,44 +364,37 @@
                         <h3>🔄 프로젝트 목록</h3>
                         <p>사내 서버와 연동되어 관리되고 있는 프로젝트 폴더 목록을 표시하며, 새로고침으로 목록을 갱신합니다.</p>
                     </div>
+                    <div class="card" onclick="sendAction('guide-toggle')">
+                        <h3>📖 Vision Guide</h3>
+                        <p>가이드북을 접었다 폈다 할 수 있습니다.</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- 2. Vision Assistant & 탐색기 (화면 2) -->
+            <!-- 2. FILE DEPENDENCY 탐색기 (화면 2) -->
             <div id="assistant" class="tab-content">
                 <div class="header-banner">
-                    <h1>Vision Assistant & 코드 유지/보수 화면</h1>
-                    <p>AI 채팅과 VS Code 탐색기가 유기적으로 연동되는 화면 구성입니다.</p>
+                    <h1>FILE DEPENDENCY (파일 의존성 탐색기)</h1>
+                    <p>현재 활성화된 파일의 의존성 관계(Imported Files 및 Referenced By Current File)를 트리 형태로 직관적으로 파악할 수 있는 화면입니다.</p>
                 </div>
                 <div class="grid-cards">
-                    <div class="card" onclick="sendAction('auto-briefing-click')">
-                        <h3>🤖 초기 자동 브리핑</h3>
-                        <p>프로젝트가 열리면 프로젝트 이름, 구성 정보, 현재 열려 있는 파일의 역할을 AI가 먼저 분석하여 설명해 줍니다.</p>
-                    </div>
-                    
-                    <!-- 현재 열린 파일 강조: screenshot.png -->
-                    <div class="card" onclick="sendAction('open-file-highlight-click')">
-                        <h3><span class="highlight-red">🔴 현재 열린 파일 강조</span></h3>
-                        <p>VS Code 탐색기에서 현재 화면에 열려 있는 파일과 연관성이 높은 파일 이름들을 <span class="highlight-red">빨간색</span>으로 시각적 구분 표시합니다.</p>
+                    <div class="card" style="grid-column: 1 / -1;" onclick="sendAction('file-dependency-click')">
+                        <h3>📂 FILE DEPENDENCY 트리 구조 및 기능 설명</h3>
+                        <p>현재 파일에서 가져온 외부 모듈/파일 목록과, 반대로 현재 파일을 참조하고 있는 연관 파일들을 한눈에 파악하여 효율적인 연관 코드 수정을 지원합니다.</p>
                         
-                        <div style="margin-top: 14px; text-align: center;">
-                            <img src="{{screenUrl}}" alt="현재 열린 파일 강조 예시" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <div style="margin-top: 16px; text-align: center;">
+                            <img src="{{ingUrl}}" alt="FILE DEPENDENCY UI 예시" style="max-width: 100%; max-height: 400px; height: auto; border-radius: 6px; border: 1px solid var(--border-color);">
                         </div>
-                    </div>
-                    
-                    <!-- sLLM 출처 파일 표시: css.png 연결 -->
-                    <div class="card" onclick="sendAction('sllm-source-click')">
-                        <h3><span class="highlight-blue">🔵 sLLM 출처 파일 표시</span></h3>
-                        <p>AI가 답변의 근거로 제시한 파일 이름들을 <span class="highlight-blue">파란색</span>으로 표시하여 원본 위치를 직관적으로 추적할 수 있습니다.</p>
-                        
-                        <div style="margin-top: 14px; text-align: center;">
-                            <img src="{{cssUrl}}" alt="sLLM 출처 파일 예시" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border-color);">
-                        </div>
+
+                        <ul style="margin-top: 16px;">
+                            <li><strong>Imported Files:</strong> 현재 파일에서 <code>import</code>하여 사용 중인 모듈 및 소스 파일 목록을 표시합니다.</li>
+                            <li><strong>Referenced By Current File:</strong> 현재 파일 또는 모듈을 참조하고 있는 프로젝트 내 타 파일 목록을 표시합니다.</li>
+                        </ul>
                     </div>
                 </div>
             </div>
 
-           <!-- 3. 코드 빠른 질문 (화면 3) -->
+            <!-- 3. 코드 빠른 질문 (화면 3) -->
             <div id="quickask" class="tab-content">
                 <div class="header-banner">
                     <h1>코드 빠른 질문 (Code Quick Ask)</h1>
@@ -410,7 +402,6 @@
                 </div>
 
                 <div class="grid-cards">
-                    <!-- 자동 코드 인젝션: vi.png 연결 -->
                     <div class="card" onclick="sendAction('auto-injection-click')">
                         <h3>🖱️ 자동 코드 인젝션</h3>
                         <p>코드를 드래그하고 우클릭 메뉴에서 <code style="color:#60a5fa">"vision: 이 코드 설명해줘"</code>를 선택하면, 선택된 파일명과 코드 블록(<code style="color:#60a5fa">@vision</code>)이 VS Code 챗 창에 자동으로 첨부됩니다.</p>
@@ -420,7 +411,6 @@
                         </div>
                     </div>
 
-                    <!-- 실시간 AI 설명: on.png 연결 -->
                     <div class="card" onclick="sendAction('realtime-ai-click')">
                         <h3>⚡ 실시간 AI 설명</h3>
                         <p>전송 시 백엔드와 연동되어 해당 코드에 대한 상세한 AI 설명을 즉시 받아볼 수 있습니다.</p>
@@ -432,8 +422,56 @@
                 </div>
             </div>
 
+            <!-- 4. Vision Chat 상세 가이드 (추려진 채팅 가이드) -->
+            <div id="chatguide" class="tab-content">
+                <div class="header-banner">
+                    <h1>Vision Chat 상세 가이드</h1>
+                    <p>VSCode Chat API 기반의 Vision Assistant 참가자 동작 및 활용 안내입니다.</p>
+                </div>
 
-            <!-- 4. 상세 기능 명세서 -->
+                <div class="grid-cards">
+                    <div class="card" onclick="sendAction('chat-overview-click')">
+                        <h3>🤖 Vision Assistant 개요</h3>
+                        <p>VSCode 내장 Chat UI에서 <code>@vision</code> 참가자를 선택하여 프로젝트 기반 질문을 진행합니다.</p>
+                        <ul>
+                            <li><strong>등록 ID:</strong> <code>vision.chat</code></li>
+                            <li><strong>참가자 이름:</strong> <code>@vision</code> (Vision Assistant)</li>
+                        </ul>
+                    </div>
+
+                    <div class="card" onclick="sendAction('chat-process-click')">
+                        <h3>⚡ 핵심 채팅 처리 프로세스</h3>
+                        <p>사용자 질문 입력 시 컨텍스트와 대화 이력을 결합하여 SSE 스트리밍 응답을 출력합니다.</p>
+                        <ul>
+                            <li><strong>프롬프트 구성:</strong> 질문 정리 및 대화 이력(<code>context.history</code>) 병합</li>
+                            <li><strong>컨텍스트 포함:</strong> 현재 활성 편집기 파일 전체 텍스트 자동 첨부</li>
+                            <li><strong>응답 전송:</strong> 백엔드 SSE 기반의 점진적 스트리밍 응답 제공 (<code>chatHandler_SSE.ts</code>)</li>
+                        </ul>
+                    </div>
+
+                    <div class="card" onclick="sendAction('chat-usage-click')">
+                        <h3>💡 주요 명령어 및 활용 팁</h3>
+                        <p>채팅 창과 편집기 명령어를 통해 손쉽게 AI 컨텍스트를 활용할 수 있습니다.</p>
+                        <ul>
+                            <li><strong>코드 설명:</strong> 우클릭 메뉴 또는 명령 팔레트 <code>vision: 이 코드 설명해줘</code> (ID: <code>vision.explainFile</code>)</li>
+                            <li><strong>가이드북 조율:</strong> <code>vision.showGuide</code> / <code>vision.toggleGuide</code></li>
+                            <li><strong>컨텍스트 팁:</strong> 활성 편집기를 유지한 채 질문하면 해당 코드 컨텍스트가 함께 전송됩니다.</li>
+                        </ul>
+                    </div>
+
+                    <div class="card" onclick="sendAction('chat-settings-click')">
+                        <h3>⚙️ 설정 및 개발자 안내</h3>
+                        <p><code>settings.json</code> 및 확장 내부 주요 등록 구조 정보입니다.</p>
+                        <ul>
+                            <li><code>vision.endpoint</code>: 백엔드 AI 서버 주소 설정</li>
+                            <li><code>vision.showGuideBook</code>: 활성화 시 가이드북 자동 실행 여부</li>
+                            <li><strong>이력 관리:</strong> <code>HistoryService</code>를 통해 사용자 질문 및 답변 기록</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. 상세 기능 명세서 (기존 4번) -->
             <div id="details" class="tab-content">
                 <h2>📋 화면 구성도 기반 기능 명세</h2>
                 <div class="table-responsive">
@@ -476,134 +514,10 @@
                 </div>
             </div>
 
-            <!-- 5. FastAPI 프로젝트 브리핑 -->
-            <div id="fastapi-briefing" class="tab-content">
-                <div class="header-banner">
-                    <h1>🚀 FastAPI 신규 개발자 온보딩 & 프로젝트 브리핑</h1>
-                    <p>Github에 등록된 FastAPI 프로젝트의 구조, 핵심 로직 및 신규 개발자가 반드시 알아야 할 상세 가이드입니다.</p>
-                </div>
-
-                <div class="grid-cards">
-                    <div class="card" onclick="sendAction('start-fastapi-briefing')">
-                        <h3>📢 FastAPI 프로젝트 전체 브리핑 실행</h3>
-                        <p>클릭 즉시 VS Code 챗 창을 통해 Github FastAPI 소스 코드 전체 구조와 핵심 로직에 대한 상세 자동 브리핑을 시작합니다.</p>
-                    </div>
-
-                    <div class="card" onclick="sendAction('fastapi-architecture')">
-                        <h3>🏛️ 프로젝트 아키텍처 및 디렉토리 구조</h3>
-                        <p>FastAPI 기반 백엔드의 계층형 구조(Router, Service, Repository, Schema)를 이해하고 각 폴더의 책임을 파악합니다.</p>
-                        <ul>
-                            <li><code>routers/</code>: API 엔드포인트 및 요청/응답 처리</li>
-                            <li><code>services/</code>: 비즈니스 로직 수행</li>
-                            <li><code>models/ schemas/</code>: DB 모델 및 Pydantic 데이터 검증</li>
-                        </ul>
-                    </div>
-
-                    <div class="card" onclick="sendAction('fastapi-dependency')">
-                        <h3>💉 의존성 주입 (Dependency Injection)</h3>
-                        <p>FastAPI의 핵심 기능인 <code>Depends</code>를 활용한 DB 세션 관리, 인증(Authentication) 및 공통 모듈 주입 방식을 확인합니다.</p>
-                    </div>
-
-                    <div class="card" onclick="sendAction('fastapi-workflow')">
-                        <h3>🔄 신규 기능 개발 및 수정 워크플로우</h3>
-                        <p>깃허브 소스 코드를 클론한 후 브랜치 전략에 맞춰 API를 추가하고, Pydantic 모델을 통한 데이터 유효성 검증을 구현하는 절차를 익힙니다.</p>
-                    </div>
-                </div>
-
-                <h2>📋 FastAPI 핵심 구성 요소 명세</h2>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>구분</th>
-                                <th>모듈 / 파일명</th>
-                                <th>역할 및 설명</th>
-                                <th>수정 시 주의사항</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Entrypoint</strong></td>
-                                <td><code>main.py</code></td>
-                                <td>FastAPI 앱 인스턴스 생성, CORS 설정 및 라우터 등록</td>
-                                <td>미들웨어 추가 시 순서 유의</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Validation</strong></td>
-                                <td><code>schemas.py</code></td>
-                                <td>Pydantic 기반의 Request/Response 데이터 구조 정의</td>
-                                <td>API 스펙 변경 시 프론트엔드와 사전 공유</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Database</strong></td>
-                                <td><code>database.py</code></td>
-                                <td>SQLAlchemy 세션 설정 및 Base 모델 정의</td>
-                                <td>비동기(Async) 세션 핸들링 주의</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- 6. 실무 개발 가이드 & 트러블슈팅 -->
-            <div id="fastapi-trouble" class="tab-content">
-                <div class="header-banner">
-                    <h1>🛠️ 실무 개발 가이드 & 트러블슈팅</h1>
-                    <p>신규 개발자가 코드를 수정하고 API를 개발할 때 자주 겪는 예외 처리, 비동기 세션 관리, 테스트 요령을 안내합니다.</p>
-                </div>
-
-                <div class="grid-cards">
-                    <div class="card" onclick="sendAction('fastapi-exception')">
-                        <h3>⚠️ 에러 핸들링 및 예외 처리</h3>
-                        <p><code>HTTPException</code>을 활용한 커스텀 에러 응답 반환 및 전역 예외 처리기를 통해 표준화된 에러 JSON 포맷을 유지합니다.</p>
-                    </div>
-
-                    <div class="card" onclick="sendAction('fastapi-async')">
-                        <h3>⚡ 비동기 프로그래밍 (Async/Await)</h3>
-                        <p>I/O 바운드 작업(DB 쿼리, 외부 API 호출) 시 <code>async def</code>와 일반 <code>def</code>의 차이점 및 SQLAlchemy 비동기 세션 관리 주의사항을 숙지합니다.</p>
-                    </div>
-
-                    <div class="card" onclick="sendAction('fastapi-testing')">
-                        <h3>🧪 API 문서화 및 단위 테스트</h3>
-                        <p>자동 생성되는 Swagger UI(<code>/docs</code>)의 Pydantic <code>Field</code> 예시 작성 팁과 Pytest를 활용한 엔드포인트 테스트 방법을 익힙니다.</p>
-                    </div>
-                </div>
-
-                <h2>📋 실무 필수 체크리스트</h2>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>구분</th>
-                                <th>체크 항목</th>
-                                <th>설명</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Security</strong></td>
-                                <td>환경 변수 관리</td>
-                                <td><code>.env</code> 파일을 통한 비밀키 및 DB 접속 정보 분리 관리</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Validation</strong></td>
-                                <td>Pydantic 타입 힌팅</td>
-                                <td>모든 Request Body 및 Query Parameter에 명확한 타입 정의</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Performance</strong></td>
-                                <td>N+1 쿼리 방지</td>
-                                <td>SQLAlchemy <code>selectinload</code> 또는 <code>joinedload</code> 활용</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
         </div>
     </main>
 
-    <!-- 👇 선이 제거된 하단 고정 영역 -->
+    <!-- 👇 하단 고정 체크박스 영역 -->
     <div class="checkbox-container" id="checkboxWrapper">
         <input type="checkbox" id="dontShowAgain">
         <label for="dontShowAgain">다음부터 이 가이드를 자동으로 표시하지 않습니다.</label>
@@ -613,7 +527,7 @@
     <script>
         const vscode = acquireVsCodeApi();
 
-        function switchTab(tabId, element, actionName) {
+        function switchTab(tabId, element) {
             const contents = document.querySelectorAll('.tab-content');
             contents.forEach(content => content.classList.remove('active'));
             
@@ -640,7 +554,6 @@
             };
 
             vscode.postMessage(payload);
-            
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -652,7 +565,6 @@
                     event.stopPropagation(); // 카드 클릭 이벤트 버블링 차단
                 });
             }
-
 
             if (dontShowCheckbox) {
                 dontShowCheckbox.addEventListener('change', (event) => {
@@ -669,7 +581,6 @@
                 });
             }
         });
-        
     </script>
 </body>
 </html>

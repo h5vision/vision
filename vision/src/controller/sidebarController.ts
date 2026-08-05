@@ -7,6 +7,7 @@ import { HistoryHandler } from "./handlers/historyHandler";
 import { IndexingHandler } from "./handlers/indexingHandler";
 import { ProjectInfoHandler } from "./handlers/projectInfoHandler";
 import { ProjectListHandler } from "./handlers/projectListHandler";
+import { ProjectBriefHandler } from "./handlers/projectBriefHandler";
 
 export class SidebarController {
 
@@ -15,6 +16,7 @@ export class SidebarController {
     private readonly indexingHandler: IndexingHandler;
     private readonly projectInfoHandler: ProjectInfoHandler;
     private readonly projectListHandler: ProjectListHandler;
+    private readonly projectBriefHandler: ProjectBriefHandler;
 
     constructor(
         private readonly view: vscode.WebviewView
@@ -24,6 +26,7 @@ export class SidebarController {
         this.indexingHandler = new IndexingHandler(view);
         this.projectInfoHandler = new ProjectInfoHandler(view);
         this.projectListHandler = new ProjectListHandler(view);
+        this.projectBriefHandler = new ProjectBriefHandler(view);
     }
 
     public async handle(message: SidebarMessage) {
@@ -47,17 +50,9 @@ export class SidebarController {
 
             case SidebarCommand.GetProjectList: 
                 return this.projectListHandler.handle(message);
-                
-            
-            
 
-            case SidebarCommand.GetGuideStatus:
-                const guideStatus = vscode.workspace.getConfiguration('vision').get('showGuideBook', false);
-                this.view.webview.postMessage({
-                    command: "guideStatus",
-                    data: guideStatus
-                });
-                return;
+            case SidebarCommand.GenerateProjectBrief:
+                return this.projectBriefHandler.handle(message);
 
             case SidebarCommand.UpdateEndpoint:
                 await vscode.workspace.getConfiguration('vision')
@@ -70,6 +65,15 @@ export class SidebarController {
                     "Endpoint가 변경되었습니다."
                 );
                 return this.APIHandler.handle(message);
+
+            
+            case SidebarCommand.GetGuideStatus:
+                const guideStatus = vscode.workspace.getConfiguration('vision').get('showGuideBook', false);
+                this.view.webview.postMessage({
+                    command: "guideStatus",
+                    data: guideStatus
+                });
+                return;
             
             case SidebarCommand.ToggleGuide:
                 vscode.commands.executeCommand('vision.toggleGuide');

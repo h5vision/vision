@@ -83,7 +83,13 @@
         "name": "vision",
         "fullName": "Vision Assistant",
         "description": "Ask Vision about your project",
-        "isSticky": true
+        "isSticky": true,
+        "commands":[
+          {
+            "name": "brief",
+            "description": "프로젝트 브리핑을 생성합니다. "
+          }
+        ]
       }
     ]
   },

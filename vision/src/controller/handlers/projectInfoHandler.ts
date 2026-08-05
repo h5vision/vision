@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import { WorkspaceService } from "../../services/workspaceService";
 import { SidebarMessage } from "../../types/sidebarMessage";
 import { GitService } from "../../services/gitService";
-import { waitUntil } from "../../utils/wait";
 
 export class ProjectInfoHandler {
 

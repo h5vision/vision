@@ -72,7 +72,7 @@ body {
     text-align:left;
 }
 .icon-btn:hover {
-    opacity: 0.7;
+    color: var(--vscode-focusBorder);
 }
 
 .project-info-box div {
@@ -116,22 +116,13 @@ body {
     vertical-align: sub;
 }
 
-#toggle-guide-btn {
-    width: 100%; 
-    cursor: pointer; 
-    background-color: var(--vscode-button-secondaryBackground); 
-    color: var(--vscode-button-secondaryForeground); 
-    border: none; 
-    border-radius: 3px;
-}
-#toggle-guide-btn:hover {
-    opacity: 1;
-    color: var(--vscode-focusBorder);
-}
-
 .ellipsis {
   width: max-width;           /* 또는 max-width */
   white-space: nowrap;    /* 줄바꿈 방지 */
   overflow: hidden;       /* 넘치는 내용 숨김 */
   text-overflow: ellipsis;/* ... 표시 */
+}
+
+.block-btn {
+    display:block;
 }

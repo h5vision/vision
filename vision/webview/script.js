@@ -57,6 +57,20 @@ document.addEventListener("DOMContentLoaded", () => {
         vscode.postMessage({ command: "toggleGuide" });
     });
 
+    // Project List 새로고침
+    const refreshProjectBtn = document.getElementById("refresh-projects-btn");
+    refreshProjectBtn.addEventListener("click", () => {
+        const prjList = document.getElementById('project-list-content');
+        prjList.innerHTML = `<div style="padding: 4px 0; opacity: 0.8;">• 프로젝트 목록을 불러오는 중...</div>`;
+        setTimeout(()=>vscode.postMessage({ command: "getProjectList" }), 1000);
+    });
+
+    // 프로젝트 브리핑 by Copilot
+    const prjBriefBtn = document.getElementById("project-brief-btn");
+    prjBriefBtn.addEventListener("click", () => {
+        vscode.postMessage({ command: "generateProjectBrief" });
+    });
+
 });
 
 const vscode = acquireVsCodeApi();
@@ -78,7 +92,6 @@ function updateBackendStatus(status) {
 
 }
 
-// 💡 안전한 이벤트 리스너 방식으로 아코디언을 동적 생성 및 렌더링
 function renderProjectList(projects) {
     const container = document.getElementById("project-list-content");
     if (!container) {return;}
@@ -217,6 +230,7 @@ window.addEventListener("message", event => {
         case "guideStatus": {
             const guideStatus = message.data;
             document.getElementById("GuideStatus").textContent = guideStatus ? "닫기" : "열기";
+            break;
         }
 
         case "showProjectList": {
