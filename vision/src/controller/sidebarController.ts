@@ -8,6 +8,7 @@ import { IndexingHandler } from "./handlers/indexingHandler";
 import { ProjectInfoHandler } from "./handlers/projectInfoHandler";
 import { ProjectListHandler } from "./handlers/projectListHandler";
 import { ProjectBriefHandler } from "./handlers/projectBriefHandler";
+import { RAGTESTHandler } from "./handlers/RAGTESTHandler";
 
 export class SidebarController {
 
@@ -17,6 +18,7 @@ export class SidebarController {
     private readonly projectInfoHandler: ProjectInfoHandler;
     private readonly projectListHandler: ProjectListHandler;
     private readonly projectBriefHandler: ProjectBriefHandler;
+    private readonly ragtestHandler: RAGTESTHandler;
 
     constructor(
         private readonly view: vscode.WebviewView
@@ -27,6 +29,7 @@ export class SidebarController {
         this.projectInfoHandler = new ProjectInfoHandler(view);
         this.projectListHandler = new ProjectListHandler(view);
         this.projectBriefHandler = new ProjectBriefHandler(view);
+        this.ragtestHandler = new RAGTESTHandler(view);
     }
 
     public async handle(message: SidebarMessage) {
@@ -53,6 +56,9 @@ export class SidebarController {
 
             case SidebarCommand.GenerateProjectBrief:
                 return this.projectBriefHandler.handle(message);
+
+            case SidebarCommand.GenerateRAGTEST:
+                return this.ragtestHandler.handle(message);
 
             case SidebarCommand.UpdateEndpoint:
                 await vscode.workspace.getConfiguration('vision')

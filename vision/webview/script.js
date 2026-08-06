@@ -71,6 +71,12 @@ document.addEventListener("DOMContentLoaded", () => {
         vscode.postMessage({ command: "generateProjectBrief" });
     });
 
+    const genRAGTBtn = document.getElementById("gen-RAGTEST-btn");
+    genRAGTBtn.addEventListener("click", () => {
+        const testN = document.getElementById('testN').value;
+        vscode.postMessage({ command: "generateRAGTEST", data: Number(testN)});
+    });
+
 });
 
 const vscode = acquireVsCodeApi();

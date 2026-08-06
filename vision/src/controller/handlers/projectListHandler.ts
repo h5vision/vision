@@ -35,7 +35,6 @@ export class ProjectListHandler {
         await this.gitService.initialize();
         if (this.gitService.exists()) {
             const gitCommits = (await this.gitService.getRecentCommits()).map(m=>m.hash.slice(0,7) + ' ─ ' + m.message);
-            console.log(gitCommits);
             sampleProjects.push({id:0, name: "[ Local ] "+response.name, commits:gitCommits});
         }
 
