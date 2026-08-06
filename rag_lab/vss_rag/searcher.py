@@ -17,9 +17,11 @@ D9 실측 (2026-07-27, BGE-M3 + cosine)
 from __future__ import annotations
 
 import re
+import time
 
 from .config import CFG
 from .embedder import embed_one
+from . import lexical, rerank
 from .references import build_references, parse_citations
 from .store import Store
 
@@ -36,23 +38,72 @@ def search(query: str, project_id: str, top_k: int | None = None,
     th = threshold if threshold is not None else CFG.score_threshold
     st = store or Store()
 
+    # ⚠ 이 두 단계가 TTFT 임계 경로입니다.
+    #    스트리밍을 써도 여기가 끝나야 LLM 호출이 시작됩니다.
+    t0 = time.perf_counter()
     vec = embed_one(query)
-    hits = st.query(project_id, vec, k)
+    t1 = time.perf_counter()
+
+    # 개선 기능이 켜져 있으면 후보를 넉넉히 뽑습니다.
+    # MMR·융합은 후보가 많아야 고를 여지가 생깁니다.
+    pool = CFG.fusion_pool if (CFG.use_bm25 or CFG.use_mmr) else k
+    hits = st.query(project_id, vec, max(pool, k))
+    t2 = time.perf_counter()
+
+    timing = {
+        "embed_ms": round((t1 - t0) * 1000, 1),
+        "search_ms": round((t2 - t1) * 1000, 1),
+    }
 
     if not hits:
         return {"has_evidence": False, "contexts": [], "all_hits": [],
-                "top_score": None, "threshold": th, "reason": "empty_index"}
+                "top_score": None, "threshold": th,
+                "reason": "empty_index", "timing": timing}
+
+    # ── BM25 융합 ────────────────────────────────────────────
+    # ⚠ 벡터 점수(score)는 그대로 유지합니다.
+    #    융합 점수로 덮어쓰면 임계값 0.54 판정이 불가능해집니다.
+    #    융합은 "순서"만 바꾸고, 임계값은 벡터 점수로 판단합니다.
+    if CFG.use_bm25:
+        t_bm = time.perf_counter()
+        idx = lexical.BM25.load(lexical.index_path(project_id))
+        if idx:
+            lex = idx.search(query, pool)
+            fused = lexical.rrf_fuse(hits, lex, k=60)
+
+            by_id = {h["_id"]: h for h in hits}
+            missing = [i for i, _ in lex if i not in by_id]
+            if missing:
+                by_id.update(st.get_by_ids(project_id, missing[:pool]))
+
+            hits = sorted(
+                (by_id[i] for i in fused if i in by_id),
+                key=lambda h: -fused[h["_id"]],
+            )
+        timing["bm25_ms"] = round((time.perf_counter() - t_bm) * 1000, 1)
 
     top = hits[0]["score"]
+
+    # ── 임계값 판정 ─────────────────────────────────────────
+    # ⚠ 벡터 점수 기준입니다. BM25 로만 올라온 청크는 score 가 0 이라
+    #    임계값을 못 넘습니다. 의도된 동작입니다 —
+    #    D9 실측(0.53~0.55)은 벡터 점수 분포에서 나온 값이기 때문입니다.
     passed = [h for h in hits if h["score"] >= th]
+
+    # ── MMR · 배치 조정 ─────────────────────────────────────
+    if passed:
+        passed = rerank.postprocess(passed, k)
+    else:
+        hits = hits[:k]
 
     return {
         "has_evidence": bool(passed),
         "contexts": passed,
-        "all_hits": hits,          # 임계값 튜닝용. 탈락한 것도 확인 가능
+        "all_hits": hits[:max(k * 2, 10)],   # 임계값 튜닝용. 탈락한 것도 확인 가능
         "top_score": top,
         "threshold": th,
         "reason": "ok" if passed else "below_threshold",
+        "timing": timing,
     }
 
 

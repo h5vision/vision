@@ -62,12 +62,37 @@ class Config:
     chunk_size: int = field(default_factory=lambda: _env("VSS_CHUNK_SIZE", 1200))
     chunk_overlap: int = field(default_factory=lambda: _env("VSS_CHUNK_OVERLAP", 150))
     min_chunk_chars: int = field(default_factory=lambda: _env("VSS_MIN_CHUNK", 80))
+    # 맥락 헤더 — 청크 앞에 "# 경로 > class X > def y" 를 붙여 임베딩에 포함시킵니다.
+    # ⚠ 켜고 끄면 청크 텍스트가 달라지므로 재인덱싱이 필요합니다.
+    #    평가셋으로 A/B 비교하기 위해 토글로 만들었습니다. 기본은 꺼짐.
+    context_header: bool = field(default_factory=lambda: _env("VSS_CONTEXT_HEADER", False))
     max_file_bytes: int = field(default_factory=lambda: _env("VSS_MAX_FILE_BYTES", 1_000_000))
 
     # ── 검색 (md 실험 대상) ──────────────────────────────────
     top_k: int = field(default_factory=lambda: _env("VSS_TOP_K", 4))
     # FN-B06 근거 없음 판정. D9 실측: answerable 최저 0.5531 / no-answer 최고 0.5306
     score_threshold: float = field(default_factory=lambda: _env("VSS_THRESHOLD", 0.5400))
+
+    # ── 검색 개선 (전부 토글. 평가셋으로 A/B 비교하기 위함) ──
+    #
+    # ⚠ 재인덱싱이 필요한 것과 아닌 것을 구분하세요.
+    #    context_header, use_bm25  →  재인덱싱 필요 (fingerprint 포함)
+    #    use_mmr, reorder_context  →  후처리라 즉시 적용
+
+    # BM25 어휘 검색을 벡터 검색과 합칩니다.
+    # 코드의 고유명사(함수명·변수명) 매칭에 강합니다.
+    use_bm25: bool = field(default_factory=lambda: _env("VSS_USE_BM25", False))
+    # 벡터 : BM25 가중치. 1.0 이면 벡터만, 0.0 이면 BM25 만.
+    bm25_weight: float = field(default_factory=lambda: _env("VSS_BM25_WEIGHT", 0.4))
+    # 융합 전에 각 경로에서 뽑을 후보 수. top_k 보다 넉넉해야 합니다.
+    fusion_pool: int = field(default_factory=lambda: _env("VSS_FUSION_POOL", 20))
+
+    # 같은 파일에 결과가 편중되는 것을 완화합니다.
+    use_mmr: bool = field(default_factory=lambda: _env("VSS_USE_MMR", False))
+    mmr_lambda: float = field(default_factory=lambda: _env("VSS_MMR_LAMBDA", 0.7))
+
+    # 프롬프트 안에서 근거 배치를 조정합니다 (lost in the middle 완화).
+    reorder_context: bool = field(default_factory=lambda: _env("VSS_REORDER", False))
 
     # ── 저장 ─────────────────────────────────────────────────
     index_dir: str = field(default_factory=lambda: _env("VSS_INDEX_DIR", "./data/index"))
@@ -83,6 +108,8 @@ class Config:
             "embed_model": self.embed_model,
             "chunk_size": self.chunk_size,
             "chunk_overlap": self.chunk_overlap,
+            "context_header": self.context_header,
+            "use_bm25": self.use_bm25,
         }
 
     def to_dict(self) -> dict:

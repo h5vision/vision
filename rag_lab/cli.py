@@ -57,6 +57,47 @@ def cmd_health(args):
     return 0
 
 
+def cmd_update(args):
+    """증분 인덱싱 — 바뀐 파일만."""
+    root = args.root or indexer.get_state(args.project).get("project_root")
+    if not root:
+        print("!! 레포 경로를 알 수 없습니다. 인자로 주세요.")
+        return 1
+
+    # 먼저 무엇이 바뀌었는지 확인
+    plan = indexer.preview_update(root, args.project)
+    if not plan.get("ok"):
+        print(f"증분 불가: {plan.get('reason')}")
+        print(f"  {plan.get('detail', '')}")
+        if plan.get("reason") in ("params_changed", "too_many_changes"):
+            print(f"\n  전체 인덱싱:  python cli.py index {root} --project {args.project} --force")
+        return 1
+
+    ch = plan["changes"]
+    print(f"{plan['old_commit'][:8]} → {plan['new_commit'][:8]}")
+    print(f"  수정 {len(ch['modified'])} / 추가 {len(ch['added'])} / "
+          f"삭제 {len(ch['deleted'])} / 이름변경 {len(ch['renamed'])}")
+    print(f"  → 재인덱싱 대상 {len(plan['to_index'])}개 (전체 {plan['total_files']})")
+    for f in plan["to_index"][:10]:
+        print(f"      {f}")
+    if len(plan["to_index"]) > 10:
+        print(f"      ... 외 {len(plan['to_index']) - 10}개")
+
+    if args.dry_run:
+        print("\n(--dry-run 이므로 실행하지 않음)")
+        return 0
+
+    print("\n실행 중...")
+    t0 = time.time()
+    r = indexer.start_update(root, args.project, blocking=True, force=args.force)
+    st = indexer.get_state(args.project)
+    print(json.dumps({k: st.get(k) for k in
+                      ("state", "chunk_count", "commit", "elapsed_s", "error")},
+                     ensure_ascii=False, indent=2))
+    print(f"\n소요 {time.time()-t0:.1f}s")
+    return 0
+
+
 def cmd_reset(args):
     print(json.dumps(indexer.clear_state(args.project), ensure_ascii=False))
     print("인덱스 데이터는 재인덱싱 시 자동으로 정리됩니다.")
@@ -193,6 +234,14 @@ def main():
 
     p = sub.add_parser("reset"); p.set_defaults(fn=cmd_reset)
     p.add_argument("--project", required=True)
+
+    p = sub.add_parser("update"); p.set_defaults(fn=cmd_update)
+    p.add_argument("root", nargs="?", default=None,
+                   help="생략하면 이전 인덱싱 경로를 사용")
+    p.add_argument("--project", required=True)
+    p.add_argument("--dry-run", action="store_true",
+                   help="무엇이 바뀌었는지만 보고 실행하지 않음")
+    p.add_argument("--force", action="store_true")
 
     p = sub.add_parser("index"); p.set_defaults(fn=cmd_index)
     p.add_argument("root"); p.add_argument("--project", required=True)

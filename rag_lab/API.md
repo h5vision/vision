@@ -358,3 +358,146 @@ const uri = `vscode://file/${workspaceRoot}/${ref.path}:${ref.line}`;
 ```
 
 ⚠ `/finalize` 는 순수 문자열 처리라 **모델을 호출하지 않습니다.** 빠릅니다.
+
+---
+
+# 부록 B. 스트리밍 (2026-08-04 추가)
+
+## 🔑 핵심 — rag_lab 은 스트리밍을 하지 않습니다
+
+LLM 호출은 **P가 Ollama로 직접** 합니다. rag_lab 은 그 전후에 관여합니다.
+
+```
+[질문]
+   │
+   ├─① POST rag_lab/prompt      messages + references(미리보기)
+   │       ↓ 프론트에 출처 먼저 전송 가능
+   │
+   ├─② POST ollama/api/chat     "stream": true
+   │       ↓ 조각을 Extension 으로 중계
+   │
+   └─③ POST rag_lab/finalize    인용된 것만 추린 최종 출처
+           ↓ 출처 영역 교체
+```
+
+## ⚠ ①이 TTFT 임계 경로에 있습니다
+
+```
+TTFT = /prompt 시간 + Ollama prefill 시간
+```
+
+`/prompt` 가 2초 걸리면 스트리밍을 써도 **첫 글자까지 3초**입니다.
+그래서 응답에 `timing` 을 항상 포함합니다.
+
+```json
+"timing": {"embed_ms": 320.5, "search_ms": 18.2, "total_ms": 345.1}
+```
+
+| 필드 | 의미 |
+|---|---|
+| `embed_ms` | 질문을 벡터로 바꾸는 시간 (Ollama 왕복) |
+| `search_ms` | 벡터 검색 |
+| `total_ms` | `/prompt` 전체 |
+
+**P 쪽 로그에 `total_ms` 를 남겨두시면** TTFT 예산 초과 시 원인 규명이 빨라집니다.
+
+## `light` 옵션 (기본 true)
+
+```json
+{"query": "...", "project_id": "fest-api", "light": true}
+```
+
+`sources` 에서 청크 원문을 뺍니다. 원문은 이미 `messages` 안에 있어 **중복**이고,
+`/finalize` 는 `path` · `line` 만 있으면 동작합니다.
+
+⚠ 청크 4개면 약 5KB 절감. 네트워크가 느릴 때 유효합니다.
+원문이 필요하면 `light: false`.
+
+## 참고 구현
+
+```python
+import json, requests
+
+def stream_answer(query, project_id):
+    # ① 검색 + 프롬프트 조립
+    d = requests.post(f"{RAG_LAB}/prompt",
+                      json={"query": query, "project_id": project_id, "light": True},
+                      timeout=60).json()
+
+    # 근거 없으면 LLM 호출하지 않음 (FN-B06)
+    if not d["has_evidence"]:
+        yield {"type": "no_evidence"}
+        return
+
+    # 출처를 먼저 보냅니다 — 생성 전에 이미 확정돼 있습니다
+    yield {"type": "sources_preview", "reference_files": d["reference_files"]}
+    yield {"type": "stage", "text": f"근거 {len(d['sources'])}건 확인"}
+
+    # ② LLM 스트리밍
+    yield {"type": "stage", "text": "답변 생성 중..."}
+    resp = requests.post(f"{OLLAMA}/api/chat", json={
+        "model": "qwen2.5-coder:7b",
+        "messages": d["messages"],
+        "stream": True,
+        "options": {"num_ctx": 8192},
+    }, stream=True, timeout=180)
+
+    answer = ""
+    for line in resp.iter_lines():
+        if not line:
+            continue
+        chunk = json.loads(line)
+        piece = chunk.get("message", {}).get("content", "")
+        if piece:
+            answer += piece
+            yield {"type": "delta", "text": piece}     # 조각 중계
+        if chunk.get("done"):
+            break
+
+    # ③ 인용된 근거만 추려 최종 출처로 교체
+    final = requests.post(f"{RAG_LAB}/finalize",
+                          json={"answer": answer, "sources": d["sources"]},
+                          timeout=30).json()
+    yield {"type": "done",
+           "answer": final["answer"],
+           "references": final["references"],
+           "reference_files": final["reference_files"],
+           "no_evidence": final["no_evidence"]}
+```
+
+## 📌 출처를 두 번 보내는 이유
+
+| 시점 | 내용 | 근거 |
+|---|---|---|
+| 생성 **전** (`/prompt`) | 검색된 **전부** | 스트리밍 중 화면이 비지 않게 |
+| 생성 **후** (`/finalize`) | 모델이 **인용한 것만** | 안 쓴 근거를 출처로 표시하면 오해 |
+
+프론트는 미리보기를 회색으로 표시했다가, `done` 에서 교체하면 자연스럽습니다.
+
+## ⚠ NO_EVIDENCE 후처리
+
+모델이 스트리밍 중 `NO_EVIDENCE` 만 출력할 수 있습니다.
+`/finalize` 가 이를 감지해 `no_evidence: true` 로 돌려주므로,
+프론트는 그때 SC-10b 전용 화면으로 전환하면 됩니다.
+
+## 서버 기동 시 워밍업
+
+`server.py` 는 시작할 때 인덱스 로드와 임베딩 워밍업을 미리 합니다.
+
+```
+  워밍업 중...
+    인덱스 로드      412 ms  ['fest-api']
+    임베딩 워밍업    287 ms
+```
+
+⚠ 이걸 안 하면 **첫 `/prompt` 요청이 수 초** 걸립니다.
+서버를 재시작한 직후 바로 데모하지 마시고, 위 줄이 출력된 것을 확인하세요.
+
+## 측정
+
+```powershell
+python bench_ttft.py --project fest-api --repeat 5
+python bench_ttft.py --project fest-api --no-stream     # 비교용
+```
+
+구간별 p50/p95 와 3초 목표 통과 여부를 출력합니다.

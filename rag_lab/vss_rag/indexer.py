@@ -20,6 +20,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import incremental, lexical
 from .config import CFG
 from .chunker import chunk_file, collect_files
 from .embedder import embed_many
@@ -173,6 +174,15 @@ def _run(project_root: str, project_id: str, store: Store) -> None:
             store.add(project_id, buf, vecs)
             total_chunks += len(buf)
 
+        # ── BM25 역색인 ─────────────────────────────────────
+        # ⚠ 벡터 인덱스가 완성된 뒤에 만듭니다. 저장된 청크를 그대로
+        #    읽어서 색인하므로, 청크 텍스트와 항상 일치합니다.
+        #    (청킹 단계에서 따로 모으면 중간 실패 시 어긋납니다)
+        if CFG.use_bm25:
+            _update(project_id, state="indexing_lexical")
+            all_c = store.all_chunks(project_id)
+            lexical.build(project_id, all_c)
+
         _update(
             project_id,
             state="done",
@@ -224,6 +234,75 @@ def start_index(project_root: str, project_id: str, blocking: bool = False,
         target=_run, args=(str(root), project_id, store), daemon=True
     ).start()
     return {"accepted": True, "project_id": project_id, "state": "running"}
+
+
+def start_update(project_root: str, project_id: str,
+                 blocking: bool = False, force: bool = False) -> dict:
+    """
+    증분 인덱싱. 바뀐 파일만 다시 처리합니다.
+
+    ⚠ 불가능한 경우(파라미터 변경·git 아님 등)에는 실행하지 않고
+       이유를 돌려줍니다. 자동으로 전체 인덱싱으로 넘어가지 않습니다 —
+       55분짜리 작업이 예고 없이 시작되면 곤란하기 때문입니다.
+    """
+    cur = get_state(project_id)
+    if cur.get("state") == "running":
+        age = time.time() - (cur.get("heartbeat") or 0)
+        if age < STALE_AFTER and not force:
+            return {"ok": False, "reason": "already_running",
+                    "heartbeat_age_s": round(age, 1)}
+
+    root = Path(project_root or cur.get("project_root") or "").resolve()
+    check = incremental.can_update(root, project_id, cur)
+    if not check["ok"]:
+        # 전체 인덱싱이 필요하다는 안내를 그대로 전달합니다.
+        return check
+
+    store = Store()
+
+    def _run_update():
+        _update(project_id, state="updating", processed=0,
+                total=len(check["to_index"]), error=None)
+        try:
+            def prog(i, n):
+                _update(project_id, processed=i, total=n)
+
+            r = incremental.update(str(root), project_id, store, cur,
+                                   on_progress=prog)
+            if r.get("ok"):
+                _update(project_id, state="done",
+                        commit=r["new_commit"],
+                        dirty=git_dirty(root),
+                        chunk_count=r["chunk_count"],
+                        processed=r["files_indexed"],
+                        total=r["files_indexed"],
+                        indexed_at=r["indexed_at"],
+                        elapsed_s=r["elapsed_s"],
+                        last_mode="incremental",
+                        error=None)
+            else:
+                _update(project_id, state="done",
+                        error=f"update skipped: {r.get('reason')}")
+        except Exception as e:
+            _update(project_id, state="failed",
+                    error=f"{type(e).__name__}: {e}")
+            raise
+
+    if blocking:
+        _run_update()
+        return {"ok": True, "project_id": project_id, **get_state(project_id)}
+
+    threading.Thread(target=_run_update, daemon=True).start()
+    return {"ok": True, "project_id": project_id, "state": "updating",
+            "to_index": len(check["to_index"]),
+            "to_delete": len(check["to_delete"])}
+
+
+def preview_update(project_root: str, project_id: str) -> dict:
+    """실행하지 않고 무엇이 바뀌었는지만 확인합니다."""
+    cur = get_state(project_id)
+    root = Path(project_root or cur.get("project_root") or "").resolve()
+    return incremental.can_update(root, project_id, cur)
 
 
 def has_index(project_id: str) -> dict:

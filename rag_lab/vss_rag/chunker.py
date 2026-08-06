@@ -14,6 +14,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from . import context_header
 from .config import CFG, CODE_EXT, DOC_EXT, SKIP_DIRS, SKIP_FILE_PATTERNS
 
 _HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
@@ -82,12 +83,21 @@ def chunk_code(text: str, rel_path: str) -> list[dict]:
 
         body = "\n".join(buf).strip()
         if len(body) >= CFG.min_chunk_chars:
+            # 이 청크를 감싸는 정의(class / def 등)를 위쪽에서 찾습니다.
+            # ⚠ 임베딩은 텍스트만 보므로, 이 정보가 텍스트에 들어가야
+            #    "결제 처리는 어디서?" 같은 질문과 연결됩니다.
+            enclosing = context_header.find_enclosing(lines, i) if CFG.context_header else []
+            if CFG.context_header:
+                hdr = context_header.build(rel_path, "code", enclosing=enclosing)
+                body = context_header.apply(body, hdr)
+
             chunks.append({
                 "type": "code",
                 "path": rel_path,
                 "line_start": i + 1,      # 1-based
                 "line_end": j,
                 "section": None,
+                "enclosing": enclosing or None,
                 "text": body,
             })
 
@@ -130,24 +140,34 @@ def chunk_doc(text: str, rel_path: str) -> list[dict]:
             continue
 
         if len(body) <= CFG.chunk_size * 1.5:
+            if CFG.context_header:
+                hdr = context_header.build(rel_path, "doc", section=title)
+                body = context_header.apply(body, hdr)
             chunks.append({
                 "type": "doc",
                 "path": rel_path,
                 "line_start": start,
                 "line_end": start + len(body_lines) - 1,
                 "section": title,
+                "enclosing": None,
                 "text": body,
             })
         else:
             # 긴 섹션은 다시 자르되 섹션 제목은 유지
             for sub in chunk_code(body, rel_path):
+                sub_text = sub["text"]
+                if CFG.context_header:
+                    sub_text = context_header.strip(sub_text)
+                    hdr = context_header.build(rel_path, "doc", section=title)
+                    sub_text = context_header.apply(sub_text, hdr)
                 chunks.append({
                     "type": "doc",
                     "path": rel_path,
                     "line_start": start + sub["line_start"] - 1,
                     "line_end": start + sub["line_end"] - 1,
                     "section": title,
-                    "text": sub["text"],
+                    "enclosing": None,
+                    "text": sub_text,
                 })
     return chunks
 
@@ -162,7 +182,13 @@ def chunk_file(path: Path, root: Path) -> list[dict]:
         return []
 
     rel = path.relative_to(root).as_posix()
-    return chunk_doc(text, rel) if kind == "doc" else chunk_code(text, rel)
+    chunks = chunk_doc(text, rel) if kind == "doc" else chunk_code(text, rel)
+
+    # ⚠ 파일 내 순번. 증분 인덱싱에서 청크 ID 를 안정적으로 만들기 위해 필요합니다.
+    #    순번이 없으면 "이 파일의 청크"를 특정할 수 없어 부분 삭제가 불가능합니다.
+    for i, c in enumerate(chunks):
+        c["chunk_index"] = i
+    return chunks
 
 
 def chunk_repo(root: str | Path) -> tuple[list[dict], list[Path]]:

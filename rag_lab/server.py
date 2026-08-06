@@ -22,12 +22,13 @@ from __future__ import annotations
 import argparse
 import json
 import threading
+import time
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
 from vss_rag.config import CFG
-from vss_rag import embedder, indexer, references, searcher
+from vss_rag import briefing, embedder, indexer, references, searcher
 from vss_rag.store import Store
 
 TOKEN: str | None = None
@@ -113,6 +114,24 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send(400, {"error": "project_id required"})
                 return self._send(200, indexer.has_index(pid))
 
+            if path == "/briefing":
+                pid = (q.get("project_id") or [None])[0]
+                if not pid:
+                    return self._send(400, {"error": "project_id required"})
+                rec = briefing.load(pid)
+                if not rec:
+                    return self._send(404, {"error": "not_generated",
+                                            "project_id": pid})
+                # 인덱스가 그 사이 갱신됐는지 알려줍니다.
+                # ⚠ 자동 재생성은 하지 않습니다 — 커밋마다 23초 생성은 낭비이고,
+                #    LLM 은 비결정적이라 코드가 안 바뀌어도 문장이 달라집니다.
+                st = indexer.get_state(pid)
+                rec["index_commit"] = st.get("commit")
+                rec["outdated"] = bool(
+                    rec.get("commit") and st.get("commit")
+                    and rec["commit"] != st["commit"])
+                return self._send(200, rec)
+
             if path == "/projects":
                 return self._send(200, {"projects": indexer.list_projects()})
 
@@ -141,6 +160,26 @@ class Handler(BaseHTTPRequestHandler):
                                         force=bool(body.get("force")))
                 return self._send(202 if r.get("accepted") else 409, r)
 
+            # ── 증분 인덱싱 ─────────────────────────────────
+            # 바뀐 파일만 다시 처리합니다. 보통 몇 초면 끝납니다.
+            # ⚠ 불가능하면 실행하지 않고 이유를 돌려줍니다.
+            #    전체 인덱싱(55분)이 예고 없이 시작되지 않도록 하기 위함입니다.
+            if path == "/index/update":
+                pid = body.get("project_id")
+                if not pid:
+                    return self._send(400, {"error": "project_id required"})
+                root = body.get("project_root") or \
+                    indexer.get_state(pid).get("project_root")
+                if not root:
+                    return self._send(400, {"error": "project_root_unknown"})
+
+                if body.get("dry_run"):
+                    return self._send(200, indexer.preview_update(root, pid))
+
+                r = indexer.start_update(root, pid, blocking=False,
+                                         force=bool(body.get("force")))
+                return self._send(202 if r.get("ok") else 409, r)
+
             # ── 검색 (FN-B02) ───────────────────────────────
             if path == "/search":
                 query = body.get("query")
@@ -161,7 +200,13 @@ class Handler(BaseHTTPRequestHandler):
 
             # ── 검색 + 프롬프트 조립 ─────────────────────────
             # LLM 호출은 백엔드가 합니다. 여기서는 messages 만 만듭니다.
+            #
+            # ⚠ 이 엔드포인트는 TTFT 임계 경로에 있습니다.
+            #    P 가 여기 응답을 받아야 Ollama 호출을 시작할 수 있으므로,
+            #    여기서 쓴 시간이 그대로 첫 글자 지연에 더해집니다.
+            #    timing 필드로 항상 계측값을 돌려줍니다.
             if path == "/prompt":
+                t_start = time.perf_counter()
                 query = body.get("query")
                 pid = body.get("project_id")
                 if not query or not pid:
@@ -180,14 +225,46 @@ class Handler(BaseHTTPRequestHandler):
                     include_text=bool(body.get("include_text")),
                 )
 
+                # light=true 면 sources 에서 청크 원문을 뺍니다.
+                # 원문은 이미 messages 안에 들어 있어 중복이고,
+                # /finalize 는 path·line 만 있으면 동작합니다.
+                light = body.get("light", True)
+                if light:
+                    sources = [{k: v for k, v in c.items() if k != "text"}
+                               for c in r["contexts"]]
+                else:
+                    sources = r["contexts"]
+
+                timing = dict(r.get("timing") or {})
+                timing["total_ms"] = round((time.perf_counter() - t_start) * 1000, 1)
+
+                # 단계 표시(FN-B05)용 메타데이터.
+                # 실제 단계 전환 신호는 P가 만듭니다 — /prompt 는 345ms 안에
+                # 끝나므로 내부 단계를 쪼개 보내도 사용자가 볼 시간이 없습니다.
+                # 여기서는 P가 문구에 넣을 "숫자"만 제공합니다.
+                n_chunks = len(r["contexts"])
+                n_files = len(pre["reference_files"])
+                stage = {
+                    "retrieved": n_chunks,
+                    "files": n_files,
+                    "top_score": r["top_score"],
+                    "threshold": r["threshold"],
+                    # 프론트가 그대로 써도 되고, 직접 조립해도 됩니다
+                    "label": (f"근거 {n_chunks}건 확인"
+                              + (f" ({n_files}개 파일)" if n_files > 1 else "")
+                              if r["has_evidence"] else "관련 근거를 찾지 못했습니다"),
+                }
+
                 return self._send(200, {
                     "has_evidence": r["has_evidence"],
                     "messages": searcher.render_prompt(query, r["contexts"]),
-                    "sources": r["contexts"],          # 하위 호환
+                    "sources": sources,                # /finalize 에 되돌려줄 것
                     "references": pre["references"],
                     "reference_files": pre["reference_files"],
+                    "stage": stage,                    # 단계 문구용
                     "top_score": r["top_score"],
                     "threshold": r["threshold"],
+                    "timing": timing,                  # ⚠ TTFT 예산 확인용
                 })
 
             # ── 답변 후처리 ─────────────────────────────────
@@ -204,6 +281,38 @@ class Handler(BaseHTTPRequestHandler):
                     cited_only=body.get("cited_only", True),
                     include_text=bool(body.get("include_text")),
                 ))
+
+            # ── 브리핑 생성 (FN-A05) ────────────────────────
+            # ⚠ rag_lab 이 LLM 을 호출하는 유일한 지점입니다 (C' 구조).
+            #    model 과 ollama_url 을 백엔드가 주입하므로, fine-tuned 모델로
+            #    교체할 때 백엔드 한 곳만 고치면 브리핑도 따라갑니다.
+            if path == "/briefing":
+                pid = body.get("project_id")
+                if not pid:
+                    return self._send(400, {"error": "project_id required"})
+
+                if not body.get("force"):
+                    cached = briefing.load(pid)
+                    if cached:
+                        cached["cached"] = True
+                        return self._send(200, cached)
+
+                st = indexer.get_state(pid)
+                root = body.get("project_root") or st.get("project_root")
+                if not root:
+                    return self._send(400, {
+                        "error": "project_root_unknown",
+                        "detail": "인덱싱 이력이 없습니다. project_root 를 함께 보내주세요."})
+
+                model = body.get("model", "qwen2.5-coder:7b")
+                url = body.get("ollama_url", CFG.ollama_url)
+
+                r = briefing.build(root, pid, model, url, commit=st.get("commit"))
+                if not r.get("ok"):
+                    # no_material / no_evidence 는 오류가 아니라 정상 결과입니다.
+                    # 문서가 부실한 레포에서 지어내는 것보다 낫습니다.
+                    return self._send(200, r)
+                return self._send(200, r)
 
             return self._send(404, {"error": "not found", "path": path})
 
@@ -237,9 +346,32 @@ def main():
     print("  GET  /index/exists?project_id=...")
     print("  GET  /projects")
     print("  POST /index    {project_root, project_id, force?}")
+    print("  POST /index/update {project_id, dry_run?}")
     print("  POST /search   {query, project_id, top_k?, threshold?}")
     print("  POST /prompt   {query, project_id}")
     print("  POST /finalize {answer, sources}")
+    print("  POST /briefing {project_id, model?, ollama_url?, force?}")
+    print("  GET  /briefing?project_id=...")
+    print("=" * 58)
+
+    # ⚠ 워밍업 — 하지 않으면 첫 /prompt 요청이 수 초 걸립니다.
+    #    Chroma 인덱스 로드 + 임베딩 모델 적재가 그때 일어나기 때문입니다.
+    #    TTFT 임계 경로이므로 기동 시 미리 끝내둡니다.
+    print("  워밍업 중...")
+    try:
+        t = time.perf_counter()
+        st = get_store()
+        projects = st.projects()
+        print(f"    인덱스 로드   {(time.perf_counter()-t)*1000:>7.0f} ms  {projects}")
+    except Exception as e:
+        print(f"    !! 인덱스 로드 실패: {e}")
+    try:
+        t = time.perf_counter()
+        embedder.embed_one("warmup")
+        print(f"    임베딩 워밍업 {(time.perf_counter()-t)*1000:>7.0f} ms")
+    except Exception as e:
+        print(f"    !! 임베딩 워밍업 실패: {e}")
+        print("       터널을 확인하세요:  netstat -ano | findstr 11500")
     print("=" * 58)
 
     ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
