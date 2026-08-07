@@ -54,29 +54,32 @@ export class ChatHandler {
             session_id = session.resetSessionId();
         } 
 
-        // add the previous messages to the messages 
-        let responseHistory = [''];
-        previousMessages.forEach(m => {
-            let fullMessage = '';
-            m.response.forEach(r => {
-                const mdPart = r as vscode.ChatResponseMarkdownPart;
-                if (mdPart.value.value !== 'NO_EVIDENCE') {fullMessage += mdPart.value.value;}
-            });
-            responseHistory.push(fullMessage);
-        });
-        messages += responseHistory.join('\n');
+        // // add the previous messages to the messages 
+        // let responseHistory = [''];
+        // previousMessages.forEach(m => {
+        //     let fullMessage = '';
+        //     m.response.forEach(r => {
+        //         const mdPart = r as vscode.ChatResponseMarkdownPart;
+        //         if (mdPart.value.value !== 'NO_EVIDENCE') {fullMessage += mdPart.value.value;}
+        //     });
+        //     responseHistory.push(fullMessage);
+        // });
+        // messages += responseHistory.join('\n');
 
-        // 에디터 화면에 열려 있는 파일의 텍스트 전체를 가져옵니다. 
-        const editor = vscode.window.activeTextEditor;
-        let file = '';
-        if (editor) {
-            file = fs.readFileSync(editor.document.uri.fsPath).toString();
-            messages += file;
-        }
+        // // 에디터 화면에 열려 있는 파일의 텍스트 전체를 가져옵니다. 
+        // const editor = vscode.window.activeTextEditor;
+        // let file = '';
+        // if (editor) {
+        //     file = fs.readFileSync(editor.document.uri.fsPath).toString();
+        //     messages += file;
+        // }
+
+        console.log('messages', messages);
 
         const payload: ChatRequest_SSE = {
             role: "user",
-            content: messages,
+            project_id: projectName,
+            content: request.prompt,
             stream: true
         };
 

@@ -55,6 +55,11 @@ body {
     width: 90%;
 }
 
+#model-list-content:hover {
+    cursor:pointer;
+    color: var(--vscode-focusBorder);
+}
+
 .badge {
     padding: 2px 6px;
     border-radius: 4px;
@@ -134,4 +139,26 @@ body {
 
 .block-btn {
     display:block;
+}
+
+select {
+    background-color: var(--vscode-sideBar-background);
+    color: var(--vscode-foreground);
+    border: none;
+    border-radius: 4px;
+    padding: 0px;
+    font-size: 12px;
+}
+
+select:hover {
+    background-color: var(--vscode-focusBorder);
+}
+
+select option {
+    background-color: var(--vscode-sideBar-background);
+    color: var(--vscode-foreground);
+}
+
+#model-list-scroll {
+    width:90%;
 }

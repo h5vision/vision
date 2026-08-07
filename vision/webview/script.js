@@ -98,6 +98,25 @@ function updateBackendStatus(status) {
 
 }
 
+function updateModelsInfo(models) {
+    const scrollContainer = document.getElementById("model-list-scroll");
+    if (!scrollContainer) {return;}
+
+    if (!models || models.length === 0) {
+        scrollContainer.textContent = '• 등록된 모델이 없습니다.';
+        return;
+    }
+
+    scrollContainer.textContent = models[0].model_name;
+    scrollContainer.innerHTML = '';
+    models.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model.model_id;
+        option.textContent = model.model_name;
+        scrollContainer.appendChild(option);
+    });
+}
+
 function renderProjectList(projects) {
     const container = document.getElementById("project-list-content");
     if (!container) {return;}
@@ -128,9 +147,14 @@ function renderProjectList(projects) {
         iconEl.style.marginRight = '4px';
 
         const textEl = document.createElement('span');
-        textEl.textContent = ` ${proj.name}`;
+        textEl.textContent = `${proj.name}`;
+
+        const locationEl = document.createElement('span');
+        locationEl.className = 'badge';
+        locationEl.textContent = `${proj.location}`;
 
         titleEl.appendChild(iconEl);
+        titleEl.appendChild(locationEl);
         titleEl.appendChild(textEl);
 
         const commitListEl = document.createElement('div');
@@ -175,13 +199,17 @@ function renderProjectList(projects) {
 }
 
 vscode.postMessage({ command: "checkBackend" });
+vscode.postMessage({ command: "getModelsInfo" });
 vscode.postMessage({ command: "getProjectInfo" });
 vscode.postMessage({ command: "getProjectGitInfo" });
 vscode.postMessage({ command: "getGuideStatus" });
 vscode.postMessage({ command: "getProjectList" });
 
 
-setInterval(() => {vscode.postMessage({ command: "checkBackend" });}, 30 * 1000);
+setInterval(() => {
+    vscode.postMessage({ command: "checkBackend" });
+    vscode.postMessage({ command: "getModelsInfo" });
+}, 30 * 1000);
 
 
 window.addEventListener("message", event => {
@@ -192,6 +220,10 @@ window.addEventListener("message", event => {
 
         case "backendStatus": {
             updateBackendStatus(message.data);
+            break;
+        }
+        case "showModelsInfo": {
+            updateModelsInfo(message.data);
             break;
         }
 

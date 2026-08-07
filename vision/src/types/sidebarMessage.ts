@@ -2,6 +2,8 @@ export enum SidebarCommand {
 
     CheckBackend = "checkBackend",
 
+    GetModelsInfo = "getModelsInfo",
+
     SendChat = "sendChat",
 
     InitialProjectIndexing = "initialProjectIndexing",

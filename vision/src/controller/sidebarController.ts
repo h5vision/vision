@@ -5,6 +5,7 @@ import { SidebarMessage, SidebarCommand } from "../types/sidebarMessage";
 import { APIHandler } from "./handlers/checkHealthHandler";
 import { HistoryHandler } from "./handlers/historyHandler";
 import { IndexingHandler } from "./handlers/indexingHandler";
+import { ModelInfoHandler } from "./handlers/modelInfoHandler";
 import { ProjectInfoHandler } from "./handlers/projectInfoHandler";
 import { ProjectListHandler } from "./handlers/projectListHandler";
 import { ProjectBriefHandler } from "./handlers/projectBriefHandler";
@@ -15,6 +16,7 @@ export class SidebarController {
     private readonly APIHandler: APIHandler;
     private readonly historyHandler: HistoryHandler;
     private readonly indexingHandler: IndexingHandler;
+    private readonly modelInfoHandler: ModelInfoHandler;
     private readonly projectInfoHandler: ProjectInfoHandler;
     private readonly projectListHandler: ProjectListHandler;
     private readonly projectBriefHandler: ProjectBriefHandler;
@@ -26,6 +28,7 @@ export class SidebarController {
         this.APIHandler = new APIHandler(view);
         this.historyHandler = new HistoryHandler(view);
         this.indexingHandler = new IndexingHandler(view);
+        this.modelInfoHandler = new ModelInfoHandler(view);
         this.projectInfoHandler = new ProjectInfoHandler(view);
         this.projectListHandler = new ProjectListHandler(view);
         this.projectBriefHandler = new ProjectBriefHandler(view);
@@ -38,6 +41,9 @@ export class SidebarController {
 
             case SidebarCommand.CheckBackend:
                 return this.APIHandler.handle(message);
+
+            case SidebarCommand.GetModelsInfo:
+                return this.modelInfoHandler.handle(message);
 
             case SidebarCommand.InitialProjectIndexing:
                 return this.indexingHandler.handle(message);

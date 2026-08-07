@@ -19,11 +19,13 @@ export class ProjectListHandler {
         const sampleProjects = [
             {
                 id:1,
+                location: "db",
                 name: 'FastAPI',
                 commits: ['']
             },
             {
                 id:2,
+                location: "db",
                 name: 'Flask',
                 commits: [''] 
             }
@@ -35,7 +37,11 @@ export class ProjectListHandler {
         await this.gitService.initialize();
         if (this.gitService.exists()) {
             const gitCommits = (await this.gitService.getRecentCommits()).map(m=>m.hash.slice(0,7) + ' ─ ' + m.message);
-            sampleProjects.push({id:0, name: "[ Local ] "+response.name, commits:gitCommits});
+            sampleProjects.push({
+                id:0, 
+                location: "local",
+                name: response.name, 
+                commits: gitCommits});
         }
 
         this.view.webview.postMessage({

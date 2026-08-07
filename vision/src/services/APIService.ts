@@ -54,7 +54,6 @@ export class APIService {
                 };
             }
         }
-
     }
 
     async get(path: string) {
