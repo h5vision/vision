@@ -71,10 +71,34 @@ export class SidebarController {
                     .update(
                         "endpoint",
                         message.data,
-                        vscode.ConfigurationTarget.Workspace
+                        vscode.ConfigurationTarget.Global
                     );
                 vscode.window.showInformationMessage(
                     "Endpoint가 변경되었습니다."
+                );
+                return this.APIHandler.handle(message);
+
+            case SidebarCommand.UpdateModelId:
+                await vscode.workspace.getConfiguration('vision')
+                    .update(
+                        "modelId",
+                        message.data,
+                        vscode.ConfigurationTarget.Global
+                    );
+                vscode.window.showInformationMessage(
+                    "Model ID가 변경되었습니다."
+                );
+                return this.APIHandler.handle(message);
+
+            case SidebarCommand.UpdateCommitId:
+                await vscode.workspace.getConfiguration('vision')
+                    .update(
+                        "commitId",
+                        message.data,
+                        vscode.ConfigurationTarget.Workspace
+                    );
+                vscode.window.showInformationMessage(
+                    "Commit ID가 변경되었습니다."
                 );
                 return this.APIHandler.handle(message);
 

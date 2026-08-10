@@ -47,6 +47,8 @@ export interface ChatResponse {
 export interface ChatRequest_SSE {
     project_id: string;
     role: "user";
+    model_id?: string;
+    commit_id?: string;
     content: string;
     stream: true;
 }

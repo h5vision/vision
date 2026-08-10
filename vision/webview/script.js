@@ -38,19 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
         endpoint.click();
     });
 
-    // 실패 파일 목록 토글
-    const errorToggleBtn = document.getElementById("error-toggle-btn");
-    const errorListContent = document.getElementById("errorListContent");
-    if (errorToggleBtn && errorListContent) {
-        errorToggleBtn.addEventListener("click", () => {
-            if (errorListContent.style.display === 'none' || errorListContent.style.display === '') {
-                errorListContent.style.display = 'block';
-            } else {
-                errorListContent.style.display = 'none';
-            }
-        });
-    }
-
     // Project List 새로고침
     const refreshProjectBtn = document.getElementById("refresh-projects-btn");
     refreshProjectBtn.addEventListener("click", () => {
@@ -115,6 +102,10 @@ function updateModelsInfo(models) {
         option.textContent = model.model_name;
         scrollContainer.appendChild(option);
     });
+    scrollContainer.addEventListener('change', (event) => {
+        const selectedModelId = event.target.value;
+        vscode.postMessage({ command: "updateModelId", data: selectedModelId });
+    });
 }
 
 function renderProjectList(projects) {
@@ -131,20 +122,13 @@ function renderProjectList(projects) {
     projects.forEach(proj => {
         const projectItem = document.createElement('div');
         projectItem.className = 'project-item';
-        projectItem.style.marginBottom = '8px';
 
         const titleEl = document.createElement('div');
         titleEl.className = 'project-title';
-        titleEl.style.cursor = 'pointer';
-        titleEl.style.display = 'flex';
-        titleEl.style.alignItems = 'center';
-        titleEl.style.fontWeight = '600';
-        titleEl.style.padding = '4px 0';
 
         const iconEl = document.createElement('i');
         iconEl.id = `icon-${proj.id}`;
         iconEl.className = 'codicon codicon-chevron-right';
-        iconEl.style.marginRight = '4px';
 
         const textEl = document.createElement('span');
         textEl.textContent = `${proj.name}`;
@@ -158,19 +142,17 @@ function renderProjectList(projects) {
         titleEl.appendChild(textEl);
 
         const commitListEl = document.createElement('div');
-        commitListEl.className = 'commit-list';
+        commitListEl.classList.add('commit-list', 'hidden');
         commitListEl.id = `commits-${proj.id}`;
-        commitListEl.style.display = 'none';
-        commitListEl.style.paddingLeft = '2px';
-        commitListEl.style.flexDirection = 'column';
-        commitListEl.style.gap = '3px';
-        commitListEl.style.marginTop = '0px';
 
         if (proj.commits && proj.commits.length > 0 && !!proj.commits[0]) {
-            proj.commits.forEach(commit => {
+            proj.commits.forEach(([SHA, message]) => {
                 const commitItem = document.createElement('div');
-                commitItem.innerHTML = `<i class="codicon codicon-git-commit"></i> ${commit}`;
+                commitItem.innerHTML = `<i class="codicon codicon-git-commit"></i> ${SHA.slice(0,7)} ─ ${message}`;
                 commitItem.className = 'commit-item badge ellipsis';
+                commitItem.addEventListener('click', () => {
+                    vscode.postMessage({ command: "updateCommitId", data: SHA  });
+                });
                 commitListEl.appendChild(commitItem);
             });
         } else {
@@ -182,12 +164,12 @@ function renderProjectList(projects) {
 
         // 클릭 시 안전하게 토글 실행 (CSP 보안 정책 우회)
         titleEl.addEventListener('click', () => {
-            const isHidden = commitListEl.style.display === 'none' || commitListEl.style.display === '';
+            const isHidden = commitListEl.classList.contains('hidden');
             if (isHidden) {
-                commitListEl.style.display = 'block';
+                commitListEl.classList.remove('hidden');
                 iconEl.classList.replace('codicon-chevron-right', 'codicon-chevron-down');
             } else {
-                commitListEl.style.display = 'none';
+                commitListEl.classList.add('hidden');
                 iconEl.classList.replace('codicon-chevron-down', 'codicon-chevron-right');
             }
         });

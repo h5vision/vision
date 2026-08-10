@@ -24,6 +24,16 @@
           "default":"http://192.168.0.7/v1",
           "description": "vision backendAI endpoint"
         },
+        "vision.modelId":{
+          "type":"string",
+          "default":"backandai-default",
+          "description":"vision backendAI modelId"
+        },
+        "vision.commitId":{
+          "type":"string",
+          "default":"None",
+          "description":"vision commitId for selected project"
+        },
         "vision.showGuideBook":{
           "type":"boolean",
           "default":false,

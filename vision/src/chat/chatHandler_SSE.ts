@@ -76,13 +76,18 @@ export class ChatHandler {
 
         console.log('messages', messages);
 
+        const model_id = vscode.workspace.getConfiguration('vision').get('modelId', 'backandai-default');
+        const commit_id = vscode.workspace.getConfiguration('vision').get('commitId', 'None');
+
         const payload: ChatRequest_SSE = {
             role: "user",
             project_id: projectName,
+            ...(commit_id !== 'None' ? { commit_id: commit_id } : {}),
+            model_id: model_id,
             content: request.prompt,
             stream: true
         };
-
+        console.log('payload', payload);
         try {
             this.historyService.save(
                 projectName,

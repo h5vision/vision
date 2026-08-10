@@ -47,15 +47,29 @@ body {
 }
 
 #endpoint-edit-input {
+    font-family: var(--vscode-font-family);
+    background: none;
+    border:none;
+    color: inherit;
+    font-size: 12px;
+    padding: -1px;
+    margin: -1px;
+    width: max-content;
+    height:fit-content;
+}
+
+#model-list-scroll {
     background: none;
     color: inherit;
     font-size: 12px;
     padding: 0px;
     margin: 0px;
     width: 90%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 }
-
-#model-list-content:hover {
+#model-list-scroll:hover {
     cursor:pointer;
     color: var(--vscode-focusBorder);
 }
@@ -64,7 +78,9 @@ body {
     padding: 2px 6px;
     border-radius: 4px;
     font-family: monospace;
+    font-weight: 400;
     font-size: 11px;
+    vertical-align: top;
 }
 .icon-btn {
     background: none;
@@ -109,18 +125,33 @@ body {
     overflow-y: auto;
 }
 
+.project-title {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    padding: 4px 0;
+}
+
+.project-item {
+    margin-bottom: 8px;
+}
+
 .commit-list {
-    padding-left: 16px;
     flex-direction: column;
     gap: 3px;
-    margin-top: 2px;
+    margin-top: 0px;
+    padding-left: 2px;
 }
 
 .commit-item {
     opacity: 0.95;
     padding: 1px 0;
 }
-
+.commit-item:hover {
+    cursor: pointer;
+    color: var(--vscode-focusBorder);
+}
 
 .hidden {
     display:none;
@@ -128,6 +159,7 @@ body {
 
 .codicon {
     vertical-align: sub;
+    margin-right: 4px;
 }
 
 .ellipsis {

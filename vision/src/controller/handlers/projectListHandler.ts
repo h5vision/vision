@@ -21,13 +21,13 @@ export class ProjectListHandler {
                 id:1,
                 location: "db",
                 name: 'FastAPI',
-                commits: ['']
+                commits: [['','']]
             },
             {
                 id:2,
                 location: "db",
                 name: 'Flask',
-                commits: [''] 
+                commits: [['','']] 
             }
         ];
 
@@ -35,13 +35,17 @@ export class ProjectListHandler {
         const workspace:any = this.workspaceService.getWorkspace();
         const response = {name: workspace.name, path: workspace.path};
         await this.gitService.initialize();
+        console.log("GitService initialized. Repository exists:", this.gitService.exists());
         if (this.gitService.exists()) {
-            const gitCommits = (await this.gitService.getRecentCommits()).map(m=>m.hash.slice(0,7) + ' ─ ' + m.message);
+            const gitCommits = (await this.gitService.getRecentCommits()).map(m=>
+                [m.hash, m.message]);
             sampleProjects.push({
                 id:0, 
                 location: "local",
                 name: response.name, 
-                commits: gitCommits});
+                commits: gitCommits,
+            });
+            console.log(sampleProjects);
         }
 
         this.view.webview.postMessage({

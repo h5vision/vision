@@ -24,6 +24,10 @@ export enum SidebarCommand {
 
     UpdateEndpoint = "updateEndpoint",
 
+    UpdateModelId = "updateModelId",
+
+    UpdateCommitId = "updateCommitId",
+
     ToggleGuide = "toggleGuide"
 }
 
