@@ -21,7 +21,6 @@ export class APIService {
             const response = await fetch(`${endpoint}/health`);
             const endtime = Date.now();
             const latency = endtime - startime;
-            console.log(response);
             if (!response.ok) {
                 return {
                     endpoint: endpoint,

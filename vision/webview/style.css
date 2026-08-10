@@ -52,8 +52,10 @@ body {
     border:none;
     color: inherit;
     font-size: 12px;
-    padding: -1px;
-    margin: -1px;
+    padding: 0px;
+    padding-left: 4px;
+    margin-right: 4px;
+    margin: 0px;
     width: max-content;
     height:fit-content;
 }
@@ -88,7 +90,7 @@ body {
     color: inherit;
     cursor: pointer;
     font-size: 13px;
-    padding: 2px;
+    padding: 0px;
     text-align:left;
 }
 .icon-btn:hover {

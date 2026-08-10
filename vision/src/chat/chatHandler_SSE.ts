@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as fs from "fs";
+import * as path from "path";
 import { ChatService } from "../services/chatServices_SSE";
 import { APIService } from "../services/APIService";
 import * as session from "../utils/session";
@@ -11,6 +11,26 @@ export class ChatHandler {
     constructor(
         private readonly historyService: HistoryService
     ) {}
+
+    private getWorkspaceFileUri(sourcePath: string): vscode.Uri | undefined {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders?.length) {
+            return undefined;
+        }
+
+        const filePath = path.isAbsolute(sourcePath)
+            ? path.normalize(sourcePath)
+            : path.resolve(workspaceFolders[0].uri.fsPath, sourcePath);
+        const isInWorkspace = workspaceFolders.some(folder => {
+            const relativePath = path.relative(folder.uri.fsPath, filePath);
+            return relativePath === "" ||
+                (!relativePath.startsWith(`..${path.sep}`) &&
+                    relativePath !== ".." &&
+                    !path.isAbsolute(relativePath));
+        });
+
+        return isInWorkspace ? vscode.Uri.file(filePath) : undefined;
+    }
 
     public handle: vscode.ChatRequestHandler = async (
         request,
@@ -74,7 +94,6 @@ export class ChatHandler {
         //     messages += file;
         // }
 
-        console.log('messages', messages);
 
         const model_id = vscode.workspace.getConfiguration('vision').get('modelId', 'backandai-default');
         const commit_id = vscode.workspace.getConfiguration('vision').get('commitId', 'None');
@@ -82,10 +101,9 @@ export class ChatHandler {
         const payload: ChatRequest_SSE = {
             role: "user",
             project_id: projectName,
-            ...(commit_id !== 'None' ? { commit_id: commit_id } : {}),
-            model_id: model_id,
-            content: request.prompt,
-            stream: true
+            commit_id: commit_id,
+            content: projectName +' '+ request.prompt,
+            stream: true,
         };
         console.log('payload', payload);
         try {
@@ -124,6 +142,7 @@ export class ChatHandler {
                         for (const fragment of finalAnswer.split("\n")) {
                             stream.markdown(fragment + '\n');
                         }
+                        console.log("finalAnswer", finalAnswer);
 
                         if (data.source?.length) {
                             stream.markdown(
@@ -131,14 +150,23 @@ export class ChatHandler {
                             );
 
                             for (const source of data.source) {
+                                const sourceUri = this.getWorkspaceFileUri(source.file);
+                                console.log("sourceUri", sourceUri);
                                 const score =
                                     typeof source.score === "number"
                                         ? ` · ${source.score.toFixed(3)}`
                                         : "";
 
-                                stream.markdown(
-                                    `\n- \`${source.file}\`${score}`
-                                );
+                                if (!sourceUri) {
+                                    stream.markdown(`\n- \`${source.file}\`${score}`);
+                                    continue;
+                                }
+
+                                stream.button({
+                                    command: "vscode.open",
+                                    title: `${path.basename(source.file)}${score}`,
+                                    arguments: [sourceUri]
+                                });
                             }
                         }
 

@@ -20,7 +20,8 @@ export interface ChatMessage {
 export interface ChatRequest {
     project_id: string;
     message: string;
-    session_id: string;
+    session_id?: string;
+    commit_id?: string;
     model_id?: string;
     top_k?: number;
     history?: string[];
@@ -50,7 +51,7 @@ export interface ChatRequest_SSE {
     model_id?: string;
     commit_id?: string;
     content: string;
-    stream: true;
+    stream: boolean;
 }
 
 export type ChatStreamEventName =

@@ -85,7 +85,9 @@ function updateBackendStatus(status) {
 
 }
 
-function updateModelsInfo(models) {
+function updateModelsInfo(command_data) {
+    const models = command_data.models;
+    const current_model_id = command_data.current_model_id;
     const scrollContainer = document.getElementById("model-list-scroll");
     if (!scrollContainer) {return;}
 
@@ -94,13 +96,15 @@ function updateModelsInfo(models) {
         return;
     }
 
-    scrollContainer.textContent = models[0].model_name;
     scrollContainer.innerHTML = '';
     models.forEach(model => {
         const option = document.createElement('option');
         option.value = model.model_id;
         option.textContent = model.model_name;
         scrollContainer.appendChild(option);
+        if (model.model_id === current_model_id) {
+            option.selected = true;
+        }
     });
     scrollContainer.addEventListener('change', (event) => {
         const selectedModelId = event.target.value;
@@ -138,20 +142,20 @@ function renderProjectList(projects) {
         locationEl.textContent = `${proj.location}`;
 
         titleEl.appendChild(iconEl);
-        titleEl.appendChild(locationEl);
         titleEl.appendChild(textEl);
+        titleEl.appendChild(locationEl);
 
         const commitListEl = document.createElement('div');
         commitListEl.classList.add('commit-list', 'hidden');
         commitListEl.id = `commits-${proj.id}`;
 
-        if (proj.commits && proj.commits.length > 0 && !!proj.commits[0]) {
+        if (proj.commits && proj.commits.length > 0 && !!proj.commits[0][0]) {
             proj.commits.forEach(([SHA, message]) => {
                 const commitItem = document.createElement('div');
-                commitItem.innerHTML = `<i class="codicon codicon-git-commit"></i> ${SHA.slice(0,7)} ─ ${message}`;
+                commitItem.innerHTML = `<i class="codicon codicon-git-commit"></i>${SHA.slice(0,7)} ─ ${message}`;
                 commitItem.className = 'commit-item badge ellipsis';
                 commitItem.addEventListener('click', () => {
-                    vscode.postMessage({ command: "updateCommitId", data: SHA  });
+                    vscode.postMessage({ command: "updateCommitId", data: SHA });
                 });
                 commitListEl.appendChild(commitItem);
             });
@@ -224,7 +228,7 @@ window.addEventListener("message", event => {
             let git = '';
             if (data.git) {
                 elgit.textContent = data.repository.branch;
-                elgit.innerHTML = `<i class="codicon codicon-git-branch"></i>&nbsp; ${data.repository.commit.slice(0,7)} &nbsp; <b><i class="codicon codicon-target"></i> ${data.repository.branch}</b>`;
+                elgit.innerHTML = `<i class="codicon codicon-git-branch"></i> ${data.repository.commit.slice(0,7)} <b><i class="codicon codicon-target"></i>${data.repository.branch}</b>`;
             } else {
                 git = "❌ 정보없음";
                 elgit.textContent = git;

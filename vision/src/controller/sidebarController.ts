@@ -31,7 +31,7 @@ export class SidebarController {
         this.modelInfoHandler = new ModelInfoHandler(view);
         this.projectInfoHandler = new ProjectInfoHandler(view);
         this.projectListHandler = new ProjectListHandler(view);
-        this.projectBriefHandler = new ProjectBriefHandler(view);
+        this.projectBriefHandler = new ProjectBriefHandler();
         this.ragtestHandler = new RAGTESTHandler(view);
     }
 
@@ -62,6 +62,9 @@ export class SidebarController {
 
             case SidebarCommand.GenerateProjectBrief:
                 return this.projectBriefHandler.handle(message);
+
+            case SidebarCommand.GetProjectBrief:
+                return this.projectBriefHandler.GetBrief(message);
 
             case SidebarCommand.GenerateRAGTEST:
                 return this.ragtestHandler.handle(message);

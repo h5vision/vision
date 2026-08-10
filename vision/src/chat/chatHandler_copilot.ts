@@ -39,15 +39,11 @@ export class ChatHandler {
             const file = fs.readFileSync(editor.document.uri.fsPath).toString();
             messages.push(vscode.LanguageModelChatMessage.User(file));
         }
-        console.log(messages);
-        const dbPath = path.join(vscode.workspace.workspaceFolders?.[0].uri.fsPath || '', 'request.json');
-        fs.writeFileSync(dbPath, JSON.stringify(messages, null, 2));        
+        console.log(messages);   
         const chatresponse = await request.model.sendRequest(messages, {}, token);  
 
         for await (const fragment of chatresponse.text) {
             stream.markdown(fragment);
         }
-
     };
-
 }

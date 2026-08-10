@@ -75,21 +75,20 @@ export class ChatHandler {
         messages += searchFilesStr;
         
         // 백엔드에서 어떤 모델을 사용해 질문할지를 결정합니다. 
-        const modelList = {default:"backendai-default", nvidia:"nvidia-default", groq:"groq-default"};
+        const modelId = vscode.workspace.getConfiguration("vision").get<string>("modelId");
+        const commitId = vscode.workspace.getConfiguration("vision").get<string>("commitId");
 
         try {
             stream.progress("VisionAI가 답변을 생성하고 있습니다...");
 
             const message = {
-                project_id: "h5vision/fast-api",
-                session_id: session_id,
-                message: messages,
-                context: '',
-                history: []
+                project_id: project_id,
+                commit_id: commitId,
+                message: request.prompt,
             };
 
             console.log(message);
-            this.historyServcie.save(project_id, session_id, 'user', request.prompt);            
+            this.historyServcie.save(project_id, session_id, 'user', request.prompt);
             const response = await chatService.sendMessage(message);
             
             // response 객체 확인용
@@ -100,7 +99,7 @@ export class ChatHandler {
                 stream.markdown(fragment);
             }
             console.log(response.source);
-            this.historyServcie.save('FastAPI', session_id, 'assistant', response.answer);
+            this.historyServcie.save(project_id, session_id, 'assistant', response.answer);
 
         }
         catch (err) {

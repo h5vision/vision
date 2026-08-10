@@ -15,6 +15,8 @@ export class ModelInfoHandler {
         
         console.log(message.command);
 
+        const current_model_id = vscode.workspace.getConfiguration("vision").get<string>("modelId");
+
         const response = await this.APIService.get("/models");
 
         let modelsInfo: {model_id: string, model_name: string}[] = [];
@@ -23,14 +25,14 @@ export class ModelInfoHandler {
             modelsInfo = (response as responseModel).models.map((model) => {
                 return {
                     model_id: model.model_id,
-                    model_name: model.display_name};
+                    model_name: model.display_name
+                };
             });
         }
-        console.log(modelsInfo);
 
         this.view.webview.postMessage({
             command: "showModelsInfo",
-            data: modelsInfo
+            data: {models: modelsInfo, current_model_id: current_model_id}
         });
     }
 }

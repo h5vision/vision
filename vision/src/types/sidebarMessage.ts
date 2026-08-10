@@ -20,6 +20,8 @@ export enum SidebarCommand {
 
     GenerateProjectBrief = "generateProjectBrief",
 
+    GetProjectBrief = "getProjectBrief",
+
     GenerateRAGTEST = "generateRAGTEST",
 
     UpdateEndpoint = "updateEndpoint",
