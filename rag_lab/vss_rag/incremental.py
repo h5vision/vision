@@ -204,11 +204,25 @@ def update(project_root: str, project_id: str, store: Store,
     """
     바뀐 파일만 다시 인덱싱합니다.
 
-    ⚠ 순서가 중요합니다.
-       ① 옛 청크 삭제  →  ② 새 청크 삽입
-       반대로 하면 같은 파일의 청크가 중복됩니다.
-       (ID 가 같으면 upsert 로 덮이지만, 청크 수가 줄어든 경우
-        남는 옛 청크가 생깁니다)
+    ⚠ 순서가 중요합니다 — 두 가지 이유로.
+
+       ① 청킹  →  ② 임베딩  →  ③ 옛 청크 삭제  →  ④ 저장
+
+       **삭제를 임베딩 뒤로 미룹니다.**
+       임베딩은 원격 호출(터널 경유)이라 실패 가능성이 실재합니다.
+       터널 끊김·타임아웃·프로세스 중단이 모두 관측된 적 있습니다.
+
+           삭제가 먼저면:  실패 시 그 파일이 인덱스에서 **사라진 채** 남음
+                           검색은 계속 되므로 조용히 품질만 나빠짐
+           삭제가 나중이면: 실패 시 인덱스가 **낡았지만 온전한** 상태 유지
+
+       그리고 **수정된 파일은 반드시 삭제 후 삽입**해야 합니다.
+       청크 수가 줄어든 경우(5개 → 3개), upsert 만으로는 4·5번 청크가
+       남아 옛 내용이 계속 검색됩니다.
+
+    ⚠ 메모리: 변경분 벡터를 모두 보유하게 됩니다.
+       파일 5개 ≈ 청크 50개 ≈ 400KB 수준이라 실질적 부담이 없습니다.
+       변경이 많으면 can_update 가 too_many_changes 로 막습니다.
     """
     t0 = time.perf_counter()
     root = Path(project_root).resolve()
@@ -220,12 +234,7 @@ def update(project_root: str, project_id: str, store: Store,
     to_index = plan["to_index"]
     to_delete = plan["to_delete"]
 
-    # ── ① 삭제 ──────────────────────────────────────────────
-    # 수정된 파일도 여기 포함됩니다. 청크 수가 줄었을 수 있으므로
-    # 지우고 다시 넣는 것이 안전합니다.
-    deleted_n = store.delete_by_paths(project_id, to_delete) if to_delete else 0
-
-    # ── ② 재청킹 + 임베딩 ───────────────────────────────────
+    # ── ① 청킹 (실패해도 인덱스에 영향 없음) ────────────────
     new_chunks: list[dict] = []
     for i, rel in enumerate(to_index, start=1):
         f = root / rel
@@ -235,17 +244,25 @@ def update(project_root: str, project_id: str, store: Store,
         if on_progress:
             on_progress(i, len(to_index))
 
-    embedded = 0
-    if new_chunks:
-        # 배치로 나눠 임베딩
-        B = 64
-        for i in range(0, len(new_chunks), B):
-            batch = new_chunks[i:i + B]
-            vecs = embed_many([c["text"] for c in batch])
-            store.add(project_id, batch, vecs)
-            embedded += len(batch)
+    # ── ② 임베딩 — 위험 구간. 아직 아무것도 지우지 않음 ─────
+    pending: list[tuple[list[dict], list[list[float]]]] = []
+    B = 64
+    for i in range(0, len(new_chunks), B):
+        batch = new_chunks[i:i + B]
+        vecs = embed_many([c["text"] for c in batch])   # 실패 시 예외 → 여기서 중단
+        pending.append((batch, vecs))
 
-    # ── ③ BM25 역색인 재구축 ────────────────────────────────
+    # ── ③ 옛 청크 삭제 ──────────────────────────────────────
+    # 임베딩이 전부 성공한 뒤에만 실행됩니다.
+    deleted_n = store.delete_by_paths(project_id, to_delete) if to_delete else 0
+
+    # ── ④ 저장 ──────────────────────────────────────────────
+    embedded = 0
+    for batch, vecs in pending:
+        store.add(project_id, batch, vecs)
+        embedded += len(batch)
+
+    # ── ⑤ BM25 역색인 재구축 ────────────────────────────────
     # ⚠ 역색인은 부분 갱신이 까다롭습니다 (df 값이 전역이라).
     #    다만 임베딩 호출이 없어 전체 재구축도 수 초면 끝납니다.
     if CFG.use_bm25:

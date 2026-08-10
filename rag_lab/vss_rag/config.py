@@ -70,7 +70,11 @@ class Config:
 
     # ── 검색 (md 실험 대상) ──────────────────────────────────
     top_k: int = field(default_factory=lambda: _env("VSS_TOP_K", 4))
-    # FN-B06 근거 없음 판정. D9 실측: answerable 최저 0.5531 / no-answer 최고 0.5306
+    # FN-B06 근거 없음 판정.
+    # ⚠ 잠정값입니다. 스파이크 v0.5 에서 answerable/no-answer 분포는 겹칩니다
+    #    (answerable min 0.5098 / no-answer max 0.5644, overlap=True).
+    #    0.54 는 분리선이 아니라 balanced accuracy 근사 최대점이며
+    #    FP 3/20 · FN 1/11 을 수반합니다. 평가셋 확보 후 재보정 대상.
     score_threshold: float = field(default_factory=lambda: _env("VSS_THRESHOLD", 0.5400))
 
     # ── 검색 개선 (전부 토글. 평가셋으로 A/B 비교하기 위함) ──
@@ -94,9 +98,26 @@ class Config:
     # 프롬프트 안에서 근거 배치를 조정합니다 (lost in the middle 완화).
     reorder_context: bool = field(default_factory=lambda: _env("VSS_REORDER", False))
 
+    # ── 브리핑 ───────────────────────────────────────────────
+    # 인덱싱이 끝나면 프로젝트 브리핑을 자동으로 만듭니다 (FN-A05).
+    # ⚠ 브리핑은 LLM 을 호출합니다. indexer 는 그 사실을 모르고,
+    #    호출자(server/cli)가 on_done 콜백으로 주입합니다.
+    # ⚠ 평가 실험에서 재인덱싱을 반복할 때는 0 으로 꺼두세요. 매번 20초 이상 붙습니다.
+    auto_briefing: bool = field(default_factory=lambda: _env("VSS_AUTO_BRIEFING", True))
+    briefing_model: str = field(default_factory=lambda: _env("VSS_BRIEFING_MODEL", "qwen2.5-coder:7b"))
+
     # ── 저장 ─────────────────────────────────────────────────
     index_dir: str = field(default_factory=lambda: _env("VSS_INDEX_DIR", "./data/index"))
     state_path: str = field(default_factory=lambda: _env("VSS_STATE_PATH", "./data/state.json"))
+
+    def briefings_dir(self) -> "Path":
+        """브리핑 저장 위치. index_dir 의 **부모** 기준입니다.
+
+        ⚠ VSS_INDEX_DIR 을 바꾸면 브리핑 위치도 함께 움직입니다.
+           예) VSS_INDEX_DIR=/tmp/x/index  →  /tmp/x/briefings
+        """
+        from pathlib import Path
+        return Path(self.index_dir).resolve().parent / "briefings"
 
     def fingerprint(self) -> dict:
         """인덱스와 함께 저장할 파라미터 지문.

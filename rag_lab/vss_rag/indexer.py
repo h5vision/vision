@@ -19,6 +19,7 @@ import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable
 
 from . import incremental, lexical
 from .config import CFG
@@ -144,7 +145,8 @@ def is_stale(project_root: str | Path, project_id: str) -> dict:
 
 # ── 인덱싱 실행 ──────────────────────────────────────────────
 
-def _run(project_root: str, project_id: str, store: Store) -> None:
+def _run(project_root: str, project_id: str, store: Store,
+         on_done: "Callable | None" = None) -> None:
     root = Path(project_root).resolve()
     t0 = time.time()
     try:
@@ -202,14 +204,33 @@ def _run(project_root: str, project_id: str, store: Store) -> None:
                 elapsed_s=round(time.time() - t0, 1))
         raise
 
+    # ── 인덱싱 완료 훅 (FN-A05 브리핑 자동 생성) ─────────────
+    # ⚠ indexer 는 여기서 무엇이 실행되는지 모릅니다.
+    #    LLM 의존성은 호출자(server/cli)가 주입합니다. briefing 을 import 하지 않습니다.
+    # ⚠ 훅 실패가 인덱싱을 실패로 만들면 안 됩니다.
+    #    55분짜리 인덱싱이 마지막 LLM 호출 하나 때문에 무효가 되는 상황을 막습니다.
+    #    그래서 try 블록 **밖**에 두고, state 는 done 인 채로 둡니다.
+    if on_done is not None:
+        _update(project_id, briefing="generating", briefing_error=None)
+        try:
+            on_done(project_id, str(root), git_head(root))
+            _update(project_id, briefing="ready")
+        except Exception as e:
+            _update(project_id, briefing="failed",
+                    briefing_error=f"{type(e).__name__}: {e}")
+
 
 def start_index(project_root: str, project_id: str, blocking: bool = False,
-                force: bool = False) -> dict:
+                force: bool = False, on_done: "Callable | None" = None) -> dict:
     """
     인덱싱 시작. 기본은 비동기(즉시 반환).
 
     ⚠ 같은 project_id 가 이미 running 이면 거부합니다.
        동시 인덱싱이 없다는 전제이므로 job_id 가 불필요합니다 (C안).
+
+    on_done: 인덱싱이 끝난 뒤 호출할 콜백. 시그니처는
+             (project_id, project_root, commit) -> None 입니다.
+             브리핑 자동 생성에 쓰이며, indexer 는 내용을 알지 못합니다.
     """
     cur = get_state(project_id)
     if cur.get("state") == "running":
@@ -227,11 +248,11 @@ def start_index(project_root: str, project_id: str, blocking: bool = False,
     store = Store()
 
     if blocking:
-        _run(str(root), project_id, store)
+        _run(str(root), project_id, store, on_done)
         return {"accepted": True, "project_id": project_id, **get_state(project_id)}
 
     threading.Thread(
-        target=_run, args=(str(root), project_id, store), daemon=True
+        target=_run, args=(str(root), project_id, store, on_done), daemon=True
     ).start()
     return {"accepted": True, "project_id": project_id, "state": "running"}
 

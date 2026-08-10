@@ -427,14 +427,23 @@ def generate(messages: list[dict], model: str, ollama_url: str,
 # ── 저장 / 조회 ──────────────────────────────────────────────
 
 def _dir() -> Path:
-    p = Path(CFG.index_dir).resolve().parent / "briefings"
+    """브리핑 저장 위치. 경로 규칙은 CFG.briefings_dir() 한 곳에만 둡니다."""
+    p = CFG.briefings_dir()
     p.mkdir(parents=True, exist_ok=True)
     return p
 
 
-def _path(project_id: str) -> Path:
+def _path(project_id: str, ext: str = "json") -> Path:
     safe = re.sub(r"[^\w\-.]", "_", project_id)
-    return _dir() / f"{safe}.json"
+    return _dir() / f"{safe}.{ext}"
+
+
+def md_path(project_id: str) -> Path:
+    """브리핑 .md 파일 경로. 파일명 규칙을 이 함수 하나로 모읍니다.
+
+    ⚠ 서버가 같은 규칙을 다시 구현하면 언젠가 어긋납니다.
+    """
+    return _path(project_id, "md")
 
 
 def save(project_id: str, text: str, c: Collected,
@@ -460,14 +469,49 @@ def save(project_id: str, text: str, c: Collected,
         "truncated": c.truncated,
         "evidence_tokens": c.used_tokens,
         "briefing_tokens": est_tokens(text),
+        # ⚠ 아래 두 필드는 반드시 저장 **전**에 넣어야 합니다.
+        #    예전에는 write_text() 뒤에 붙여서, 캐시로 돌려주는 응답
+        #    (GET /briefing · POST /briefing 캐시히트)에만 빠져 있었습니다.
+        #    프론트가 `if (!r.ok)` 로 분기하면 캐시히트를 실패로 처리합니다.
+        "ok": True,
+        "md_path": str(_path(project_id, "md")),
     }
-    _path(project_id).write_text(
+    # ── 두 형태로 저장 ──────────────────────────────────────
+    # .md   사람이 에디터로 바로 열어볼 수 있는 본문
+    # .json 프로그램이 쓰는 메타데이터 (references, structure 등)
+    #
+    # ⚠ .md 를 손으로 고치면 .json 의 인용 정보와 어긋납니다.
+    #    .md 는 읽기용으로만 쓰고, 수정이 필요하면 재생성하세요.
+    _path(project_id, "json").write_text(
         json.dumps(rec, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    front = [
+        "---",
+        f"project_id: {project_id}",
+        f"generated_at: {rec['generated_at']}",
+        f"commit: {commit or '(없음)'}",
+        f"cited: {rec['cited']}",
+        f"evidence_tokens: {rec['evidence_tokens']}",
+        "---",
+        "",
+    ]
+    body = [text, "", "---", "", "## 근거", ""]
+    for r in rec["reference_files"]:
+        spans = ", ".join(f"L{a}-{b}" for a, b in r["lines"]) or "-"
+        body.append(f"- `{r['path']}`  [{','.join(map(str, r['citations']))}]  {spans}")
+    if rec["mentioned_files"]:
+        body += ["", "## 본문에 언급된 파일", ""]
+        for m in rec["mentioned_files"]:
+            body.append(f"- `{m['path']}`" + ("  (디렉터리)" if m["is_dir"] else ""))
+
+    _path(project_id, "md").write_text(
+        "\n".join(front + body), encoding="utf-8")
+
     return rec
 
 
 def load(project_id: str) -> dict | None:
-    p = _path(project_id)
+    p = _path(project_id, "json")
     if not p.exists():
         return None
     try:
@@ -496,5 +540,5 @@ def build(project_root: str, project_id: str, model: str, ollama_url: str,
 
     rec = save(project_id, text, c, commit=commit)
     rec["elapsed_s"] = round(time.perf_counter() - t0, 1)
-    rec["ok"] = True
+    # ok / md_path 는 save() 안에서 이미 넣었습니다 (캐시 응답과 동일하게 유지).
     return rec

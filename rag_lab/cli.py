@@ -54,6 +54,50 @@ def cmd_health(args):
 
     st = Store()
     print(f"인덱스 : {CFG.index_dir}  projects={st.projects()}")
+    print(f"브리핑 : {CFG.briefings_dir()}")
+
+    # ⚠ fingerprint() 를 그대로 찍습니다.
+    #    인덱스 stale 판정에 쓰는 값과 눈으로 보는 값이 같아야 합니다.
+    fp = CFG.fingerprint()
+    print("지문   : " + "  ".join(f"{k}={v}" for k, v in fp.items()))
+    print(f"검색   : top_k={CFG.top_k}  threshold={CFG.score_threshold}  "
+          f"min_chunk={CFG.min_chunk_chars}  use_mmr={CFG.use_mmr}  "
+          f"reorder={CFG.reorder_context}")
+    print(f"브리핑 : auto={CFG.auto_briefing}  model={CFG.briefing_model}")
+    return 0
+
+
+def cmd_briefing(args):
+    """브리핑을 만들거나 이미 만든 것을 보여줍니다."""
+    from vss_rag import briefing
+
+    if not args.force:
+        cached = briefing.load(args.project)
+        if cached:
+            print(f"이미 있습니다: {briefing.md_path(args.project)}")
+            print(f"  생성 {cached.get('generated_at')}  commit {cached.get('commit')}")
+            print("  다시 만들려면 --force")
+            return 0
+
+    st = indexer.get_state(args.project)
+    root = args.root or st.get("project_root")
+    if not root:
+        print("!! project_root 를 알 수 없습니다. --root 로 지정하세요.")
+        return 1
+
+    print(f"브리핑 생성: {args.project}  (모델 {args.model})")
+    t0 = time.time()
+    r = briefing.build(root, args.project, args.model, CFG.ollama_url,
+                       commit=st.get("commit"))
+    if not r.get("ok"):
+        # no_material / no_evidence 는 오류가 아닙니다.
+        # 문서가 부실한 레포에서 지어내는 것보다 낫습니다.
+        print(f"작성하지 않음: {r.get('reason')} — {r.get('message')}")
+        return 0
+
+    print(f"완료 {time.time()-t0:.1f}s")
+    print(f"  {r['md_path']}")
+    print(f"  근거 {len(r['reference_files'])}개 파일 / {r['evidence_tokens']} 토큰")
     return 0
 
 
@@ -98,6 +142,33 @@ def cmd_update(args):
     return 0
 
 
+def cmd_projects(args):
+    """인덱싱된 프로젝트 목록."""
+    from vss_rag import briefing
+    st_all = indexer.list_projects()
+    store = Store()
+
+    print(f"{'프로젝트':<22} {'상태':<10} {'청크':>8}  {'브리핑':<6} {'인덱싱 시각'}")
+    print("-" * 78)
+    known = set()
+    for st in sorted(st_all, key=lambda x: x.get("indexed_at") or "", reverse=True):
+        pid = st.get("project_id")
+        if not pid:
+            continue
+        known.add(pid)
+        b = "있음" if briefing.load(pid) else "-"
+        print(f"{pid:<22} {st.get('state','?'):<10} "
+              f"{store.count(pid):>8}  {b:<6} {st.get('indexed_at') or '-'}")
+        if st.get("project_root"):
+            print(f"  └ {st['project_root']}")
+
+    for pid in store.projects():
+        if pid not in known:
+            print(f"{pid:<22} {'orphan':<10} {store.count(pid):>8}  "
+                  f"{'-':<6} (상태 기록 없음)")
+    return 0
+
+
 def cmd_reset(args):
     print(json.dumps(indexer.clear_state(args.project), ensure_ascii=False))
     print("인덱스 데이터는 재인덱싱 시 자동으로 정리됩니다.")
@@ -112,8 +183,20 @@ def cmd_index(args):
         return 0
 
     print(f"인덱싱 시작: {args.root}  →  project_id={args.project}")
+
+    # ⚠ 브리핑은 LLM 을 씁니다. indexer 는 그 사실을 모르고,
+    #    여기서 콜백으로 주입합니다. 실패해도 인덱싱은 done 으로 남습니다.
+    hook = None
+    if CFG.auto_briefing and not args.no_briefing:
+        from vss_rag import briefing as _brf
+
+        def hook(pid, root, commit):
+            print("  브리핑 생성 중...")
+            _brf.build(root, pid, args.model, CFG.ollama_url, commit=commit)
+
     t0 = time.time()
-    r = indexer.start_index(args.root, args.project, blocking=True, force=args.force)
+    r = indexer.start_index(args.root, args.project, blocking=True,
+                            force=args.force, on_done=hook)
     if not r.get("accepted"):
         print(f"!! 거부됨: {r}")
         return 1
@@ -121,6 +204,12 @@ def cmd_index(args):
     st = indexer.get_state(args.project)
     print(json.dumps(st, ensure_ascii=False, indent=2))
     print(f"\n소요 {time.time()-t0:.1f}s / 파일 {st.get('total')} / 청크 {st.get('chunk_count')}")
+    if st.get("briefing") == "ready":
+        from vss_rag import briefing as _brf
+        print(f"브리핑 : {_brf.md_path(args.project)}")
+    elif st.get("briefing") == "failed":
+        print(f"브리핑 : 실패 — {st.get('briefing_error')}")
+        print("        인덱싱은 정상입니다. python cli.py briefing 으로 재시도하세요.")
     return 0
 
 
@@ -235,6 +324,8 @@ def main():
     p = sub.add_parser("reset"); p.set_defaults(fn=cmd_reset)
     p.add_argument("--project", required=True)
 
+    sub.add_parser("projects").set_defaults(fn=cmd_projects)
+
     p = sub.add_parser("update"); p.set_defaults(fn=cmd_update)
     p.add_argument("root", nargs="?", default=None,
                    help="생략하면 이전 인덱싱 경로를 사용")
@@ -243,9 +334,19 @@ def main():
                    help="무엇이 바뀌었는지만 보고 실행하지 않음")
     p.add_argument("--force", action="store_true")
 
+    p = sub.add_parser("briefing"); p.set_defaults(fn=cmd_briefing)
+    p.add_argument("project")
+    p.add_argument("--root", default=None, help="생략하면 인덱싱 기록에서 찾습니다")
+    p.add_argument("--model", default=CFG.briefing_model)
+    p.add_argument("--force", action="store_true", help="캐시를 무시하고 다시 생성")
+
     p = sub.add_parser("index"); p.set_defaults(fn=cmd_index)
     p.add_argument("root"); p.add_argument("--project", required=True)
     p.add_argument("--force", action="store_true")
+    p.add_argument("--model", default=CFG.briefing_model,
+                   help="인덱싱 후 자동 생성할 브리핑의 모델")
+    p.add_argument("--no-briefing", action="store_true",
+                   help="브리핑 자동 생성을 건너뜁니다 (평가 실험용)")
 
     p = sub.add_parser("status"); p.set_defaults(fn=cmd_status)
     p.add_argument("--project", required=True)

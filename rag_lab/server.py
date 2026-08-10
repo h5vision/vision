@@ -25,11 +25,24 @@ import threading
 import time
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 from vss_rag.config import CFG
 from vss_rag import briefing, embedder, indexer, references, searcher
 from vss_rag.store import Store
+
+
+def _briefing_hook(model: str, url: str):
+    """인덱싱이 끝나면 브리핑을 만드는 콜백을 돌려줍니다.
+
+    ⚠ 이것이 rag_lab 에서 LLM 을 부르는 두 지점 중 하나입니다 (다른 하나는 POST /briefing).
+       모델과 URL 을 여기서 주입하므로, fine-tuned 모델로 바꿀 때
+       백엔드 한 곳만 고치면 브리핑도 따라갑니다 (C' 구조).
+    """
+    def cb(project_id: str, root: str, commit: str | None) -> None:
+        briefing.build(root, project_id, model, url, commit=commit)
+    return cb
 
 TOKEN: str | None = None
 _STORE_LOCK = threading.Lock()
@@ -49,6 +62,21 @@ class Handler(BaseHTTPRequestHandler):
     server_version = "vss-rag-lab/0.1"
 
     # ── 공통 ────────────────────────────────────────────────
+    def _send_text(self, code: int, text: str, ctype: str = "text/markdown"):
+        """원문 텍스트를 그대로 내려줍니다 (JSON 감싸기 없음).
+
+        프론트는 `fetch(url).then(r => r.text())` 한 줄이면 됩니다.
+        """
+        body = text.encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", f"{ctype}; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-VSS-Token")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.end_headers()
+        self.wfile.write(body)
+
     def _send(self, code: int, payload: dict):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
@@ -94,11 +122,19 @@ class Handler(BaseHTTPRequestHandler):
                     "embed_model": CFG.embed_model,
                     "index_dir": CFG.index_dir,
                     "projects": get_store().projects(),
+                    "briefings_dir": str(CFG.briefings_dir()),
+                    # ⚠ fingerprint() 를 그대로 펼칩니다.
+                    #    인덱스 stale 판정에 쓰는 값과 화면에 보이는 값이
+                    #    같아야 어긋날 일이 없습니다.
                     "config": {
-                        "chunk_size": CFG.chunk_size,
-                        "chunk_overlap": CFG.chunk_overlap,
+                        **CFG.fingerprint(),
+                        "min_chunk_chars": CFG.min_chunk_chars,
                         "top_k": CFG.top_k,
                         "score_threshold": CFG.score_threshold,
+                        "use_mmr": CFG.use_mmr,
+                        "reorder_context": CFG.reorder_context,
+                        "auto_briefing": CFG.auto_briefing,
+                        "briefing_model": CFG.briefing_model,
                     },
                 })
 
@@ -113,6 +149,20 @@ class Handler(BaseHTTPRequestHandler):
                 if not pid:
                     return self._send(400, {"error": "project_id required"})
                 return self._send(200, indexer.has_index(pid))
+
+            # ── 브리핑 원문 (.md) ───────────────────────────
+            # 프론트가 마크다운을 그대로 받아 렌더하는 용도입니다.
+            # references·structure 같은 구조 정보가 필요하면 /briefing (JSON) 을 쓰세요.
+            if path == "/briefing.md":
+                pid = (q.get("project_id") or [None])[0]
+                if not pid:
+                    return self._send(400, {"error": "project_id required"})
+                md = briefing.md_path(pid)
+                if not md.exists():
+                    return self._send(404, {
+                        "error": "not_found", "project_id": pid,
+                        "detail": "아직 생성되지 않았습니다. POST /briefing 으로 만드세요."})
+                return self._send_text(200, md.read_text(encoding="utf-8"))
 
             if path == "/briefing":
                 pid = (q.get("project_id") or [None])[0]
@@ -132,8 +182,69 @@ class Handler(BaseHTTPRequestHandler):
                     and rec["commit"] != st["commit"])
                 return self._send(200, rec)
 
+            # ── 인덱싱된 프로젝트 목록 ──────────────────────
+            # 프론트가 "어떤 프로젝트를 인덱싱해뒀는지" 화면에 보여주기 위한
+            # 엔드포인트입니다. 목록에서 골라 질문하거나, 갱신을 요청할 수
+            # 있게 하려면 이 정보가 필요합니다.
             if path == "/projects":
-                return self._send(200, {"projects": indexer.list_projects()})
+                store = get_store()
+                out = []
+                for st in indexer.list_projects():
+                    pid = st.get("project_id")
+                    if not pid:
+                        continue
+                    root = st.get("project_root")
+
+                    # 인덱스가 낡았는지 — git commit 비교
+                    stale = None
+                    if root and st.get("state") == "done":
+                        try:
+                            stale = indexer.is_stale(root, pid)
+                        except Exception:
+                            stale = None
+
+                    out.append({
+                        "project_id": pid,
+                        "name": (Path(root).name if root else pid),
+                        "project_root": root,
+                        "state": st.get("state", "none"),
+                        "chunk_count": st.get("chunk_count", 0),
+                        "actual_chunks": store.count(pid),
+                        "indexed_at": st.get("indexed_at"),
+                        "commit": st.get("commit"),
+                        "dirty": st.get("dirty"),
+                        "elapsed_s": st.get("elapsed_s"),
+                        "last_mode": st.get("last_mode", "full"),
+                        "processed": st.get("processed"),
+                        "total": st.get("total"),
+                        "error": st.get("error"),
+                        "has_briefing": briefing.load(pid) is not None,
+                        "briefing": st.get("briefing"),
+                        "briefing_error": st.get("briefing_error"),
+                        "outdated": bool(stale and stale.get("stale")),
+                        "outdated_reason": (stale or {}).get("reason"),
+                        "fingerprint": st.get("fingerprint"),
+                    })
+
+                # 인덱싱 안 된 컬렉션도 노출 (state.json 이 지워진 경우 등)
+                known = {o["project_id"] for o in out}
+                for pid in store.projects():
+                    if pid not in known:
+                        out.append({
+                            "project_id": pid, "name": pid,
+                            "state": "orphan",        # 인덱스는 있는데 상태 기록이 없음
+                            "chunk_count": 0,
+                            "actual_chunks": store.count(pid),
+                            "has_briefing": briefing.load(pid) is not None,
+                        "briefing": st.get("briefing"),
+                        "briefing_error": st.get("briefing_error"),
+                            # generating | ready | failed | None(미시도)
+                            "briefing": st.get("briefing"),
+                            "briefing_error": st.get("briefing_error"),
+                        })
+
+                out.sort(key=lambda x: (x.get("indexed_at") or ""), reverse=True)
+                return self._send(200, {"projects": out, "count": len(out)})
 
             return self._send(404, {"error": "not found", "path": path})
 
@@ -156,8 +267,19 @@ class Handler(BaseHTTPRequestHandler):
                 if not root or not pid:
                     return self._send(400, {"error": "project_root, project_id required"})
 
+                # ⚠ 브리핑은 LLM 을 씁니다. indexer 는 그 사실을 모르고,
+                #    서버가 콜백으로 주입합니다 (C' 구조 유지).
+                #    실패해도 인덱싱 state 는 done 으로 남습니다.
+                hook = None
+                if CFG.auto_briefing and not body.get("no_briefing"):
+                    hook = _briefing_hook(
+                        body.get("model", CFG.briefing_model),
+                        body.get("ollama_url", CFG.ollama_url),
+                    )
+
                 r = indexer.start_index(root, pid, blocking=False,
-                                        force=bool(body.get("force")))
+                                        force=bool(body.get("force")),
+                                        on_done=hook)
                 return self._send(202 if r.get("accepted") else 409, r)
 
             # ── 증분 인덱싱 ─────────────────────────────────
@@ -352,6 +474,7 @@ def main():
     print("  POST /finalize {answer, sources}")
     print("  POST /briefing {project_id, model?, ollama_url?, force?}")
     print("  GET  /briefing?project_id=...")
+    print("  GET  /briefing.md?project_id=...   (마크다운 원문)")
     print("=" * 58)
 
     # ⚠ 워밍업 — 하지 않으면 첫 /prompt 요청이 수 초 걸립니다.
