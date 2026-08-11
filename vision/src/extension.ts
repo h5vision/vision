@@ -7,8 +7,6 @@ import { ChatHandler } from './chat/chatHandler_SSE';
 import { FileDependencyProvider } from "./providers/dependencyProvider";
 import { HistoryService } from './services/historyService';
 import { DependencyService } from './services/dependencyService';
-import { ProjectBriefHandler } from './controller/handlers/projectBriefHandler';
-import { SidebarCommand } from './types/sidebarMessage';
 
 
 // 이 메서드는 확장 프로그램이 활성화될 때 호출됩니다. 확장 프로그램이 처음으로 명령을 실행할 때 활성화됩니다.
