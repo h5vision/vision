@@ -3,6 +3,7 @@ import * as path from "path";
 
 import { DependencyFile } from "../types/dependency";
 import { FileDependencyProvider } from "../providers/dependencyProvider";
+import { buildImportResolutionCandidates, extractImportPaths, resolveLanguageId, shouldPreferSymbolBasedStrategy } from "./dependencyImportPatterns";
 
 interface DependencyCacheEntry {
     version: number;
@@ -39,12 +40,22 @@ export class DependencyService {
 
         const symbols = await this.getSymbols(document);
         const result = new Map<string, DependencyFile>();
+        const languageId = resolveLanguageId(document.languageId, document.fileName);
+        const shouldUseSymbolStrategy = shouldPreferSymbolBasedStrategy(languageId, document.fileName);
 
-        await Promise.all([
-            this.collectImports(document, result),
-            this.collectDefinitions(document, symbols, result),
-            this.collectReferences(document, symbols, result)
-        ]);
+        if (shouldUseSymbolStrategy) {
+            await Promise.all([
+                this.collectDefinitions(document, symbols, result),
+                this.collectReferences(document, symbols, result),
+                this.collectImports(document, result)
+            ]);
+        } else {
+            await Promise.all([
+                this.collectImports(document, result),
+                this.collectDefinitions(document, symbols, result),
+                this.collectReferences(document, symbols, result)
+            ]);
+        }
 
         const dependencies = [...result.values()];
         this.dependencyCache.set(cacheKey, {
@@ -69,7 +80,7 @@ export class DependencyService {
             document.uri
         );
 
-        if (links && links.length > 0) {
+        if (links) {
             for (const link of links) {
                 if (!link.target || link.target.scheme !== "file") {
                     continue;
@@ -83,7 +94,6 @@ export class DependencyService {
                 });
             }
 
-            return;
         }
 
         await this.collectImportsByRegex(document, result);
@@ -97,32 +107,42 @@ export class DependencyService {
         result: Map<string, DependencyFile>
     ) {
         const currentDir = path.dirname(document.uri.fsPath);
-        const regex =
-            /import\s+(?:[\w*\s{},]+)\s+from\s+['"](.+?)['"]|import\(\s*['"](.+?)['"]\s*\)|require\(\s*['"](.+?)['"]\s*\)|export\s+.*?from\s+['"](.+?)['"]/g;
+        const source = document.getText();
+        const languageId = resolveLanguageId(document.languageId, document.fileName);
+        const importPaths = extractImportPaths(source, languageId);
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
-        for (let i = 0; i < document.lineCount; i++) {
-            const line = document.lineAt(i).text;
-            let match: RegExpExecArray | null;
-
-            while ((match = regex.exec(line)) !== null) {
-                const importPath = match[1] || match[2] || match[3] || match[4];
-                if (!importPath || !importPath.startsWith(".")) {
-                    continue;
-                }
-
-                const resolved = await this.resolveImport(currentDir, importPath);
-                if (!resolved) {
-                    continue;
-                }
-
-                this.mergeDependency(result, resolved, {
-                    path: resolved,
-                    label: vscode.workspace.asRelativePath(resolved),
-                    imported: true,
-                    referenced: false
-                });
+        for (const importPath of importPaths) {
+            if (!this.shouldResolveImport(importPath, languageId)) {
+                continue;
             }
+
+            const resolved = await this.resolveImport(currentDir, importPath, languageId, workspaceRoot, document.fileName);
+            if (!resolved) {
+                continue;
+            }
+
+            this.mergeDependency(result, resolved, {
+                path: resolved,
+                label: vscode.workspace.asRelativePath(resolved),
+                imported: true,
+                referenced: false
+            });
         }
+    }
+
+    private shouldResolveImport(importPath: string, languageId: string): boolean {
+        const normalized = (languageId || '').toLowerCase();
+
+        if (normalized.startsWith('python')) {
+            return Boolean(importPath) && !importPath.startsWith('http://') && !importPath.startsWith('https://');
+        }
+
+        if (normalized === 'cpp' || normalized === 'c' || normalized === 'objective-c' || normalized === 'objective-cpp') {
+            return importPath.startsWith('.') || importPath.startsWith('/') || importPath.includes('/') || importPath.includes('\\');
+        }
+
+        return importPath.startsWith('.');
     }
 
     /**
@@ -264,20 +284,12 @@ export class DependencyService {
      */
     private async resolveImport(
         currentDir: string,
-        importPath: string
+        importPath: string,
+        languageId: string,
+        workspaceRoot?: string,
+        fileName?: string
     ): Promise<string | undefined> {
-        const base = path.resolve(currentDir, importPath);
-        const candidates = [
-            base,
-            `${base}.ts`,
-            `${base}.tsx`,
-            `${base}.js`,
-            `${base}.jsx`,
-            path.join(base, "index.ts"),
-            path.join(base, "index.tsx"),
-            path.join(base, "index.js"),
-            path.join(base, "index.jsx")
-        ];
+        const candidates = buildImportResolutionCandidates(currentDir, importPath, languageId, workspaceRoot, fileName);
 
         for (const candidate of candidates) {
             try {
