@@ -58,17 +58,17 @@ document.addEventListener("DOMContentLoaded", () => {
         vscode.postMessage({ command: "toggleGuide" });
     });
 
-    // 프로젝트 브리핑 생성 by Copilot
-    const copilotBriefGenBtn = document.getElementById("copilot-gen-brief-btn");
-    copilotBriefGenBtn.addEventListener("click", () => {
-        vscode.postMessage({ command: "generateBriefByCopilot" });
-    });
+    // // 프로젝트 브리핑 생성 by Copilot
+    // const copilotBriefGenBtn = document.getElementById("copilot-gen-brief-btn");
+    // copilotBriefGenBtn.addEventListener("click", () => {
+    //     vscode.postMessage({ command: "generateBriefByCopilot" });
+    // });
 
-    const genRAGTBtn = document.getElementById("gen-RAGTEST-btn");
-    genRAGTBtn.addEventListener("click", () => {
-        const testN = document.getElementById('testN').value;
-        vscode.postMessage({ command: "generateRAGTEST", data: Number(testN)});
-    });
+    // const genRAGTBtn = document.getElementById("gen-RAGTEST-btn");
+    // genRAGTBtn.addEventListener("click", () => {
+    //     const testN = document.getElementById('testN').value;
+    //     vscode.postMessage({ command: "generateRAGTEST", data: Number(testN)});
+    // });
 
     // Chat History.db 열기 버튼 이벤트
     const openDBExternalBtn = document.getElementById("open-db-external-btn");

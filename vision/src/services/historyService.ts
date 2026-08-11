@@ -66,6 +66,7 @@ export class HistoryService {
     }
 
     public async openDBExternal() {
+        console.log('Opening DB location in external explorer...');
         const absolutePath = path.isAbsolute(this.dbPath)
             ? this.dbPath
             : path.resolve(this.dbPath);
