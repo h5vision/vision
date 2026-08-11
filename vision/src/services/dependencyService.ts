@@ -38,6 +38,8 @@ export class DependencyService {
             return;
         }
 
+        this.provider.setLoading();
+
         const symbols = await this.getSymbols(document);
         const result = new Map<string, DependencyFile>();
         const languageId = resolveLanguageId(document.languageId, document.fileName);

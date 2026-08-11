@@ -151,6 +151,11 @@ function renderProjectList(projects) {
 
         const locationEl = document.createElement('span');
         locationEl.className = 'badge';
+        if (proj.location === 'Local') {
+            locationEl.style.color = '#32b1ff';
+        } else if (proj.location === 'DB') {
+            locationEl.style.color = '#4CAF50';
+        }
         locationEl.textContent = `${proj.location}`;
 
         titleEl.appendChild(iconEl);
