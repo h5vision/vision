@@ -38,6 +38,12 @@ document.addEventListener("DOMContentLoaded", () => {
         endpoint.click();
     });
 
+    // 프로젝트 브리핑 열기
+    const prjBriefBtn = document.getElementById("project-brief-btn");
+    prjBriefBtn.addEventListener("click", () => {
+        vscode.postMessage({ command: "getProjectBrief" });
+    });
+
     // Project List 새로고침
     const refreshProjectBtn = document.getElementById("refresh-projects-btn");
     refreshProjectBtn.addEventListener("click", () => {
@@ -52,16 +58,22 @@ document.addEventListener("DOMContentLoaded", () => {
         vscode.postMessage({ command: "toggleGuide" });
     });
 
-    // 프로젝트 브리핑 by Copilot
-    const prjBriefBtn = document.getElementById("project-brief-btn");
-    prjBriefBtn.addEventListener("click", () => {
-        vscode.postMessage({ command: "generateProjectBrief" });
+    // 프로젝트 브리핑 생성 by Copilot
+    const copilotBriefGenBtn = document.getElementById("copilot-gen-brief-btn");
+    copilotBriefGenBtn.addEventListener("click", () => {
+        vscode.postMessage({ command: "generateBriefByCopilot" });
     });
 
     const genRAGTBtn = document.getElementById("gen-RAGTEST-btn");
     genRAGTBtn.addEventListener("click", () => {
         const testN = document.getElementById('testN').value;
         vscode.postMessage({ command: "generateRAGTEST", data: Number(testN)});
+    });
+
+    // Chat History.db 열기 버튼 이벤트
+    const openDBExternalBtn = document.getElementById("open-db-external-btn");
+    openDBExternalBtn.addEventListener("click", () => {
+        vscode.postMessage({ command: "openDBExternal" });
     });
 
 });
@@ -117,7 +129,7 @@ function renderProjectList(projects) {
     if (!container) {return;}
 
     if (!projects || projects.length === 0) {
-        container.innerHTML = '<div style="padding: 4px 0; opacity: 0.8;">• 등록된 프로젝트 목록이 없습니다.</div>';
+        container.innerHTML = '<div>• 등록된 프로젝트 목록이 없습니다.</div>';
         return;
     }
 
@@ -228,7 +240,7 @@ window.addEventListener("message", event => {
             let git = '';
             if (data.git) {
                 elgit.textContent = data.repository.branch;
-                elgit.innerHTML = `<i class="codicon codicon-git-branch"></i> ${data.repository.commit.slice(0,7)} <b><i class="codicon codicon-target"></i>${data.repository.branch}</b>`;
+                elgit.innerHTML = `<i class="codicon codicon-git-branch"></i> ${data.repository.commit.slice(0,7)} &nbsp; <b><i class="codicon codicon-target"></i>${data.repository.branch}</b>`;
             } else {
                 git = "❌ 정보없음";
                 elgit.textContent = git;
@@ -260,4 +272,3 @@ window.addEventListener("message", event => {
         }
     }
 });
-

@@ -102,7 +102,7 @@ export class ChatHandler {
             role: "user",
             project_id: projectName,
             commit_id: commit_id,
-            content: projectName +' '+ request.prompt,
+            content: request.prompt,
             stream: true,
         };
         console.log('payload', payload);

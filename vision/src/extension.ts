@@ -84,6 +84,12 @@ export async function activate(context: vscode.ExtensionContext) {
 		// ChatParticipantProvider를 구독에 추가하여 확장 프로그램이 비활성화될 때 정리할 수 있도록 합니다.
 		const chatHandler = new ChatHandler(historyService);
 		vscode.chat.createChatParticipant("vision.chat", chatHandler.handle);
+
+		// history.db 파일을 외부에서 열 수 있도록 명령어를 등록합니다.
+		const openDBExternalCommand = vscode.commands.registerCommand('vision.openDBExternal', async () => {
+			await historyService.openDBExternal();
+		});
+		context.subscriptions.push(openDBExternalCommand);
 	} catch(err) {
 		console.log(err);
 	}
@@ -142,11 +148,7 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(explainFileDisposable);
-	
-	// Project Briefing 표시
-	await new ProjectBriefHandler().GetBrief({
-		command: SidebarCommand.GetProjectBrief
-	});
+
 }
 
 // 이 메서드는 확장 프로그램이 비활성화될 때 호출됩니다.

@@ -19,13 +19,13 @@ export class ProjectListHandler {
         const sampleProjects = [
             {
                 id:1,
-                location: "db",
+                location: "DB",
                 name: 'FastAPI',
                 commits: [['','']]
             },
             {
                 id:2,
-                location: "db",
+                location: "DB",
                 name: 'Flask',
                 commits: [['','']] 
             }
@@ -41,7 +41,7 @@ export class ProjectListHandler {
                 [m.hash, m.message]);
             sampleProjects.push({
                 id:0, 
-                location: "local",
+                location: "Local",
                 name: response.name, 
                 commits: gitCommits,
             });

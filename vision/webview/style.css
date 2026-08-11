@@ -57,7 +57,7 @@ body {
     margin-right: 4px;
     margin: 0px;
     width: max-content;
-    height:fit-content;
+    height: fit-content;
 }
 
 #model-list-scroll {
@@ -98,7 +98,7 @@ body {
 }
 
 .project-info-box div {
-    margin:4px;
+    margin: 8px 4px;
     font-size:12px;
 }
 
@@ -173,6 +173,8 @@ body {
 
 .block-btn {
     display:block;
+    margin-top: 4px;
+    margin-bottom: 10px;
 }
 
 select {

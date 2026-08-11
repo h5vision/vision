@@ -9,7 +9,7 @@ export class ProjectBriefHandler {
     private readonly APIService = new APIService();
     private readonly workspaceService = new WorkspaceService();
 
-    public async handle(message: SidebarMessage) {
+    public async CopilotGenBrief(message: SidebarMessage) {
         console.log(message.command);
         const query = BriefPromptBuilder.build();
         await vscode.commands.executeCommand("workbench.action.chat.open", {
@@ -22,7 +22,7 @@ export class ProjectBriefHandler {
         );
     }
 
-    public async GetBrief(message: SidebarMessage) {
+    public async handle(message: SidebarMessage) {
         console.log(message.command);
         const workspace = this.workspaceService.getWorkspace();
         if (!workspace) {
@@ -33,10 +33,8 @@ export class ProjectBriefHandler {
 
         if ((await vscode.workspace.fs.readDirectory(vscode.Uri.file(workspace.path))).some(([name]) => name === 'brief.md')) {
             vscode.window.showInformationMessage("프로젝트 브리핑 파일이 이미 존재합니다. brief.md 파일을 엽니다.");
-            await vscode.window.showTextDocument(
-                vscode.Uri.joinPath(vscode.Uri.file(workspace.path), "brief.md"), 
-                { preview: true }
-            );
+            const briefUri = vscode.Uri.joinPath(vscode.Uri.file(workspace.path), "brief.md");
+            await vscode.commands.executeCommand("markdown.showPreview", briefUri);
             return;
         }
 
@@ -59,8 +57,7 @@ export class ProjectBriefHandler {
                 Buffer.from(brief, "utf8")
             );
 
-            const document = await vscode.workspace.openTextDocument(outputUri);
-            await vscode.window.showTextDocument(document, { preview: true });
+            await vscode.commands.executeCommand("markdown.showPreview", outputUri);
         } catch (error) {
             const detail = error instanceof Error ? error.message : String(error);
             vscode.window.showErrorMessage(`프로젝트 브리핑 저장에 실패했습니다: ${detail}`);

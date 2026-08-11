@@ -48,7 +48,7 @@ export class SidebarController {
             case SidebarCommand.InitialProjectIndexing:
                 return this.indexingHandler.handle(message);
 
-            case SidebarCommand.LoadHistory:
+            case SidebarCommand.OpenDBExternal:
                 return this.historyHandler.handle(message);
 
             case SidebarCommand.GetProjectInfo:
@@ -60,14 +60,15 @@ export class SidebarController {
             case SidebarCommand.GetProjectList: 
                 return this.projectListHandler.handle(message);
 
-            case SidebarCommand.GenerateProjectBrief:
+            case SidebarCommand.GetProjectBrief:
                 return this.projectBriefHandler.handle(message);
 
-            case SidebarCommand.GetProjectBrief:
-                return this.projectBriefHandler.GetBrief(message);
+            case SidebarCommand.GenerateBriefByCopilot:
+                return this.projectBriefHandler.CopilotGenBrief(message);
 
             case SidebarCommand.GenerateRAGTEST:
                 return this.ragtestHandler.handle(message);
+
 
             case SidebarCommand.UpdateEndpoint:
                 await vscode.workspace.getConfiguration('vision')
@@ -81,6 +82,7 @@ export class SidebarController {
                 );
                 return this.APIHandler.handle(message);
 
+
             case SidebarCommand.UpdateModelId:
                 await vscode.workspace.getConfiguration('vision')
                     .update(
@@ -92,6 +94,7 @@ export class SidebarController {
                     "Model ID가 변경되었습니다."
                 );
                 return this.APIHandler.handle(message);
+
 
             case SidebarCommand.UpdateCommitId:
                 await vscode.workspace.getConfiguration('vision')
@@ -114,6 +117,7 @@ export class SidebarController {
                 });
                 return;
             
+
             case SidebarCommand.ToggleGuide:
                 vscode.commands.executeCommand('vision.toggleGuide');
                 return;

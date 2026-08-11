@@ -49,6 +49,10 @@
       {
         "command": "vision.explainFile",
         "title": "vision: 이 코드 설명해줘"
+      },
+      {
+        "command": "vision.openDBExternal",
+        "title": "vision: Open DB Location"
       }
     ],
     "menus": {

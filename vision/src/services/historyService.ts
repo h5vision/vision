@@ -1,10 +1,14 @@
+import * as path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import * as vscode from 'vscode';
 
 export class HistoryService {
 
     private db: DatabaseSync;
+    private dbPath: string;
 
     constructor(dbPath: string) {
+        this.dbPath = dbPath;
         this.db = new DatabaseSync(dbPath);
         this.initialize();
     }
@@ -59,5 +63,19 @@ export class HistoryService {
             LIMIT 20
         `);
         return stmt.all(projectId);
+    }
+
+    public async openDBExternal() {
+        const absolutePath = path.isAbsolute(this.dbPath)
+            ? this.dbPath
+            : path.resolve(this.dbPath);
+
+        const fileUri = vscode.Uri.file(absolutePath);
+
+        try {
+            await vscode.commands.executeCommand('revealFileInOS', fileUri);
+        } catch (error) {
+            console.error('Failed to open DB location in explorer:', error);
+        }
     }
 }

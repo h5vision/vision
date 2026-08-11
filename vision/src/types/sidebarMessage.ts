@@ -8,7 +8,7 @@ export enum SidebarCommand {
 
     InitialProjectIndexing = "initialProjectIndexing",
 
-    LoadHistory = "loadHistory",
+    OpenDBExternal = "openDBExternal",
 
     GetProjectInfo = "getProjectInfo",
 
@@ -18,7 +18,7 @@ export enum SidebarCommand {
 
     GetProjectList = "getProjectList",
 
-    GenerateProjectBrief = "generateProjectBrief",
+    GenerateBriefByCopilot = "generateBriefByCopilot",
 
     GetProjectBrief = "getProjectBrief",
 
