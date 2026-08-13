@@ -28,7 +28,7 @@ export class CommitDiffService implements vscode.Disposable {
             const payload = await this.gitService.getCommitDiff(commit, previousCommit);
             console.log("Commit diff payload:", payload);
 
-            await this.apiService.post("/v1/git/commit-diff", payload);
+            await this.apiService.post("/workspace-overlays", payload);
         } catch (error) {
             console.log("Failed to send commit diff to backend:", error);
         }

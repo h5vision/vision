@@ -17,7 +17,13 @@ export class FileDependencyProvider implements vscode.TreeDataProvider<vscode.Tr
     }
 
     public updateFiles(newFiles: DependencyFile[]) {
-        this.files = newFiles;
+        this.files = [...newFiles].sort((left, right) => {
+            const groupOrder = this.getGroupOrder(left) - this.getGroupOrder(right);
+
+            return groupOrder !== 0
+                ? groupOrder
+                : left.label.localeCompare(right.label);
+        });
         this.isLoading = false;
         this._onDidChangeTreeData.fire();
     }
@@ -94,6 +100,19 @@ export class FileDependencyProvider implements vscode.TreeDataProvider<vscode.Tr
         }
 
         return 'unknown';
+    }
+
+    private getGroupOrder(file: DependencyFile): number {
+        switch (this.getGroupId(file)) {
+            case 'imported':
+                return 0;
+            case 'both':
+                return 1;
+            case 'referenced':
+                return 2;
+            case 'unknown':
+                return 3;
+        }
     }
 
     private getGroupDescription(groupId: DependencyGroupId): string {

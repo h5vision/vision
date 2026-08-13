@@ -104,6 +104,7 @@ export class ChatHandler {
             commit_id: commit_id,
             content: request.prompt,
             stream: true,
+            model_id: model_id
         };
         console.log('payload', payload);
         try {
