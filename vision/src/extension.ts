@@ -7,6 +7,8 @@ import { ChatHandler } from './chat/chatHandler_SSE';
 import { FileDependencyProvider } from "./providers/dependencyProvider";
 import { HistoryService } from './services/historyService';
 import { DependencyService } from './services/dependencyService';
+import { GitService } from './services/gitService';
+import { CommitDiffService } from './services/commitDiffService';
 
 
 // 이 메서드는 확장 프로그램이 활성화될 때 호출됩니다. 확장 프로그램이 처음으로 명령을 실행할 때 활성화됩니다.
@@ -19,6 +21,16 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.window.showInformationMessage('Hello World from vision!');
 	});
 	context.subscriptions.push(disposable);
+
+
+	// 커밋이 발생하면 diff를 backend 서버로 전송하는 기능을 초기화합니다.
+	const gitService = new GitService();
+	const commitDiffService = new CommitDiffService(gitService);
+	context.subscriptions.push(gitService, commitDiffService);
+
+	gitService.initialize().then(() => {
+		commitDiffService.start();
+	});
 
 
 	// SidebarProvider를 등록하여 웹뷰를 표시할 수 있도록 설정

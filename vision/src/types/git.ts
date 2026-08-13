@@ -46,6 +46,9 @@ export interface Repository {
     }): Promise<GitCommit[]>;
 
     diffWithHEAD(path?: string): Promise<string>;
+
+    diffBetween(ref1: string, ref2: string): Promise<Change[]>;
+    diffBetween(ref1: string, ref2: string, path: string): Promise<string>;
 }
 
 export interface RepositoryState {
@@ -55,6 +58,8 @@ export interface RepositoryState {
     workingTreeChanges: readonly Change[];
     indexChanges: readonly Change[];
     mergeChanges: readonly Change[];
+
+    onDidChange: vscode.Event<void>;
 }
 
 export interface Change {

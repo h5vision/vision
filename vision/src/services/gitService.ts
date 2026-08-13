@@ -10,13 +10,25 @@ export class GitService implements vscode.Disposable {
     public readonly onDidRepositoryReady =
         this._onDidRepositoryReady.event;
 
+    private readonly _onDidCommit =
+        new vscode.EventEmitter<{ commit: string; previousCommit: string }>();
+
+    public readonly onDidCommit =
+        this._onDidCommit.event;
+
     private git?: GitAPI;
     private repository?: Repository;
     private initializePromise?: Promise<void>;
+    private lastCommit?: string;
+    private stateChangeListener?: vscode.Disposable;
 
     constructor() {}
 
-    public dispose() { this._onDidRepositoryReady.dispose(); }
+    public dispose() {
+        this._onDidRepositoryReady.dispose();
+        this._onDidCommit.dispose();
+        this.stateChangeListener?.dispose();
+    }
 
     public initialize(): Promise<void> {
 
@@ -45,7 +57,7 @@ export class GitService implements vscode.Disposable {
         });
 
         if (!extension) {
-            console.log("Git extension is not available or not active.");
+            vscode.window.showErrorMessage("Git extension is not available or not active.");
             return;
         }
 
@@ -69,8 +81,31 @@ export class GitService implements vscode.Disposable {
             return;
         }
 
+        this.lastCommit = head.commit;
+
+        this.stateChangeListener = this.repository.state.onDidChange(
+            () => this.checkForNewCommit()
+        );
+
         this._onDidRepositoryReady.fire();
         
+    }
+
+    // HEAD의 commit hash 변경을 감지하여 새 커밋 발생 여부를 판단합니다.
+    private checkForNewCommit(): void {
+
+        const currentCommit = this.repository?.state.HEAD?.commit;
+        const previousCommit = this.lastCommit;
+
+        if (!currentCommit || currentCommit === previousCommit) {
+            return;
+        }
+
+        this.lastCommit = currentCommit;
+
+        if (previousCommit) {
+            this._onDidCommit.fire({ commit: currentCommit, previousCommit });
+        }
     }
 
     //---------------------------------------
@@ -205,6 +240,29 @@ export class GitService implements vscode.Disposable {
         }
 
         return this.repository.diffWithHEAD(path);
+    }
+
+    public async getCommitDiff(
+        commit: string,
+        parentCommit?: string
+    ): Promise<string> {
+
+        if (!this.repository) {
+            return "";
+        }
+
+        const parent = parentCommit ?? `${commit}^`;
+
+        const changes = await this.repository.diffBetween(parent, commit);
+
+        const diffs = await Promise.all(
+            changes.map(change =>
+                this.repository!.diffBetween(parent, commit, change.uri.fsPath)
+            )
+        );
+        console.log("Commit diff generated:", diffs.join("\n"));
+
+        return diffs.join("\n");
     }
 
     //---------------------------------------
