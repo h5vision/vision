@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("backend-status").textContent = '🟡 Server Reconnecting...';
             document.getElementById("endpoint").textContent = '';
             vscode.postMessage({ command: "checkBackend" });
+            vscode.postMessage({ command: "getModelsInfo" });
         });
     }
 
@@ -36,6 +37,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     cancelEndpoint.addEventListener("click", ()=>{
         endpoint.click();
+    });
+
+    const scrollContainer = document.getElementById("model-list-scroll");
+    scrollContainer.addEventListener('change', (event) => {
+        const selectedModelId = event.target.value;
+        vscode.postMessage({ command: "updateModelId", data: selectedModelId });
     });
 
     // 프로젝트 브리핑 열기
@@ -118,10 +125,6 @@ function updateModelsInfo(command_data) {
             option.selected = true;
         }
     });
-    scrollContainer.addEventListener('change', (event) => {
-        const selectedModelId = event.target.value;
-        vscode.postMessage({ command: "updateModelId", data: selectedModelId });
-    });
 }
 
 function renderProjectList(projects) {
@@ -201,12 +204,21 @@ function renderProjectList(projects) {
     });
 }
 
-vscode.postMessage({ command: "checkBackend" });
-vscode.postMessage({ command: "getModelsInfo" });
 vscode.postMessage({ command: "getProjectInfo" });
-vscode.postMessage({ command: "getProjectGitInfo" });
 vscode.postMessage({ command: "getGuideStatus" });
-vscode.postMessage({ command: "getProjectList" });
+
+setTimeout(() => {
+    vscode.postMessage({ command: "checkBackend" });
+}, 100);
+
+setTimeout(() => {
+    vscode.postMessage({ command: "getModelsInfo" });
+}, 250);
+
+setTimeout(() => {
+    vscode.postMessage({ command: "getProjectGitInfo" });
+    vscode.postMessage({ command: "getProjectList" });
+}, 500);
 
 
 setInterval(() => {

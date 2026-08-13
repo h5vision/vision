@@ -11,7 +11,11 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished",
+    "onView:VisionAssistant.sidebar",
+    "onView:visionFileView",
+    "onCommand:vision.helloWorld",
+    "onCommand:vision.explainFile",
+    "onCommand:vision.openDBExternal",
     "onChatParticipant:vision.chat"
   ],
   "main": "./out/extension.js",

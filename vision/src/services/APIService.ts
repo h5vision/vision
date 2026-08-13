@@ -11,6 +11,10 @@ export class APIService {
 
     constructor() {}
 
+    private createTimeoutSignal(timeoutMs: number): AbortSignal {
+        return AbortSignal.timeout(timeoutMs);
+    }
+
     async checkHealth(): Promise<BackendStatus> {
         const endpoint = vscode.workspace.getConfiguration().get<string>("vision.endpoint",
             "http://127.0.0.1:5000"
@@ -18,7 +22,9 @@ export class APIService {
         let startime = Date.now();
 
         try {
-            const response = await fetch(`${endpoint}/health`);
+            const response = await fetch(`${endpoint}/health`, {
+                signal: this.createTimeoutSignal(2000)
+            });
             const endtime = Date.now();
             const latency = endtime - startime;
             if (!response.ok) {
@@ -55,17 +61,20 @@ export class APIService {
         }
     }
 
-    async get(path: string) {
+    async get(path: string, timeoutMs: number = 3000) {
         const endpoint = vscode.workspace.getConfiguration().get<string>("vision.endpoint",
             "http://127.0.0.1:5000"
         )!;
         const response = await fetch(
-            `${endpoint}${path}`
+            `${endpoint}${path}`,
+            {
+                signal: this.createTimeoutSignal(timeoutMs)
+            }
         );
         return response.json();
     }
 
-    async post(path: string, body: any) {
+    async post(path: string, body: any, timeoutMs: number = 10000) {
         const endpoint = vscode.workspace.getConfiguration().get<string>("vision.endpoint",
             "http://127.0.0.1:5000"
         )!;
@@ -76,7 +85,8 @@ export class APIService {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(body)
+                body: JSON.stringify(body),
+                signal: this.createTimeoutSignal(timeoutMs)
             }
         );
         console.log(response);

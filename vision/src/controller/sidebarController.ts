@@ -10,6 +10,7 @@ import { ProjectInfoHandler } from "./handlers/projectInfoHandler";
 import { ProjectListHandler } from "./handlers/projectListHandler";
 import { ProjectBriefHandler } from "./handlers/projectBriefHandler";
 import { RAGTESTHandler } from "./handlers/RAGTESTHandler";
+import { GitService } from "../services/gitService";
 
 export class SidebarController {
 
@@ -21,6 +22,7 @@ export class SidebarController {
     private readonly projectListHandler: ProjectListHandler;
     private readonly projectBriefHandler: ProjectBriefHandler;
     private readonly ragtestHandler: RAGTESTHandler;
+    private readonly gitService = new GitService();
 
     constructor(
         private readonly view: vscode.WebviewView
@@ -29,8 +31,8 @@ export class SidebarController {
         this.historyHandler = new HistoryHandler(view);
         this.indexingHandler = new IndexingHandler(view);
         this.modelInfoHandler = new ModelInfoHandler(view);
-        this.projectInfoHandler = new ProjectInfoHandler(view);
-        this.projectListHandler = new ProjectListHandler(view);
+        this.projectInfoHandler = new ProjectInfoHandler(view, this.gitService);
+        this.projectListHandler = new ProjectListHandler(view, this.gitService);
         this.projectBriefHandler = new ProjectBriefHandler();
         this.ragtestHandler = new RAGTESTHandler(view);
     }

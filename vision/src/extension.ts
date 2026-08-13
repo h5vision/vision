@@ -49,13 +49,13 @@ export async function activate(context: vscode.ExtensionContext) {
 	const GuideBookSetting = vscode.workspace.getConfiguration('vision').get("showGuideBook");
 	console.log("GuideBookSetting:", GuideBookSetting);
 	if (GuideBookSetting) {
-		await vscode.commands.executeCommand('vision.showGuide').then(() => {
+		setTimeout(() => void vscode.commands.executeCommand('vision.showGuide').then(() => {
 			console.log("Guidebook has been opened.");
 			provider.view?.webview.postMessage({
 				command: "guideStatus",
 				data: true
 			});
-		});
+		}), 250);
 	} else {
 		provider.view?.webview.postMessage({
 			command: "guideStatus",
@@ -65,7 +65,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	
 	
 	// Extension을 실행할 때 vscode chat 창을 자동으로 열어줍니다. 
-	await vscode.commands.executeCommand("workbench.action.chat.open");
 	
 	// vscode 내의 Storage에 history.db 파일을 만듭니다. 
 	const storagePath = path.join(context.globalStorageUri.fsPath);
@@ -100,7 +99,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const dependencyService = new DependencyService(dependencyProvider);
 
-	dependencyService.refresh();
+	setTimeout(() => void dependencyService.refresh(), 500);
 
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveTextEditor(() => {

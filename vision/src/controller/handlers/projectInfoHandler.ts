@@ -6,10 +6,10 @@ import { GitService } from "../../services/gitService";
 export class ProjectInfoHandler {
 
     private readonly workspaceService = new WorkspaceService();
-    private readonly gitService = new GitService();
 
     constructor( 
-        private readonly view: vscode.WebviewView
+        private readonly view: vscode.WebviewView,
+        private readonly gitService: GitService = new GitService()
     ) {}
 
     public async handle(message: SidebarMessage) {
@@ -25,7 +25,6 @@ export class ProjectInfoHandler {
     };
 
     public async handleGitInfo(message: SidebarMessage) {
-        this.gitService.dispose();
         console.log(message.command);
         await this.gitService.initialize();
         const repo = await this.gitService.getRepositoryInfo();

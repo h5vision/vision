@@ -17,17 +17,21 @@ export class ModelInfoHandler {
 
         const current_model_id = vscode.workspace.getConfiguration("vision").get<string>("modelId");
 
-        const response = await this.APIService.get("/models");
-
         let modelsInfo: {model_id: string, model_name: string}[] = [];
 
-        if ((response as responseModel).models) {
-            modelsInfo = (response as responseModel).models.map((model) => {
-                return {
-                    model_id: model.model_id,
-                    model_name: model.display_name
-                };
-            });
+        try {
+            const response = await this.APIService.get("/models", 2500);
+
+            if ((response as responseModel).models) {
+                modelsInfo = (response as responseModel).models.map((model) => {
+                    return {
+                        model_id: model.model_id,
+                        model_name: model.display_name
+                    };
+                });
+            }
+        } catch (error) {
+            console.log("Failed to load models info:", error);
         }
 
         this.view.webview.postMessage({

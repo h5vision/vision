@@ -6,10 +6,10 @@ import { WorkspaceService } from "../../services/workspaceService";
 
 export class ProjectListHandler {
 
-    private readonly gitService = new GitService();
     private readonly workspaceService = new WorkspaceService();
     constructor(
-        private readonly view: vscode.WebviewView
+        private readonly view: vscode.WebviewView,
+        private readonly gitService: GitService = new GitService()
     ) {}
 
     public async handle(message: SidebarMessage) {
