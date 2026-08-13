@@ -21,7 +21,6 @@ export interface GitCommitFile {
     status: "added" | "modified";
     path: string;
     content: string;
-    content_sha256: string;
     encoding: "utf-8";
 }
 

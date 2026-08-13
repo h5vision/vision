@@ -282,7 +282,6 @@ export class GitService implements vscode.Disposable {
                 status: this.toFileStatus(change.status),
                 path: filePath,
                 content: Buffer.from(contents).toString("utf-8"),
-                content_sha256: createHash("sha256").update(contents).digest("hex"),
                 encoding: "utf-8"
             });
         }));
