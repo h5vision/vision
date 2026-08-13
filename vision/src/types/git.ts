@@ -17,6 +17,28 @@ export interface GitChangedFile {
     status: number;
 }
 
+export interface GitCommitFile {
+    status: "added" | "modified";
+    path: string;
+    content: string;
+    content_sha256: string;
+    encoding: "utf-8";
+}
+
+export interface GitCommitRename {
+    old_path: string;
+    new_path: string;
+}
+
+export interface GitCommitPayload {
+    project_id: string;
+    base_revision: string;
+    target_revision: string;
+    files: GitCommitFile[];
+    deleted_paths: string[];
+    renames: GitCommitRename[];
+}
+
 export interface GitCommit {
 
     hash: string;
@@ -49,6 +71,9 @@ export interface Repository {
 
     diffBetween(ref1: string, ref2: string): Promise<Change[]>;
     diffBetween(ref1: string, ref2: string, path: string): Promise<string>;
+
+    getConfig(key: string): Promise<string>;
+    buffer(ref: string, path: string): Promise<Uint8Array>;
 }
 
 export interface RepositoryState {
@@ -64,6 +89,8 @@ export interface RepositoryState {
 
 export interface Change {
     uri: vscode.Uri;
+    originalUri: vscode.Uri;
+    renameUri?: vscode.Uri;
     status: number;
 }
 

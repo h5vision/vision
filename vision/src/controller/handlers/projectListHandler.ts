@@ -35,7 +35,6 @@ export class ProjectListHandler {
         const workspace:any = this.workspaceService.getWorkspace();
         const response = {name: workspace.name, path: workspace.path};
         await this.gitService.initialize();
-        console.log("GitService initialized. Repository exists:", this.gitService.exists());
         if (this.gitService.exists()) {
             const gitCommits = (await this.gitService.getRecentCommits()).map(m=>
                 [m.hash, m.message]);
@@ -45,7 +44,6 @@ export class ProjectListHandler {
                 name: response.name, 
                 commits: gitCommits,
             });
-            console.log(sampleProjects);
         }
 
         this.view.webview.postMessage({

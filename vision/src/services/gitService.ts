@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
+import { createHash } from "crypto";
+import * as path from "path";
 import { waitUntil } from "../utils/wait";
-import {GitAPI, GitChangedFile, GitCommit, GitExtension, GitRepositoryInfo, Repository} from "../types/git";
+import {GitAPI, GitChangedFile, GitCommit, GitCommitFile, GitCommitPayload, GitExtension, GitRepositoryInfo, Repository} from "../types/git";
 
 export class GitService implements vscode.Disposable {
     
@@ -245,24 +247,95 @@ export class GitService implements vscode.Disposable {
     public async getCommitDiff(
         commit: string,
         parentCommit?: string
-    ): Promise<string> {
+    ): Promise<GitCommitPayload> {
 
         if (!this.repository) {
-            return "";
+            throw new Error("Git repository is not available.");
         }
 
         const parent = parentCommit ?? `${commit}^`;
 
         const changes = await this.repository.diffBetween(parent, commit);
+        const files: GitCommitFile[] = [];
+        const deletedPaths: string[] = [];
+        const renames: GitCommitPayload["renames"] = [];
 
-        const diffs = await Promise.all(
-            changes.map(change =>
-                this.repository!.diffBetween(parent, commit, change.uri.fsPath)
-            )
-        );
-        console.log("Commit diff generated:", diffs.join("\n"));
+        await Promise.all(changes.map(async change => {
+            const filePath = this.toRepositoryPath(change.uri);
+            const isDeleted = this.isDeletedStatus(change.status);
 
-        return diffs.join("\n");
+            if (isDeleted) {
+                deletedPaths.push(filePath);
+                return;
+            }
+
+            if (change.renameUri) {
+                renames.push({
+                    old_path: this.toRepositoryPath(change.originalUri),
+                    new_path: this.toRepositoryPath(change.renameUri)
+                });
+            }
+
+            const contents = await this.repository!.buffer(commit, filePath);
+
+            files.push({
+                status: this.toFileStatus(change.status),
+                path: filePath,
+                content: Buffer.from(contents).toString("utf-8"),
+                content_sha256: createHash("sha256").update(contents).digest("hex"),
+                encoding: "utf-8"
+            });
+        }));
+
+        return {
+            project_id: await this.getProjectId(),
+            base_revision: parent,
+            target_revision: commit,
+            files,
+            deleted_paths: deletedPaths,
+            renames
+        };
+    }
+
+    private toRepositoryPath(uri: vscode.Uri): string {
+        return path.relative(this.repository!.rootUri.fsPath, uri.fsPath)
+            .replace(/\\/g, "/");
+    }
+
+    private isDeletedStatus(status: number): boolean {
+        // Git API Status: INDEX_DELETED, DELETED, DELETED_BY_US,
+        // DELETED_BY_THEM, BOTH_DELETED
+        return [2, 6, 14, 15, 17].includes(status);
+    }
+
+    private toFileStatus(status: number): GitCommitFile["status"] {
+        // Git API Status: INDEX_ADDED, UNTRACKED, ADDED_BY_US,
+        // ADDED_BY_THEM, BOTH_ADDED
+        return [1, 7, 12, 13, 16].includes(status) ? "added" : "modified";
+    }
+
+    private async getProjectId(): Promise<string> {
+        let remoteUrl: string;
+
+        try {
+            remoteUrl = await this.repository!.getConfig("remote.origin.url");
+        } catch {
+            return path.basename(this.repository!.rootUri.fsPath);
+        }
+
+        const normalizedUrl = remoteUrl.replace(/\.git$/, "");
+        const sshMatch = normalizedUrl.match(/^[^@]+@[^:]+:(.+)$/);
+
+        if (sshMatch) {
+            return sshMatch[1];
+        }
+
+        try {
+            const remotePath = new URL(normalizedUrl).pathname.replace(/^\//, "");
+            return remotePath || path.basename(this.repository!.rootUri.fsPath);
+        } catch {
+            return path.basename(this.repository!.rootUri.fsPath);
+        }
     }
 
     //---------------------------------------
