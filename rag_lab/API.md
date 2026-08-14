@@ -338,6 +338,11 @@ reason = "empty_index"       인덱스가 비어있음 → 인덱싱 필요
 
 `/search`에 프롬프트 조립까지 더한 것입니다. **이쪽을 쓰시는 걸 권합니다.**
 
+⚠ 이 라우트는 rag_lab의 `8200` 엔드포인트입니다. 현재 `8000` emergency bridge가 외부에
+공개하는 질의 라우트는 `/v1/chat`이며, 그 내부에서 `8200/prompt`를 호출합니다.
+따라서 `POST :8000/prompt`는 `404`이고, Frontend는 `POST :8000/v1/chat`을 사용합니다.
+향후 8000에 `/prompt` 프록시를 추가하려면 별도의 공개 계약으로 합의해야 합니다.
+
 ```json
 요청  {"query": "...", "project_id": "fest-api"}
 

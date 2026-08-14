@@ -1,7 +1,7 @@
 ---
 문서: STATE
 상태: 현행정본
-버전: v1.1
+버전: v1.2
 최종확인: 2026-08-14
 대체한_문서: HANDOFF v1.1 · SESSION_HANDOFF_20260813 · PROJECT_STATE(2026-08-03) · PROJECT_FACTS_20260811
 판단근거로_쓸_범위: 지금 상태 · 다음 할 일 · 미해결 · 리스크
@@ -86,8 +86,9 @@ HANDOFF v1.1은 작성 반나절 만에 낡았고, PROJECT_STATE는 열흘째 �
 - FastAPI 코드는 현재 rag_lab `/prompt` → 생성 모델 → `/finalize` 흐름으로 변경됐습니다.
   `/v1/search`도 rag_lab `/search`를 사용합니다.
 - 실제 8000번에서 실행되던 것은 `back/api_test`가 아니라 `C:\Pj\chat_bridge.py`의
-  비-RAG emergency bridge였습니다. 이 파일도 `/prompt → Ollama → /finalize` 흐름으로 수정했고
-  별도 포트 검증에서 8200 `/prompt` 호출까지 확인했습니다. 기존 8000 프로세스는 재시작이 필요합니다.
+  emergency bridge였습니다. 현재 프로세스는 수정본으로 재기동되어 `/v1/chat` 요청이
+  8200 `/prompt → Ollama → /finalize`를 거치는 전체 RAG 왕복까지 확인됐습니다.
+  단, 8000은 `/prompt`를 직접 공개하지 않으며 외부 진입점은 `/v1/chat`입니다.
 - project_id 이관 시점에는 8000/8200 리스너가 없었습니다. 임시 8299 서버의
   `GET /projects`에서 `sqlalchemy`가 `done`, 19,510청크, `rag-v2`, BM25 활성 상태로
   반환되는 것까지 확인한 뒤 임시 서버를 종료했습니다. 이후 실제 8000/8200/Ollama가 기동됐고,
@@ -97,6 +98,9 @@ HANDOFF v1.1은 작성 반나절 만에 낡았고, PROJECT_STATE는 열흘째 �
 - `has_evidence=false`이면 LLM을 호출하지 않고 `NO_EVIDENCE`, 빈 출처를 반환합니다.
 - 변경 파일 전체 문자열 기반 `POST /index/update/files`는 rag_lab에 구현됐습니다.
   `content_sha256`은 선택값이고, 실패 시 Chroma/BM25 rollback을 시도합니다.
+- 대형 컬렉션의 BM25 재구축은 검증된 페이지 순회로 변경됐습니다. 조회 실패·중복·누락·
+  건수 변경은 빈 역색인으로 바뀌지 않고 실패로 드러나며, 전체·두 증분·재개 경로 모두
+  staging 검증 후 교체합니다. 로컬 Git 증분도 실패 시 Chroma/BM25/fingerprint를 함께 복원합니다.
 - Frontend → FastAPI → rag_lab 증분 프록시는 아직 없습니다. 현재 FastAPI 변경은
   문법 검사를 통과했지만 로컬 Python에 `psycopg`가 없어 전체 서버를 기동하지 못했습니다.
 - FastAPI 공유 설정의 기본 생성 모델은 `gemma3:4b`, rag_lab 측 Ollama에서 관측한 모델은
@@ -341,10 +345,11 @@ exact project ID를 누가 매핑·정규화할지는 **프론트/백 이관 가
 `get_or_create_collection`이 없는 ID로 질의할 때 **빈 컬렉션을 조용히 만듭니다.**
 rag_lab 내부 건이라 이관 논의를 기다릴 이유가 없습니다. 진단 도구 쪽은 이미 막았습니다.
 
-### 🟠 4. 핵심 안전 계약 회귀 테스트 부족
+### 🟠 4. 핵심 안전 계약 회귀 테스트 일부 부족
 
-프로필·matrix 테스트는 생겼지만, `AGENTS.md`의 원자 교체·`[N]` 대응·NO_EVIDENCE와
-새 payload 증분의 수정·삭제·rename·revision 충돌·rollback 계약은 아직 자동화가 부족합니다.
+BM25 페이지 크기·중간 조회 실패·중복 ID·건수 변경·문서 수 불일치와 로컬 Git 증분의
+BM25 커밋 후 rollback은 자동화됐습니다. 남은 범위는 `[N]` 대응·NO_EVIDENCE와
+파일 payload 증분의 수정·삭제·rename·revision 충돌 조합입니다.
 
 ### 🟠 5. `project_root` 경로 문제
 

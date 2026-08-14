@@ -207,7 +207,9 @@ POST /v1/index/restart       → 8200 POST /index/restart
 | `complete` | 재개하지 않고 `already_complete` 반환 |
 
 BM25는 임베딩보다 빠르고 완전한 문서 집합이 필요하므로 파일 단위 체크포인트를 만들지 않습니다.
-중단되면 building 또는 이미 승격된 target 전체로 다시 만듭니다.
+중단되면 building 또는 이미 승격된 target 전체를 제한된 크기의 Chroma 페이지로 다시 읽습니다.
+페이지 조회 실패·중복 ID·건수 변경은 실패로 처리하고, 문서 수 검증을 통과한 staging BM25만
+최종 파일로 교체합니다. promote 이후 복구 단계에서 실패하면 Chroma와 직전 BM25를 함께 rollback합니다.
 
 브리핑은 인덱스 승격 후 실행합니다. 브리핑 실패가 완성 인덱스를 무효화하지 않으며 상태는
 `done + briefing=failed`로 남습니다.
