@@ -1,12 +1,13 @@
 """
 검색 — top-k + 임계값 기반 근거 없음 판정(FN-B06) + 프롬프트 조립 + 답변 후처리.
 
-D9 실측 (2026-07-27, BGE-M3 + cosine)
-  answerable 최저 점수  0.5531
-  no-answer  최고 점수  0.5306
-  → 임계값 0.53~0.55 로 분리 가능
+임계값은 BGE-M3 + cosine 점수 분포 관찰에서 나온 **잠정 선택값**입니다.
 
-⚠ 이 값은 임베딩 모델·정규화·거리 함수에 종속됩니다.
+⚠ 분리선이 아닙니다. answerable 과 no-answer 분포는 겹칩니다.
+   balanced accuracy 를 근사 최대화하는 지점일 뿐이며 FP·FN 을 수반합니다.
+   수치·run_id 는 MEASUREMENTS §2 참조. 이 파일에는 값을 적지 않습니다.
+
+⚠ 임베딩 모델·정규화·거리 함수에 종속됩니다.
    저장소를 바꾸는 건 무관하지만, 임베딩을 바꾸면 재측정해야 합니다.
 
 ⚠ 임계값은 "검색 단계" 판정입니다.
@@ -18,16 +19,48 @@ from __future__ import annotations
 
 import re
 import time
+from typing import Mapping
 
-from .config import CFG
+from .config import CFG, normalize_fingerprint
 from .embedder import embed_one
 from . import lexical, rerank
 from .references import build_references, parse_citations
 from .store import Store
 
 
+class ProjectNotFoundError(LookupError):
+    pass
+
+
+def serving_profile(store: Store, project_id: str) -> dict:
+    """질의에 사용할 프로젝트별 인덱스 프로필.
+
+    전역 CFG를 쓰면 서로 다른 설정으로 만든 컬렉션 중 하나는 반드시 잘못
+    서빙됩니다. 컬렉션 metadata가 정본이고, 구 컬렉션만 state.json을 보조로 씁니다.
+    """
+    available = store.projects()
+    if project_id not in available:
+        raise ProjectNotFoundError(
+            f"인덱싱된 project_id가 아닙니다: {project_id!r}; "
+            f"available={', '.join(available) or '(없음)'}")
+
+    fp = store.index_fingerprint(project_id)
+    if fp:
+        return fp
+
+    # fingerprint metadata가 없던 구 인덱스 호환. state.json도 없으면 현재 CFG로
+    # 추정하지 않습니다. 잘못된 임베딩 모델로 조용히 검색하는 것보다 실패가 안전합니다.
+    from . import indexer
+    fp = normalize_fingerprint(indexer.get_state(project_id).get("fingerprint"))
+    if not fp:
+        raise RuntimeError(
+            f"인덱스 설정 지문을 확인할 수 없습니다: {project_id!r}. 재인덱싱이 필요합니다.")
+    return fp
+
+
 def search(query: str, project_id: str, top_k: int | None = None,
-           threshold: float | None = None, store: Store | None = None) -> dict:
+           threshold: float | None = None, store: Store | None = None,
+           *, search_profile: Mapping | None = None) -> dict:
     """
     반환의 contexts 는 백엔드 Source 스키마와 호환됩니다.
 
@@ -37,16 +70,24 @@ def search(query: str, project_id: str, top_k: int | None = None,
     k = top_k if top_k is not None else CFG.top_k
     th = threshold if threshold is not None else CFG.score_threshold
     st = store or Store()
+    profile = serving_profile(st, project_id)
 
     # ⚠ 이 두 단계가 TTFT 임계 경로입니다.
     #    스트리밍을 써도 여기가 끝나야 LLM 호출이 시작됩니다.
     t0 = time.perf_counter()
-    vec = embed_one(query)
+    vec = embed_one(
+        query,
+        model=str(profile["embed_model"]),
+        expected_dim=int(profile["embed_dim"]),
+    )
     t1 = time.perf_counter()
 
     # 개선 기능이 켜져 있으면 후보를 넉넉히 뽑습니다.
     # MMR·융합은 후보가 많아야 고를 여지가 생깁니다.
-    pool = CFG.fusion_pool if (CFG.use_bm25 or CFG.use_mmr) else k
+    options = dict(search_profile or {})
+    use_bm25 = bool(options.get("use_bm25", profile["use_bm25"]))
+    use_mmr = bool(options.get("use_mmr", CFG.use_mmr))
+    pool = int(options.get("pool", CFG.fusion_pool)) if (use_bm25 or use_mmr) else k
     hits = st.query(project_id, vec, max(pool, k))
     t2 = time.perf_counter()
 
@@ -58,16 +99,25 @@ def search(query: str, project_id: str, top_k: int | None = None,
     if not hits:
         return {"has_evidence": False, "contexts": [], "all_hits": [],
                 "top_score": None, "threshold": th,
-                "reason": "empty_index", "timing": timing}
+                "reason": "empty_index", "timing": timing,
+                "serving_profile": profile, "bm25_active": False,
+                "search_profile": {
+                    "use_bm25": use_bm25, "pool": pool, "top_k": k,
+                    "threshold": th, "use_mmr": use_mmr,
+                    "mmr_lambda": float(options.get("mmr_lambda", CFG.mmr_lambda)),
+                    "reorder": bool(options.get("reorder", CFG.reorder_context)),
+                }}
 
     # ── BM25 융합 ────────────────────────────────────────────
     # ⚠ 벡터 점수(score)는 그대로 유지합니다.
     #    융합 점수로 덮어쓰면 임계값 0.54 판정이 불가능해집니다.
     #    융합은 "순서"만 바꾸고, 임계값은 벡터 점수로 판단합니다.
-    if CFG.use_bm25:
+    bm25_active = False
+    if use_bm25:
         t_bm = time.perf_counter()
         idx = lexical.BM25.load(lexical.index_path(project_id))
         if idx:
+            bm25_active = True
             lex = idx.search(query, pool)
             fused = lexical.rrf_fuse(hits, lex, k=60)
 
@@ -82,7 +132,15 @@ def search(query: str, project_id: str, top_k: int | None = None,
             )
         timing["bm25_ms"] = round((time.perf_counter() - t_bm) * 1000, 1)
 
-    top = hits[0]["score"]
+    # ⚠ **융합 후 hits[0] 의 점수를 쓰면 안 됩니다.**
+    #    RRF 는 순서를 바꾸므로 hits[0] 이 최고 벡터 점수가 아닙니다.
+    #    그렇게 하면 아래 판정과 어긋나 "top < 임계값인데 has_evidence=True"
+    #    같은 모순된 출력이 나옵니다 (2026-08-13 관측).
+    #
+    #    판정은 pool 전체를 보므로(`any(score >= th)`), 표시도 **최대 벡터 점수**여야
+    #    `top_score >= threshold ⟺ has_evidence` 가 성립합니다.
+    top = max(h["score"] for h in hits)
+    ranked1 = hits[0]["score"]          # 융합 후 1위의 벡터 점수 (참고용)
 
     # ── 임계값 판정 ─────────────────────────────────────────
     # ⚠ 벡터 점수 기준입니다. BM25 로만 올라온 청크는 score 가 0 이라
@@ -92,7 +150,12 @@ def search(query: str, project_id: str, top_k: int | None = None,
 
     # ── MMR · 배치 조정 ─────────────────────────────────────
     if passed:
-        passed = rerank.postprocess(passed, k)
+        passed = rerank.postprocess(
+            passed, k,
+            use_mmr=use_mmr,
+            mmr_lambda=float(options.get("mmr_lambda", CFG.mmr_lambda)),
+            reorder=bool(options.get("reorder", CFG.reorder_context)),
+        )
     else:
         hits = hits[:k]
 
@@ -100,10 +163,21 @@ def search(query: str, project_id: str, top_k: int | None = None,
         "has_evidence": bool(passed),
         "contexts": passed,
         "all_hits": hits[:max(k * 2, 10)],   # 임계값 튜닝용. 탈락한 것도 확인 가능
+        # ⚠ top_score = pool 안의 **최대 벡터 점수**. 융합 후 1위의 점수가 아닙니다.
+        #    `top_score >= threshold` 와 `has_evidence` 는 항상 같은 값입니다.
         "top_score": top,
+        "ranked1_score": ranked1,            # 융합 후 1위의 벡터 점수 (진단용)
         "threshold": th,
         "reason": "ok" if passed else "below_threshold",
         "timing": timing,
+        "serving_profile": profile,
+        "bm25_active": bm25_active,
+        "search_profile": {
+            "use_bm25": use_bm25, "pool": pool, "top_k": k, "threshold": th,
+            "use_mmr": use_mmr,
+            "mmr_lambda": float(options.get("mmr_lambda", CFG.mmr_lambda)),
+            "reorder": bool(options.get("reorder", CFG.reorder_context)),
+        },
     }
 
 

@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "profiles": {
+    "rag-v1": {
+      "label": "Vector baseline",
+      "description": "동일 레포 비교의 기준선. 벡터 검색만 사용하고 맥락 헤더는 넣지 않습니다.",
+      "settings": {
+        "embed_model": "bge-m3:latest",
+        "embed_dim": 1024,
+        "chunk_size": 1200,
+        "chunk_overlap": 150,
+        "min_chunk_chars": 80,
+        "max_file_bytes": 1000000,
+        "context_header": false,
+        "use_bm25": false,
+        "exclude_globs": ""
+      }
+    },
+    "rag-v2": {
+      "label": "Hybrid retrieval",
+      "description": "rag-v1과 같은 벡터·청킹 조건에 BM25 역색인만 추가합니다.",
+      "based_on": "rag-v1",
+      "settings": {
+        "use_bm25": true
+      }
+    },
+    "rag-v3": {
+      "label": "Hybrid with context header",
+      "description": "rag-v2에 코드 구조 맥락 헤더만 추가합니다.",
+      "based_on": "rag-v2",
+      "settings": {
+        "context_header": true
+      }
+    }
+  }
+}

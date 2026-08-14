@@ -11,9 +11,31 @@
 
 from __future__ import annotations
 
+import json
+import time
 from pathlib import Path
 
-from .config import CFG
+from .config import CFG, normalize_fingerprint
+
+# ── 미완성 인덱스 표시 규약 ──────────────────────────────────
+#
+# ⚠ 이 두 접두어/접미어가 **인덱스 상태의 정본**입니다.
+#    state.json 이 통째로 날아가도 컬렉션 이름만 보고 판정할 수 있어야 합니다.
+#
+#      building-<pid>   인덱싱 중이거나 중단됨. 조회 대상이 아님
+#      <pid>-prev       교체 도중. 직전 인덱스의 백업
+#      <pid>            완성된 인덱스. 이것만 조회됨
+#
+# ⚠ Chroma 이름 규칙상 ASCII 영숫자로 시작해야 해서 `__building__` 은 쓸 수 없습니다.
+#    이름 길이 상한이 63자이므로 project_id 는 최대 54자입니다.
+BUILD_PREFIX = "building-"
+PREV_SUFFIX = "-prev"
+MAX_PROJECT_ID = 63 - len(BUILD_PREFIX)
+
+
+def is_internal(name: str) -> bool:
+    """조회 대상이 아닌 내부 컬렉션인가."""
+    return name.startswith(BUILD_PREFIX) or name.endswith(PREV_SUFFIX)
 
 
 class Store:
@@ -36,11 +58,139 @@ class Store:
         )
 
     def reset(self, project_id: str) -> None:
-        """재인덱싱 전 기존 컬렉션 삭제."""
+        """컬렉션 삭제.
+
+        ⚠ 전체 인덱싱에서는 쓰지 마세요. `begin_build()` → `promote()` 를 씁니다.
+           선삭제 후 임베딩이 실패하면 인덱스가 반쪽으로 남습니다 (2026-08 사고).
+        """
         try:
             self._client.delete_collection(project_id)
         except Exception:
             pass   # 없으면 그만
+
+    # ── 원자적 교체 ──────────────────────────────────────────
+
+    def begin_build(self, project_id: str, *, fingerprint: dict | None = None,
+                    project_root: str | None = None,
+                    profile_id: str | None = None,
+                    profile_hash: str | None = None) -> str:
+        """임시 컬렉션을 만들고 그 이름을 돌려줍니다.
+
+        인덱싱은 여기에 쌓고, 끝나면 `promote()` 로 교체합니다.
+        도중에 죽으면 `building-<pid>` 가 남아 **이름만으로 중단이 드러납니다.**
+        """
+        if len(project_id) > MAX_PROJECT_ID:
+            raise ValueError(
+                f"project_id 가 {MAX_PROJECT_ID}자를 넘습니다: {len(project_id)}자"
+            )
+        name = BUILD_PREFIX + project_id
+        self.reset(name)                      # 이전 시도 잔재 제거
+        meta = {
+            "hnsw:space": "cosine",           # ⚠ D9 전제
+            "status": "building",
+            "target": project_id,
+            "started_at": time.time(),
+        }
+        if project_root:
+            meta["project_root"] = str(project_root)
+        if fingerprint:
+            # ⚠ Chroma metadata 는 스칼라만 받습니다. dict 는 JSON 문자열로.
+            meta["fingerprint"] = json.dumps(fingerprint, ensure_ascii=False)
+        if profile_id:
+            meta["profile_id"] = profile_id
+        if profile_hash:
+            meta["profile_hash"] = profile_hash
+        self._client.create_collection(name=name, metadata=meta)
+        return name
+
+    def promote(self, project_id: str, *, keep_previous: bool = False) -> None:
+        """`building-<pid>` 를 `<pid>` 로 승격합니다. 3단계라 중간에 죽어도 복구 가능합니다.
+
+            ① <pid>          → <pid>-prev      (기존 것 보존)
+            ② building-<pid> → <pid>           (새 것 승격)
+            ③ <pid>-prev 삭제
+
+        어느 단계에서 죽든 데이터가 최소 한 벌은 남고, **이름만 보고 판정**됩니다.
+        """
+        build = BUILD_PREFIX + project_id
+        prev = project_id + PREV_SUFFIX
+        names = {c.name for c in self._client.list_collections()}
+
+        if build not in names:
+            raise RuntimeError(f"승격할 임시 컬렉션이 없습니다: {build}")
+
+        self.reset(prev)                      # 지난 교체의 잔재
+        if project_id in names:               # ①
+            self._client.get_collection(project_id).modify(name=prev)
+        self._client.get_collection(build).modify(name=project_id)      # ②
+        try:                                                            # ③
+            col = self._client.get_collection(project_id)
+            meta = dict(col.metadata or {})
+            # ⚠ hnsw:space 를 넣으면 Chroma 가 거부합니다.
+            #    "Changing the distance function of a collection once it is
+            #     created is not supported" — 생성 시점에 이미 cosine 으로 고정돼
+            #    있으므로 빼고 갱신해도 거리 함수는 그대로입니다 (D9 유지).
+            meta.pop("hnsw:space", None)
+            meta.update({"status": "ready", "promoted_at": time.time()})
+            col.modify(metadata=meta)
+        except Exception as e:
+            # ⚠ 조용히 넘기지 않습니다. 이전 구현이 pass 로 삼켜서
+            #    status 가 building 인 채로 남는 걸 아무도 몰랐습니다.
+            print(f"!! 컬렉션 metadata 갱신 실패 ({type(e).__name__}: {e}) "
+                  f"— 인덱스 자체는 정상입니다.")
+        if not keep_previous:
+            self.reset(prev)
+
+    def finish_promote(self, project_id: str) -> None:
+        """외부 부수 파일까지 커밋된 뒤 직전 컬렉션 백업을 제거합니다."""
+        self.reset(project_id + PREV_SUFFIX)
+
+    def rollback_promote(self, project_id: str) -> None:
+        """승격 후 부수 파일 커밋이 실패하면 새 컬렉션을 증거로 남기고 이전 것을 복원합니다."""
+        build = BUILD_PREFIX + project_id
+        prev = project_id + PREV_SUFFIX
+        names = {c.name for c in self._client.list_collections()}
+        if build in names:
+            raise RuntimeError(f"rollback 대상 이름이 이미 존재합니다: {build}")
+        if project_id in names:
+            self._client.get_collection(project_id).modify(name=build)
+        names = {c.name for c in self._client.list_collections()}
+        if prev in names:
+            self._client.get_collection(prev).modify(name=project_id)
+
+    def incomplete(self) -> list[dict]:
+        """미완성 컬렉션 목록. 정상이면 빈 리스트입니다."""
+        out = []
+        for c in self._client.list_collections():
+            if not is_internal(c.name):
+                continue
+            meta = c.metadata or {}
+            started = meta.get("started_at")
+            out.append({
+                "name": c.name,
+                "kind": "building" if c.name.startswith(BUILD_PREFIX) else "prev",
+                "target": meta.get("target") or c.name.removesuffix(PREV_SUFFIX),
+                "chunks": c.count(),
+                "started_at": started,
+                "age_s": round(time.time() - started, 1) if started else None,
+            })
+        return out
+
+    def cleanup_incomplete(self, min_age_s: float = 0.0) -> list[str]:
+        """미완성 컬렉션을 지웁니다.
+
+        ⚠ 자동 호출하지 마세요. 다른 프로세스(cli.py)가 인덱싱 중일 수 있습니다.
+           서버 기동 시에는 **경고만** 하고, 삭제는 명시적 명령으로만 합니다.
+        """
+        removed = []
+        for item in self.incomplete():
+            if item["age_s"] is not None and item["age_s"] < min_age_s:
+                continue
+            self.reset(item["name"])
+            removed.append(item["name"])
+        return removed
+
+    # ────────────────────────────────────────────────────────
 
     @staticmethod
     def _chunk_id(project_id: str, chunk: dict, fallback: int) -> str:
@@ -54,12 +204,20 @@ class Store:
         idx = chunk.get("chunk_index", fallback)
         return f"{project_id}:{chunk.get('path', '?')}:{idx}"
 
-    def add(self, project_id: str, chunks: list[dict], vectors: list[list[float]]) -> None:
+    def add(self, project_id: str, chunks: list[dict], vectors: list[list[float]],
+            id_prefix: str | None = None) -> None:
+        """청크 저장.
+
+        ⚠ `id_prefix` 는 임시 컬렉션(`building-<pid>`)에 쌓을 때 씁니다.
+           컬렉션 이름은 임시여도 **청크 ID 는 최종 project_id 기준**이어야
+           승격 후 ID 체계가 일관됩니다.
+        """
         if not chunks:
             return
         col = self._collection(project_id)
+        pfx = id_prefix or project_id
         col.upsert(          # ⚠ add 가 아니라 upsert — 재인덱싱 시 중복 방지
-            ids=[self._chunk_id(project_id, c, i) for i, c in enumerate(chunks)],
+            ids=[self._chunk_id(pfx, c, i) for i, c in enumerate(chunks)],
             embeddings=vectors,
             documents=[c["text"] for c in chunks],
             metadatas=[
@@ -93,6 +251,7 @@ class Store:
         dists = res["distances"][0]
         ids = res.get("ids", [[]])[0] or [""] * len(docs)
         for cid, doc, meta, dist in zip(ids, docs, metas, dists):
+            meta = meta or {}
             out.append({
                 "_id": cid,          # BM25 결과와 합칠 때 쓰는 키
                 "text": doc,
@@ -130,6 +289,71 @@ class Store:
                 except Exception:
                     pass
         return len(paths)
+
+    def snapshot_by_paths(self, project_id: str, paths: list[str]) -> dict:
+        """파일 단위 갱신 전 rollback용 원본 청크를 메모리에 보관합니다.
+
+        문서·metadata뿐 아니라 기존 embedding도 함께 읽습니다. 원격 payload
+        증분 갱신이 저장 또는 BM25 단계에서 실패하면 재임베딩 없이 직전 상태를
+        복원하는 용도이며, 영속적인 백업 파일을 만들지는 않습니다.
+        """
+        unique = list(dict.fromkeys(paths))
+        empty = {"ids": [], "documents": [], "metadatas": [], "embeddings": []}
+        if not unique:
+            return empty
+
+        col = self._collection(project_id)
+        rows: list[dict] = []
+        try:
+            rows.append(col.get(
+                where={"path": {"$in": unique}},
+                include=["documents", "metadatas", "embeddings"],
+            ))
+        except Exception:
+            # 구 Chroma의 $in 미지원에 대비합니다.
+            for path in unique:
+                try:
+                    rows.append(col.get(
+                        where={"path": path},
+                        include=["documents", "metadatas", "embeddings"],
+                    ))
+                except Exception:
+                    continue
+
+        out = {k: [] for k in empty}
+        seen: set[str] = set()
+        for row in rows:
+            ids = row.get("ids") or []
+            docs = row.get("documents") or []
+            metas = row.get("metadatas") or []
+            embeddings = row.get("embeddings")
+            if embeddings is None:
+                embeddings = []
+            for cid, doc, meta, vec in zip(ids, docs, metas, embeddings):
+                if cid in seen:
+                    continue
+                seen.add(cid)
+                out["ids"].append(cid)
+                out["documents"].append(doc)
+                out["metadatas"].append(meta or {})
+                out["embeddings"].append(vec)
+        return out
+
+    def restore_snapshot(self, project_id: str, snapshot: dict) -> None:
+        """``snapshot_by_paths()`` 결과를 같은 ID와 벡터로 복원합니다."""
+        ids = list(snapshot.get("ids") or [])
+        if not ids:
+            return
+        col = self._collection(project_id)
+        batch_size = 256
+        for i in range(0, len(ids), batch_size):
+            sl = slice(i, i + batch_size)
+            col.upsert(
+                ids=ids[sl],
+                documents=list(snapshot["documents"])[sl],
+                metadatas=list(snapshot["metadatas"])[sl],
+                embeddings=list(snapshot["embeddings"])[sl],
+            )
 
     def indexed_paths(self, project_id: str) -> set[str]:
         """현재 인덱싱된 파일 경로 집합. 삭제된 파일 감지에 씁니다."""
@@ -201,8 +425,74 @@ class Store:
         except Exception:
             return 0
 
-    def projects(self) -> list[str]:
+    def index_fingerprint(self, project_id: str) -> dict | None:
+        """**인덱스 자신이** 들고 있는 파라미터 지문. 없으면 None.
+
+        ⚠ `CFG.fingerprint()` 와 헷갈리지 마세요.
+           CFG 는 "지금 이 프로세스의 환경변수"이고, 이건 "그 인덱스를 만들 때
+           실제로 쓴 값"입니다. 둘은 얼마든지 어긋날 수 있습니다.
+
+           2026-08-10 baseline run 이 `context_header=true` 로 기록됐지만
+           실제 인덱스는 `false` 였던 사고가 여기서 나왔습니다.
+           측정 기록에는 **반드시 이 값**을 쓰세요.
+        """
+        # ⚠ `_collection()` 을 쓰지 않습니다. get_or_create 라서
+        #    없는 이름으로 부르면 빈 컬렉션이 생깁니다.
+        meta = None
         try:
-            return [c.name for c in self._client.list_collections()]
+            for c in self._client.list_collections():
+                if c.name == project_id:
+                    meta = dict(c.metadata or {})
+                    break
+        except Exception:
+            return None
+        if meta is None:
+            return None
+        raw = meta.get("fingerprint")
+        if not raw:
+            return None
+        try:
+            parsed = json.loads(raw) if isinstance(raw, str) else dict(raw)
+            return normalize_fingerprint(parsed)
+        except Exception:
+            return None
+
+    def set_index_fingerprint(self, project_id: str, fingerprint: dict) -> None:
+        """기존 컬렉션의 인덱스 지문만 갱신합니다.
+
+        증분 갱신이 구 fingerprint를 현재 스키마로 보완한 뒤 저장할 때 사용합니다.
+        거리 함수는 Chroma에서 변경할 수 없으므로 metadata 갱신 payload에서 뺍니다.
+        """
+        col = self._client.get_collection(project_id)
+        meta = dict(col.metadata or {})
+        meta.pop("hnsw:space", None)
+        meta["fingerprint"] = json.dumps(
+            normalize_fingerprint(fingerprint), ensure_ascii=False)
+        col.modify(metadata=meta)
+
+    def raw_collections(self) -> list[dict]:
+        """모든 컬렉션의 이름·청크수·metadata. **아무것도 생성하지 않습니다.**
+
+        ⚠ 진단 전용입니다. `projects()` 와 달리 내부 컬렉션도 전부 포함합니다.
+           `_collection()` 을 거치지 않으므로 없는 이름을 만들 위험이 없습니다.
+        """
+        try:
+            return [{"name": c.name,
+                     "chunks": c.count(),
+                     "metadata": dict(c.metadata or {})}
+                    for c in self._client.list_collections()]
+        except Exception:
+            return []
+
+    def projects(self) -> list[str]:
+        """조회 가능한 프로젝트 목록.
+
+        ⚠ 미완성 컬렉션(`building-*` · `*-prev`)은 제외합니다.
+           반쪽 인덱스가 정상인 척 노출되던 것이 2026-08 사고의 원인이었습니다.
+           미완성 목록이 필요하면 `incomplete()` 를 쓰세요.
+        """
+        try:
+            return [c.name for c in self._client.list_collections()
+                    if not is_internal(c.name)]
         except Exception:
             return []

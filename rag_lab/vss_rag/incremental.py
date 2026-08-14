@@ -35,10 +35,12 @@ import subprocess
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Mapping
 
 from . import lexical
 from .chunker import chunk_file, classify, collect_files
-from .config import CFG, SKIP_DIRS, SKIP_FILE_PATTERNS
+from .config import (CFG, SKIP_DIRS, SKIP_FILE_PATTERNS, is_excluded,
+                     normalize_fingerprint, profile_value)
 from .embedder import embed_many
 from .store import Store
 
@@ -56,7 +58,8 @@ def _git(root: str | Path, *args: str, timeout: int = 30) -> str | None:
         r = subprocess.run(
             # ⚠ quotepath=false 가 없으면 한글 파일명이
             #    "\355\225\234\352\270\200" 처럼 이스케이프되어 나옵니다.
-            ["git", "-c", "core.quotepath=false", *args],
+            ["git", "-c", "core.quotepath=false", "-c",
+             f"safe.directory={Path(root).resolve()}", *args],
             cwd=str(root), capture_output=True, text=True,
             timeout=timeout, encoding="utf-8", errors="replace",
         )
@@ -112,7 +115,8 @@ def detect_changes(root: str | Path, old_commit: str) -> dict | None:
     return res
 
 
-def _is_target(root: Path, rel: str) -> bool:
+def _is_target(root: Path, rel: str,
+               profile: Mapping | None = None) -> bool:
     """인덱싱 대상 파일인지. chunker 의 필터와 같은 기준."""
     p = root / rel
     parts = Path(rel).parts
@@ -120,11 +124,14 @@ def _is_target(root: Path, rel: str) -> bool:
         return False
     if Path(rel).name in SKIP_FILE_PATTERNS:
         return False
+    if is_excluded(Path(rel).as_posix(),
+                   str(profile_value(profile, "exclude_globs"))):
+        return False
     if classify(Path(rel)) is None:
         return False
     if p.is_file():
         try:
-            if p.stat().st_size > CFG.max_file_bytes:
+            if p.stat().st_size > int(profile_value(profile, "max_file_bytes")):
                 return False
         except OSError:
             return False
@@ -133,7 +140,8 @@ def _is_target(root: Path, rel: str) -> bool:
 
 # ── 증분 가능 여부 판정 ──────────────────────────────────────
 
-def can_update(project_root: str | Path, project_id: str, state: dict) -> dict:
+def can_update(project_root: str | Path, project_id: str, state: dict,
+               index_fp: Mapping | None = None) -> dict:
     """
     증분 인덱싱이 가능한지 판정합니다.
 
@@ -143,11 +151,13 @@ def can_update(project_root: str | Path, project_id: str, state: dict) -> dict:
         return {"ok": False, "reason": "not_indexed",
                 "detail": "완료된 인덱스가 없습니다. 전체 인덱싱이 필요합니다."}
 
-    if state.get("fingerprint") != CFG.fingerprint():
-        return {"ok": False, "reason": "params_changed",
-                "detail": "청킹·임베딩 설정이 바뀌었습니다. 모든 청크를 다시 만들어야 합니다.",
-                "indexed": state.get("fingerprint"),
-                "current": CFG.fingerprint()}
+    # 증분 갱신은 기존 청크와 동일한 설정을 써야 합니다. 전역 CFG가 아니라
+    # 컬렉션 자신의 지문이 그 설정의 정본입니다. 구 state의 누락 키는 당시
+    # 기본값으로 보완해 새 fingerprint 키 추가가 전체 차단을 일으키지 않게 합니다.
+    profile = normalize_fingerprint(index_fp or state.get("fingerprint"))
+    if not profile:
+        return {"ok": False, "reason": "fingerprint_unknown",
+                "detail": "인덱스 설정 지문이 없어 안전한 증분 갱신을 할 수 없습니다. 전체 인덱싱이 필요합니다."}
 
     old = state.get("commit")
     if not old:
@@ -171,12 +181,12 @@ def can_update(project_root: str | Path, project_id: str, state: dict) -> dict:
     # 대상 파일만 추립니다
     to_index = [p for p in (changes["modified"] + changes["added"]
                             + [new for _, new in changes["renamed"]])
-                if _is_target(root, p)]
+                if _is_target(root, p, profile)]
     to_delete = list({*changes["deleted"],
                       *changes["modified"],
                       *[old_p for old_p, _ in changes["renamed"]]})
 
-    total_now = len(collect_files(root))
+    total_now = len(collect_files(root, profile))
     ratio = (len(to_index) / total_now) if total_now else 1.0
 
     if ratio > FULL_REINDEX_RATIO:
@@ -194,6 +204,7 @@ def can_update(project_root: str | Path, project_id: str, state: dict) -> dict:
         "to_delete": to_delete,
         "changes": changes,
         "total_files": total_now,
+        "fingerprint": profile,
     }
 
 
@@ -227,12 +238,14 @@ def update(project_root: str, project_id: str, store: Store,
     t0 = time.perf_counter()
     root = Path(project_root).resolve()
 
-    plan = can_update(root, project_id, state)
+    index_fp = store.index_fingerprint(project_id)
+    plan = can_update(root, project_id, state, index_fp=index_fp)
     if not plan["ok"]:
         return plan
 
     to_index = plan["to_index"]
     to_delete = plan["to_delete"]
+    profile = plan["fingerprint"]
 
     # ── ① 청킹 (실패해도 인덱스에 영향 없음) ────────────────
     new_chunks: list[dict] = []
@@ -240,7 +253,7 @@ def update(project_root: str, project_id: str, store: Store,
         f = root / rel
         if not f.is_file():
             continue
-        new_chunks.extend(chunk_file(f, root))
+        new_chunks.extend(chunk_file(f, root, profile))
         if on_progress:
             on_progress(i, len(to_index))
 
@@ -249,7 +262,11 @@ def update(project_root: str, project_id: str, store: Store,
     B = 64
     for i in range(0, len(new_chunks), B):
         batch = new_chunks[i:i + B]
-        vecs = embed_many([c["text"] for c in batch])   # 실패 시 예외 → 여기서 중단
+        vecs = embed_many(
+            [c["text"] for c in batch],
+            model=str(profile["embed_model"]),
+            expected_dim=int(profile["embed_dim"]),
+        )   # 실패 시 예외 → 여기서 중단
         pending.append((batch, vecs))
 
     # ── ③ 옛 청크 삭제 ──────────────────────────────────────
@@ -265,8 +282,11 @@ def update(project_root: str, project_id: str, store: Store,
     # ── ⑤ BM25 역색인 재구축 ────────────────────────────────
     # ⚠ 역색인은 부분 갱신이 까다롭습니다 (df 값이 전역이라).
     #    다만 임베딩 호출이 없어 전체 재구축도 수 초면 끝납니다.
-    if CFG.use_bm25:
+    if bool(profile["use_bm25"]):
         lexical.build(project_id, store.all_chunks(project_id))
+
+    # 구 지문에 새 키가 빠져 있었다면 성공한 증분 갱신을 계기로 정규화합니다.
+    store.set_index_fingerprint(project_id, profile)
 
     elapsed = round(time.perf_counter() - t0, 1)
     return {
@@ -282,4 +302,5 @@ def update(project_root: str, project_id: str, store: Store,
         "chunk_count": store.count(project_id),
         "elapsed_s": elapsed,
         "indexed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "fingerprint": profile,
     }

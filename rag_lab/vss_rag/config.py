@@ -9,7 +9,10 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, asdict, field
+from functools import lru_cache
+from typing import Mapping
 
 
 def _env(key: str, default):
@@ -46,11 +49,83 @@ SKIP_FILE_PATTERNS = {
 }
 
 
+# ── 경로 패턴 제외 (VSS_EXCLUDE_GLOBS) ───────────────────────
+#
+# ⚠ SKIP_DIRS 는 **디렉터리 이름**을 봅니다. `docs/ko` 처럼 하위 경로를
+#    지정할 수 없습니다. 그래서 glob 패턴 제외를 따로 둡니다.
+#
+# ⚠ 왜 필요한가 — 실측 사례
+#    FastAPI 레포는 같은 문서를 12개 언어로 갖고 있습니다.
+#    BGE-M3 는 다국어 모델이라 한국어 질문이 프랑스어 번역본과도 매칭됩니다.
+#    같은 내용이 12벌 있으면 점수가 나뉘고 top_k 를 번역본이 채웁니다.
+#
+# 규칙
+#    *   `/` 를 넘지 않음
+#    **  `/` 를 넘음
+#    ?   `/` 가 아닌 한 글자
+#    glob 문자가 없으면 "그 경로와 그 아래 전부"로 해석합니다
+#
+# 예)  VSS_EXCLUDE_GLOBS="tests,docs/ko/**,docs/ja/**"
+
+_GLOB_CHARS = set("*?[")
+
+
+def _glob_to_re(pat: str) -> str:
+    out, i = [], 0
+    while i < len(pat):
+        c = pat[i]
+        if c == "*":
+            if pat[i:i + 2] == "**":
+                out.append(".*")
+                i += 2
+                if pat[i:i + 1] == "/":
+                    i += 1
+            else:
+                out.append("[^/]*")
+                i += 1
+            continue
+        if c == "?":
+            out.append("[^/]")
+            i += 1
+            continue
+        out.append(re.escape(c))
+        i += 1
+    return "".join(out)
+
+
+@lru_cache(maxsize=16)
+def _compiled(spec: str) -> tuple:
+    pats = []
+    for raw in spec.split(","):
+        p = raw.strip().replace("\\", "/").strip("/")
+        if not p:
+            continue
+        if not (_GLOB_CHARS & set(p)):
+            # glob 문자가 없으면 디렉터리 접두어로 봅니다
+            pats.append(re.compile(f"^{re.escape(p)}(/.*)?$"))
+        else:
+            pats.append(re.compile(f"^{_glob_to_re(p)}$"))
+    return tuple(pats)
+
+
+def is_excluded(rel_path: str, spec: str | None = None) -> bool:
+    """프로젝트 루트 기준 상대 경로가 제외 대상인가.
+
+    ⚠ 호출자는 **posix 형태 상대 경로**를 넘겨야 합니다 (`docs/ko/foo.md`).
+       `chunker` 와 `incremental` 이 같은 기준을 써야 하므로 여기 한 곳에 둡니다.
+    """
+    s = CFG.exclude_globs if spec is None else spec
+    if not s:
+        return False
+    rel = rel_path.replace("\\", "/").lstrip("./")
+    return any(p.match(rel) for p in _compiled(s))
+
+
 @dataclass
 class Config:
     # ── 임베딩 ───────────────────────────────────────────────
-    # ⚠ 이 두 값은 D9 실측(Hit@3 90%, 임계값 0.53~0.55)의 전제입니다.
-    #    바꾸면 임계값을 재측정해야 합니다.
+    # ⚠ 이 두 값은 확보된 검색 실측 전부의 전제입니다 (D9).
+    #    바꾸면 임계값과 Hit@k 를 재측정해야 합니다. 수치는 MEASUREMENTS 참조.
     ollama_url: str = field(default_factory=lambda: _env("VSS_OLLAMA_URL", "http://127.0.0.1:11500"))
     embed_model: str = field(default_factory=lambda: _env("VSS_EMBED_MODEL", "bge-m3:latest"))
     embed_dim: int = 1024
@@ -67,6 +142,11 @@ class Config:
     #    평가셋으로 A/B 비교하기 위해 토글로 만들었습니다. 기본은 꺼짐.
     context_header: bool = field(default_factory=lambda: _env("VSS_CONTEXT_HEADER", False))
     max_file_bytes: int = field(default_factory=lambda: _env("VSS_MAX_FILE_BYTES", 1_000_000))
+
+    # 경로 패턴 제외. 쉼표로 구분. 위 `is_excluded()` 주석 참조.
+    # ⚠ 인덱스 내용을 바꾸므로 fingerprint 에 들어갑니다 — 바꾸면 재인덱싱이 필요합니다.
+    # ⚠ 질의 동작에는 영향이 없습니다 (인덱싱 전용).
+    exclude_globs: str = field(default_factory=lambda: _env("VSS_EXCLUDE_GLOBS", ""))
 
     # ── 검색 (md 실험 대상) ──────────────────────────────────
     top_k: int = field(default_factory=lambda: _env("VSS_TOP_K", 4))
@@ -99,11 +179,10 @@ class Config:
     reorder_context: bool = field(default_factory=lambda: _env("VSS_REORDER", False))
 
     # ── 브리핑 ───────────────────────────────────────────────
-    # 인덱싱이 끝나면 프로젝트 브리핑을 자동으로 만듭니다 (FN-A05).
-    # ⚠ 브리핑은 LLM 을 호출합니다. indexer 는 그 사실을 모르고,
-    #    호출자(server/cli)가 on_done 콜백으로 주입합니다.
-    # ⚠ 평가 실험에서 재인덱싱을 반복할 때는 0 으로 꺼두세요. 매번 20초 이상 붙습니다.
-    auto_briefing: bool = field(default_factory=lambda: _env("VSS_AUTO_BRIEFING", True))
+    # 제품용 전체 인덱싱(CLI / POST /index)은 완료 후 브리핑을 항상 만듭니다 (FN-A05).
+    # 이 값은 health 응답의 정책 표시용이며 VSS_AUTO_BRIEFING으로 끌 수 없습니다.
+    # 반복 실험은 experiment.py가 indexer를 직접 호출해 브리핑 훅을 주입하지 않습니다.
+    auto_briefing: bool = True
     briefing_model: str = field(default_factory=lambda: _env("VSS_BRIEFING_MODEL", "qwen2.5-coder:7b"))
 
     # ── 저장 ─────────────────────────────────────────────────
@@ -127,10 +206,14 @@ class Config:
         """
         return {
             "embed_model": self.embed_model,
+            "embed_dim": self.embed_dim,
             "chunk_size": self.chunk_size,
             "chunk_overlap": self.chunk_overlap,
+            "min_chunk_chars": self.min_chunk_chars,
+            "max_file_bytes": self.max_file_bytes,
             "context_header": self.context_header,
             "use_bm25": self.use_bm25,
+            "exclude_globs": self.exclude_globs,
         }
 
     def to_dict(self) -> dict:
@@ -138,3 +221,45 @@ class Config:
 
 
 CFG = Config()
+
+
+# ── 저장된 인덱스 지문 호환성 ─────────────────────────────────
+#
+# fingerprint 키를 추가할 때 구 인덱스에는 그 키가 없습니다. 단순 dict 비교를 하면
+# 의미상 같은 기본값도 `None != ""` 로 판정되어 모든 증분 갱신이 막힙니다.
+# 아래 값은 각 키가 처음 도입되기 전 실제 기본값입니다. 현재 환경변수 값을 쓰면
+# 과거 인덱스의 설정을 조용히 바꾸는 셈이 되므로 반드시 상수여야 합니다.
+LEGACY_FINGERPRINT_DEFAULTS = {
+    "embed_model": "bge-m3:latest",
+    "embed_dim": 1024,
+    "chunk_size": 1200,
+    "chunk_overlap": 150,
+    "min_chunk_chars": 80,
+    "max_file_bytes": 1_000_000,
+    "context_header": False,
+    "use_bm25": False,
+    "exclude_globs": "",
+}
+
+
+def normalize_fingerprint(fp: Mapping | None) -> dict | None:
+    """구 fingerprint를 현재 스키마로 보완합니다.
+
+    저장된 값이 있으면 항상 그것을 우선하고, 과거에 존재하지 않던 키만 당시
+    기본값으로 채웁니다. 따라서 새 키 추가가 기존 인덱스를 `params_changed`로
+    오판하는 일을 막으면서도 실제 설정 차이는 보존합니다.
+    """
+    if not fp:
+        return None
+    out = dict(LEGACY_FINGERPRINT_DEFAULTS)
+    out.update(dict(fp))
+    if out.get("exclude_globs") is None:
+        out["exclude_globs"] = ""
+    return out
+
+
+def profile_value(profile: Mapping | None, key: str):
+    """명시적 인덱스 프로필의 값. 없을 때만 현재 CFG를 사용합니다."""
+    if profile is not None and key in profile:
+        return profile[key]
+    return getattr(CFG, key)

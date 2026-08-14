@@ -16,8 +16,10 @@ BM25 어휘 검색 — 벡터 검색을 보완합니다.
     코드에는 고유명사(함수명·변수명·클래스명)가 많아서, 정확 매칭이
     의미 검색보다 나을 때가 자주 있습니다.
 
-⚠ 2026-07-27 스파이크에서 "BM25 단독으로는 임계값 분리가 불충분" 이라는
+⚠ RAG 스파이크에서 "BM25 단독으로는 임계값 분리가 불충분" 이라는
    결론이 나왔지만, 그것은 **BM25 만 쓸 때** 이야기입니다.
+   (⚠ 2026-07-27 이라는 날짜는 무효입니다 — 해당 run 이 이력에 없습니다.
+    수치·run_id 는 MEASUREMENTS §1-4 참조)
    벡터와 **합치는 것**이 일반적인 방식이며, 이 모듈은 그 용도입니다.
 
 ⚠ 순수 표준 라이브러리로 구현했습니다. 외부 의존이 없습니다.
@@ -117,11 +119,15 @@ class BM25:
     def save(self, path: str | Path) -> None:
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps({
+        payload = json.dumps({
             "k1": self.k1, "b": self.b,
             "doc_ids": self.doc_ids, "doc_len": self.doc_len,
             "tf": self.tf, "df": dict(self.df), "avg_len": self.avg_len,
-        }, ensure_ascii=False), encoding="utf-8")
+        }, ensure_ascii=False)
+        # 반쯤 써진 JSON이 정상 역색인처럼 남지 않도록 같은 디렉터리에서 원자 교체합니다.
+        tmp = p.with_name(p.name + ".tmp")
+        tmp.write_text(payload, encoding="utf-8")
+        tmp.replace(p)
 
     @classmethod
     def load(cls, path: str | Path) -> "BM25 | None":
@@ -146,7 +152,13 @@ def index_path(project_id: str) -> Path:
     return Path(CFG.index_dir).resolve().parent / "bm25" / f"{safe}.json"
 
 
-def build(project_id: str, chunks: list[dict]) -> BM25:
+def staging_path(project_id: str) -> Path:
+    """전체 인덱싱 중 검증을 마치기 전까지 쓸 BM25 파일."""
+    final = index_path(project_id)
+    return final.with_name(f"building-{final.name}")
+
+
+def build(project_id: str, chunks: list[dict], *, path: str | Path | None = None) -> BM25:
     """청크 목록으로 역색인을 만들고 저장합니다."""
     idx = BM25()
     for c in chunks:
@@ -154,8 +166,13 @@ def build(project_id: str, chunks: list[dict]) -> BM25:
         body = f"{c.get('path','')} {c.get('section') or ''} {c.get('text','')}"
         idx.add(c["_id"], body)
     idx.finalize()
-    idx.save(index_path(project_id))
+    idx.save(path or index_path(project_id))
     return idx
+
+
+def doc_count(project_id: str) -> int | None:
+    idx = BM25.load(index_path(project_id))
+    return len(idx.doc_ids) if idx is not None else None
 
 
 # ── 점수 합치기 ──────────────────────────────────────────────

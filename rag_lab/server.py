@@ -29,7 +29,7 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 from vss_rag.config import CFG
-from vss_rag import briefing, embedder, indexer, references, searcher
+from vss_rag import briefing, diagnose, embedder, indexer, profiles, references, searcher
 from vss_rag.store import Store
 
 
@@ -40,8 +40,8 @@ def _briefing_hook(model: str, url: str):
        모델과 URL 을 여기서 주입하므로, fine-tuned 모델로 바꿀 때
        백엔드 한 곳만 고치면 브리핑도 따라갑니다 (C' 구조).
     """
-    def cb(project_id: str, root: str, commit: str | None) -> None:
-        briefing.build(root, project_id, model, url, commit=commit)
+    def cb(project_id: str, root: str, commit: str | None) -> dict:
+        return briefing.build(root, project_id, model, url, commit=commit)
     return cb
 
 TOKEN: str | None = None
@@ -116,6 +116,7 @@ class Handler(BaseHTTPRequestHandler):
             path = u.path.rstrip("/") or "/"
 
             if path == "/health":
+                drift_rows = diagnose.drift_summary(get_store())
                 return self._send(200, {
                     "ok": True,
                     "ollama": CFG.ollama_url,
@@ -123,9 +124,31 @@ class Handler(BaseHTTPRequestHandler):
                     "index_dir": CFG.index_dir,
                     "projects": get_store().projects(),
                     "briefings_dir": str(CFG.briefings_dir()),
-                    # ⚠ fingerprint() 를 그대로 펼칩니다.
-                    #    인덱스 stale 판정에 쓰는 값과 화면에 보이는 값이
-                    #    같아야 어긋날 일이 없습니다.
+
+                    # ⚠ `config` 는 **이 프로세스의 환경변수**입니다.
+                    #    인덱스가 무엇으로 만들어졌는지가 아닙니다.
+                    #    둘이 다를 수 있어서 `indexes` · `mismatch` 를 함께 냅니다.
+                    #    (2026-08-13: config 만 노출해서 불일치를 아무도 못 보던 문제)
+                    "indexes": [
+                        {"project_id": r["name"], "chunks": r["chunks"],
+                         # 검색·증분이 실제로 사용하는 프로젝트별 고정 프로필입니다.
+                         "serving_profile": r["fingerprint"],
+                         "fingerprint": r["fingerprint"],  # 이전 클라이언트 호환
+                         "profile_source": r["fingerprint_source"],
+                         # 다음 전체 인덱싱 기본값(CFG)과의 차이일 뿐 서빙 오류가 아닙니다.
+                         "default_config_drift": {
+                             k: {"index": i, "config": c}
+                             for k, (i, c) in r["drift"].items()} or None,
+                         "drift": {  # 이전 클라이언트 호환. 의미는 기본값과의 차이
+                             k: {"index": i, "config": c}
+                             for k, (i, c) in r["drift"].items()} or None}
+                        for r in drift_rows
+                    ],
+                    "mismatch": [
+                        r["name"] for r in drift_rows if r["fingerprint"] is None],
+                    "default_config_drift": [
+                        r["name"] for r in drift_rows if r["drift"]],
+
                     "config": {
                         **CFG.fingerprint(),
                         "min_chunk_chars": CFG.min_chunk_chars,
@@ -149,6 +172,9 @@ class Handler(BaseHTTPRequestHandler):
                 if not pid:
                     return self._send(400, {"error": "project_id required"})
                 return self._send(200, indexer.has_index(pid))
+
+            if path == "/profiles":
+                return self._send(200, {"profiles": profiles.list_profiles()})
 
             # ── 브리핑 원문 (.md) ───────────────────────────
             # 프론트가 마크다운을 그대로 받아 렌더하는 용도입니다.
@@ -188,6 +214,7 @@ class Handler(BaseHTTPRequestHandler):
             # 있게 하려면 이 정보가 필요합니다.
             if path == "/projects":
                 store = get_store()
+                live_projects = set(store.projects())
                 out = []
                 for st in indexer.list_projects():
                     pid = st.get("project_id")
@@ -199,22 +226,28 @@ class Handler(BaseHTTPRequestHandler):
                     stale = None
                     if root and st.get("state") == "done":
                         try:
-                            stale = indexer.is_stale(root, pid)
+                            # 질의·증분은 저장된 프로젝트 프로필을 쓰므로 전역 CFG
+                            # 차이를 source outdated로 표시하지 않습니다.
+                            stale = indexer.is_stale(root, pid, compare_config=False)
                         except Exception:
                             stale = None
 
+                    serving_profile = (searcher.serving_profile(store, pid)
+                                       if pid in live_projects else None)
                     out.append({
                         "project_id": pid,
                         "name": (Path(root).name if root else pid),
                         "project_root": root,
                         "state": st.get("state", "none"),
                         "chunk_count": st.get("chunk_count", 0),
-                        "actual_chunks": store.count(pid),
+                        "actual_chunks": (store.count(pid) if pid in live_projects else 0),
                         "indexed_at": st.get("indexed_at"),
                         "commit": st.get("commit"),
                         "dirty": st.get("dirty"),
                         "elapsed_s": st.get("elapsed_s"),
                         "last_mode": st.get("last_mode", "full"),
+                        "profile_id": st.get("profile_id"),
+                        "profile_hash": st.get("profile_hash"),
                         "processed": st.get("processed"),
                         "total": st.get("total"),
                         "error": st.get("error"),
@@ -223,12 +256,13 @@ class Handler(BaseHTTPRequestHandler):
                         "briefing_error": st.get("briefing_error"),
                         "outdated": bool(stale and stale.get("stale")),
                         "outdated_reason": (stale or {}).get("reason"),
-                        "fingerprint": st.get("fingerprint"),
+                        "fingerprint": serving_profile,
+                        "serving_profile": serving_profile,
                     })
 
                 # 인덱싱 안 된 컬렉션도 노출 (state.json 이 지워진 경우 등)
                 known = {o["project_id"] for o in out}
-                for pid in store.projects():
+                for pid in live_projects:
                     if pid not in known:
                         out.append({
                             "project_id": pid, "name": pid,
@@ -236,11 +270,9 @@ class Handler(BaseHTTPRequestHandler):
                             "chunk_count": 0,
                             "actual_chunks": store.count(pid),
                             "has_briefing": briefing.load(pid) is not None,
-                        "briefing": st.get("briefing"),
-                        "briefing_error": st.get("briefing_error"),
-                            # generating | ready | failed | None(미시도)
-                            "briefing": st.get("briefing"),
-                            "briefing_error": st.get("briefing_error"),
+                            "briefing": None,
+                            "briefing_error": None,
+                            "serving_profile": store.index_fingerprint(pid),
                         })
 
                 out.sort(key=lambda x: (x.get("indexed_at") or ""), reverse=True)
@@ -267,22 +299,42 @@ class Handler(BaseHTTPRequestHandler):
                 if not root or not pid:
                     return self._send(400, {"error": "project_root, project_id required"})
 
+                selected = None
+                if body.get("profile"):
+                    try:
+                        selected = profiles.resolve_profile(str(body["profile"]))
+                    except profiles.ProfileError as e:
+                        return self._send(400, {"error": "invalid_profile", "detail": str(e)})
+
                 # ⚠ 브리핑은 LLM 을 씁니다. indexer 는 그 사실을 모르고,
                 #    서버가 콜백으로 주입합니다 (C' 구조 유지).
                 #    실패해도 인덱싱 state 는 done 으로 남습니다.
-                hook = None
-                if CFG.auto_briefing and not body.get("no_briefing"):
-                    hook = _briefing_hook(
-                        body.get("model", CFG.briefing_model),
-                        body.get("ollama_url", CFG.ollama_url),
-                    )
+                # 제품용 전체 인덱싱은 브리핑까지가 완료 계약입니다.
+                # 과거 no_briefing 필드는 호환상 받아도 더는 생성을 건너뛰지 않습니다.
+                hook = _briefing_hook(
+                    body.get("model", CFG.briefing_model),
+                    body.get("ollama_url", CFG.ollama_url),
+                )
 
                 r = indexer.start_index(root, pid, blocking=False,
                                         force=bool(body.get("force")),
-                                        on_done=hook)
+                                        on_done=hook,
+                                        profile=(selected or {}).get("fingerprint"),
+                                        profile_id=(selected or {}).get("profile_id"),
+                                        profile_hash=(selected or {}).get("profile_hash"))
                 return self._send(202 if r.get("accepted") else 409, r)
 
-            # ── 증분 인덱싱 ─────────────────────────────────
+            # ── 프론트 snapshot 기반 증분 인덱싱 ─────────────
+            # 변경 파일의 최종 전체 문자열을 받아 로컬 Git 작업 트리 없이 갱신합니다.
+            if path == "/index/update/files":
+                result = indexer.start_payload_update(body, blocking=False)
+                if result.get("ok"):
+                    code = 200 if result.get("already_applied") else 202
+                else:
+                    code = 409 if result.get("conflict") else 400
+                return self._send(code, result)
+
+            # ── 로컬 Git 기반 증분 인덱싱 ────────────────────
             # 바뀐 파일만 다시 처리합니다. 보통 몇 초면 끝납니다.
             # ⚠ 불가능하면 실행하지 않고 이유를 돌려줍니다.
             #    전체 인덱싱(55분)이 예고 없이 시작되지 않도록 하기 위함입니다.
@@ -386,6 +438,8 @@ class Handler(BaseHTTPRequestHandler):
                     "stage": stage,                    # 단계 문구용
                     "top_score": r["top_score"],
                     "threshold": r["threshold"],
+                    "serving_profile": r["serving_profile"],
+                    "bm25_active": r.get("bm25_active", False),
                     "timing": timing,                  # ⚠ TTFT 예산 확인용
                 })
 
@@ -438,6 +492,8 @@ class Handler(BaseHTTPRequestHandler):
 
             return self._send(404, {"error": "not found", "path": path})
 
+        except searcher.ProjectNotFoundError as e:
+            return self._send(404, {"error": "project_not_found", "detail": str(e)})
         except embedder.EmbeddingError as e:
             traceback.print_exc()
             return self._send(503, {"error": "embedding_unavailable", "detail": str(e)})
@@ -467,8 +523,10 @@ def main():
     print("  GET  /index/status?project_id=...")
     print("  GET  /index/exists?project_id=...")
     print("  GET  /projects")
-    print("  POST /index    {project_root, project_id, force?}")
-    print("  POST /index/update {project_id, dry_run?}")
+    print("  GET  /profiles")
+    print("  POST /index    {project_root, project_id, profile?, force?}")
+    print("  POST /index/update {project_id, dry_run?}  (로컬 Git)")
+    print("  POST /index/update/files {project_id, base_revision, target_revision, files, ...}")
     print("  POST /search   {query, project_id, top_k?, threshold?}")
     print("  POST /prompt   {query, project_id}")
     print("  POST /finalize {answer, sources}")
@@ -486,6 +544,30 @@ def main():
         st = get_store()
         projects = st.projects()
         print(f"    인덱스 로드   {(time.perf_counter()-t)*1000:>7.0f} ms  {projects}")
+
+        # ⚠ 미완성 컬렉션은 **경고만** 합니다. 자동으로 지우지 않습니다.
+        #    cli.py 가 별도 프로세스에서 인덱싱 중일 수 있습니다.
+        #    정리는 `python repair_collections.py --apply` 로 명시적으로 하세요.
+        inc = st.incomplete()
+        if inc:
+            print("    ⚠ 미완성 인덱스가 있습니다 (조회 대상 아님):")
+            for it in inc:
+                age = f"{it['age_s']:.0f}s 전 시작" if it["age_s"] else "시작 시각 미상"
+                print(f"       {it['name']:24s} {it['chunks']:>7,}청크  {age}")
+            print("       진행 중이 아니라면:  python repair_collections.py --apply")
+
+        # 인덱스 지문 ↔ 다음 전체 인덱싱 기본값(CFG) 대조.
+        # 질의와 증분은 프로젝트별 저장 프로필을 쓰므로 이 차이는 서빙 오류가 아닙니다.
+        rows = diagnose.drift_summary(st)
+        drifted = [r for r in rows if r["drift"]]
+        if drifted:
+            print("    ℹ 프로젝트 프로필과 다음 전체 인덱싱 기본값이 다릅니다:")
+            for r in drifted:
+                for k, (iv, cv) in r["drift"].items():
+                    print(f"       {r['name']:16s} {k}: 인덱스={iv}  CFG={cv}")
+            print("       → 현재 질의·증분은 각 프로젝트의 저장 프로필을 사용합니다.")
+            print("       → CFG는 새 전체 인덱싱을 시작할 때만 사용합니다.")
+            print("       자세히:  python cli.py doctor")
     except Exception as e:
         print(f"    !! 인덱스 로드 실패: {e}")
     try:

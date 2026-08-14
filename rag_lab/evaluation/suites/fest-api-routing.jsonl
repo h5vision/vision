@@ -1,0 +1,2 @@
+{"id":"routing-001","question":"라우터를 등록하는 코드는 어디에 있나요?","answerable":true,"type":2,"gold":[{"path":"fastapi/routing.py","line_start":3084,"line_end":3220,"symbol":"include_router"}],"tags":["exact_symbol","architecture","code_vs_docs","duplicate","korean"],"note":"번역 튜토리얼보다 실제 APIRouter.include_router 구현이 올라와야 합니다."}
+{"id":"routing-none-001","question":"GraphQL 라우터를 자동 생성하는 generate_graphql_router 함수는 어디에 있나요?","answerable":false,"type":5,"gold":[],"tags":["no_evidence","hard_negative","korean"],"note":"비슷한 라우팅 코드가 있어도 존재하지 않는 심볼을 지어내면 안 됩니다."}

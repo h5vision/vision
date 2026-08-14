@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "name": "fest-api-rag-v1-v3",
+  "repository": "C:/Pj/fest-api",
+  "suite": "../suites/fest-api-routing.jsonl",
+  "require_clean": true,
+  "index_profiles": ["rag-v1", "rag-v2", "rag-v3"],
+  "search_profiles": [
+    {"name": "vector", "use_bm25": false, "pool": 20, "top_k": 4, "threshold": 0.54,
+     "use_mmr": false, "mmr_lambda": 0.7, "reorder": false},
+    {"name": "hybrid", "use_bm25": true, "pool": 20, "top_k": 4, "threshold": 0.54,
+     "use_mmr": false, "mmr_lambda": 0.7, "reorder": false}
+  ],
+  "cells": [
+    {"index_profile": "rag-v1", "search_profile": "vector", "modes": ["retrieval", "pipeline"]},
+    {"index_profile": "rag-v2", "search_profile": "vector", "modes": ["retrieval", "pipeline"]},
+    {"index_profile": "rag-v2", "search_profile": "hybrid", "modes": ["retrieval", "pipeline"]},
+    {"index_profile": "rag-v3", "search_profile": "vector", "modes": ["retrieval", "pipeline"]},
+    {"index_profile": "rag-v3", "search_profile": "hybrid", "modes": ["retrieval", "pipeline"]}
+  ]
+}

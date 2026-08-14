@@ -6,8 +6,9 @@
    오염시키는 문제(R18)를 여기서는 구조적으로 차단합니다.
    실패는 예외로 드러납니다.
 
-⚠ BGE-M3 + cosine 은 D9 실측(Hit@3 90%, MRR 0.900, 임계값 0.53~0.55)의 전제입니다.
-   모델을 바꾸면 그 수치가 전부 무효가 됩니다.
+⚠ BGE-M3 + cosine 은 확보된 검색 실측 전부의 전제입니다 (D9).
+   모델을 바꾸면 Hit@k·MRR·임계값이 전부 무효가 됩니다.
+   수치·run_id 는 MEASUREMENTS §1 · §2 참조.
 """
 
 from __future__ import annotations
@@ -51,17 +52,24 @@ def health() -> list[str]:
         raise EmbeddingError(f"Ollama 접속 실패: {e}") from e
 
 
-def embed_many(texts: list[str]) -> list[list[float]]:
-    """여러 문장을 배치로 임베딩. 순서 보존."""
+def embed_many(texts: list[str], *, model: str | None = None,
+               expected_dim: int | None = None) -> list[list[float]]:
+    """여러 문장을 배치로 임베딩. 순서 보존.
+
+    질의에서는 인덱스가 실제로 사용한 모델·차원을 명시적으로 넘깁니다.
+    생략한 호출(새 전체 인덱싱)은 현재 프로세스의 CFG를 사용합니다.
+    """
     if not texts:
         return []
 
+    selected_model = model or CFG.embed_model
+    selected_dim = expected_dim or CFG.embed_dim
     out: list[list[float]] = []
     for i in range(0, len(texts), CFG.embed_batch):
         batch = texts[i:i + CFG.embed_batch]
         data = _post(
             "/api/embed",
-            {"model": CFG.embed_model, "input": batch},
+            {"model": selected_model, "input": batch},
             CFG.embed_timeout,
         )
 
@@ -77,9 +85,9 @@ def embed_many(texts: list[str]) -> list[list[float]]:
             raise EmbeddingError(f"개수 불일치: 요청 {len(batch)} / 응답 {len(vecs)}")
 
         for v in vecs:
-            if len(v) != CFG.embed_dim:
+            if len(v) != selected_dim:
                 raise EmbeddingError(
-                    f"차원 불일치: {len(v)} (기대 {CFG.embed_dim}). "
+                    f"차원 불일치: {len(v)} (기대 {selected_dim}). "
                     "임베딩 모델이 바뀌지 않았는지 확인하세요."
                 )
         out.extend(vecs)
@@ -87,5 +95,6 @@ def embed_many(texts: list[str]) -> list[list[float]]:
     return out
 
 
-def embed_one(text: str) -> list[float]:
-    return embed_many([text])[0]
+def embed_one(text: str, *, model: str | None = None,
+              expected_dim: int | None = None) -> list[float]:
+    return embed_many([text], model=model, expected_dim=expected_dim)[0]

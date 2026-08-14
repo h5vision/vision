@@ -127,13 +127,19 @@ def reorder_for_attention(contexts: list[dict]) -> list[dict]:
 
 # ── 진입점 ───────────────────────────────────────────────────
 
-def postprocess(hits: list[dict], top_k: int) -> list[dict]:
+def postprocess(hits: list[dict], top_k: int, *,
+                use_mmr: bool | None = None,
+                mmr_lambda: float | None = None,
+                reorder: bool | None = None) -> list[dict]:
     """검색 결과 → LLM 에 넘길 최종 목록. 설정에 따라 MMR·재배치 적용."""
     out = hits
-    if CFG.use_mmr:
-        out = mmr(out, top_k, CFG.mmr_lambda)
+    mmr_on = CFG.use_mmr if use_mmr is None else use_mmr
+    reorder_on = CFG.reorder_context if reorder is None else reorder
+    lambda_ = CFG.mmr_lambda if mmr_lambda is None else mmr_lambda
+    if mmr_on:
+        out = mmr(out, top_k, lambda_)
     else:
         out = out[:top_k]
-    if CFG.reorder_context:
+    if reorder_on:
         out = reorder_for_attention(out)
     return out

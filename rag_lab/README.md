@@ -1,198 +1,102 @@
-# rag_lab — VSsVscodeEX 검색 실험대
+---
+문서: README
+상태: 현행정본
+버전: v2.1
+최종확인: 2026-08-14
+판단근거로_쓸_범위: 없음 — 이 문서는 **길잡이**입니다
+쓰면_안_되는_범위: 전부. 내용은 각 문서를 보세요
+---
 
-md 노트북에서 도는 독립 실험 환경입니다. **P의 백엔드를 전혀 건드리지 않습니다.**
+# rag_lab — VSsVscodeEX 검색 계층
+
+신입 개발자가 낯선 코드베이스에 질문하면 **출처와 함께** 답하게 하는 시스템의
+검색 부분입니다. 전체·증분 인덱싱, 검색, 프롬프트 조립, 출처 후처리를 담당하고,
+질의 답변의 LLM 호출은 게이트웨이가 합니다. 프로젝트 브리핑 생성만 rag_lab이 LLM을 호출합니다.
 
 ```
-[fest-api 레포]  →  청킹  →  임베딩(EC2 Ollama, 터널)  →  Chroma  →  검색
-   C:\Pj\fest-api                                          ./data/index
+[VSCode Extension] → [게이트웨이·P] → [rag_lab] → [Ollama]
+                                       ↑ 이 레포
 ```
 
 ---
 
-## 설치
+## 처음이라면 이 순서로
+
+```bash
+python cli.py health     # 연결 · 인덱스 · CFG 확인
+python cli.py doctor     # 상태가 어긋난 곳이 있는지
+```
+
+두 명령이 **지금 시스템이 어떤 상태인지 전부** 알려줍니다.
+문서에서 찾지 마세요 — 문서에 적힌 숫자는 적히는 순간부터 낡습니다.
+
+---
+
+## 문서 — 무엇을 어디서 찾는가
+
+| 알고 싶은 것 | 볼 곳 |
+|---|---|
+| **코드를 고치기 전에 알아야 할 것** | `AGENTS.md` 🔴 **필독** |
+| 지금 상태 · 다음 할 일 · 미해결 | `STATE.md` |
+| 왜 이렇게 정했는가 | `DECISIONS.md` |
+| 수치 (정확도 · 성능 · 코퍼스) | `MEASUREMENTS.md` · `MEASUREMENTS_generated.md` |
+| 명령어 · 트러블슈팅 | `MANUAL.md` |
+| 백엔드 연동 계약 | `API.md` |
+| 인덱싱 버전 · 질문 suite · 평가 matrix 작성 | `EVALUATION_GUIDE.md` |
+| 다른 LLM에 최근 작업 전체 인계 | `C:\Pj\RAG_CURRENT_CONTEXT.md` (롤링 스냅샷, 정본 아님) |
+
+### 🔑 문서에 없는 것은 도구가 냅니다
+
+| | |
+|---|---|
+| 인덱스 현황 · 설정 불일치 | `python cli.py doctor` |
+| 연결 · CFG · 인덱스별 지문 | `python cli.py health` |
+| 검색 정확도 | `python make_measurements.py` |
+| 작업 이력 | `python cli.py journal --render` |
+| 평가 프로필 목록 | `python cli.py profiles` |
+| 정확도 실험 검증·계획 | `python experiment.py validate ...` · `python experiment.py plan ...` |
+
+---
+
+## 설치 · 실행
 
 ```powershell
-cd C:\Pj\rag_lab
 python -m venv .venv
-.\.venv\Scripts\activate
-pip install chromadb
-```
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 
-⚠ `chromadb`만 필요합니다. torch·transformers 불필요 — **임베딩은 EC2 Ollama를 씁니다.**
-
-## 사전 조건
-
-**EC2 터널이 살아있어야 합니다.**
-
-```powershell
+# Ollama 터널 확인 (기본 11500)
 netstat -ano | findstr 11500
-# → 0.0.0.0:11500  LISTENING  이면 정상
-```
 
-없으면 PuTTY 세션 `vss-tunnel`을 열어주세요.
-
----
-
-## 사용
-
-```powershell
-# 0) 연결 확인 — 먼저 이것부터
 python cli.py health
-
-# 1) 인덱싱
-python cli.py index C:\Pj\fest-api --project fest-api
-
-# 2) 상태
-python cli.py status --project fest-api
-
-# 3) 검색 (임계값 통과/탈락 전부 표시)
-python cli.py search "결제 처리는 어디서 시작되나요?" --project fest-api
-
-# 4) 검색 + LLM 답변 (프롬프트 조립까지)
-python cli.py ask "이 프로젝트 구조를 설명해줘" --project fest-api --show-prompt
-
-# 5) 청킹 파라미터 비교
-python cli.py sweep C:\Pj\fest-api --project fest-api
 ```
+
+명령어 전체와 트러블슈팅은 **`MANUAL.md`** 를 보세요.
 
 ---
 
-## 실험 대상 — md가 조절하는 값
+## 현재 연동 경계
 
-`vss_rag/config.py` 또는 환경변수로 바꿉니다.
-
-| 값 | 기본 | 비고 |
-|---|---|---|
-| `chunk_size` | 1200 | P는 1600. 검색 품질의 최대 변수 |
-| `chunk_overlap` | 150 | P는 200 |
-| `top_k` | 4 | |
-| `score_threshold` | 0.5400 | **D9 실측 0.53~0.55** |
-
-```powershell
-$env:VSS_CHUNK_SIZE=800
-$env:VSS_TOP_K=6
-python cli.py index C:\Pj\fest-api --project fest-api-c800 --force
+```text
+질의: Frontend → FastAPI /v1/chat → rag_lab /prompt → 생성 모델 → rag_lab /finalize
+증분(로컬 Git): rag_lab /index/update
+증분(프론트 파일 전체 문자열): Frontend → FastAPI 프록시(미구현) → rag_lab /index/update/files
 ```
 
-### 🔴 바꾸면 안 되는 것
-
-```
-embed_model = bge-m3      D9 실측(Hit@3 90%, MRR 0.900, 임계값 0.53~0.55)의 전제
-거리 함수    = cosine       바꾸면 임계값 전부 무효 → 재측정
-```
-
-📌 **저장소(Chroma/SQLite/Qdrant)는 바꿔도 임계값이 유효합니다.** 점수 분포를 결정하는 건 임베딩과 거리 함수이지 저장 위치가 아닙니다.
+질의에는 `GET /projects`에서 확인한 완성 인덱스의 exact `project_id`를 사용합니다.
+`auto`나 유사 이름 fallback은 없습니다. 파일 payload 증분의 `content_sha256`은 선택값이며,
+생략하면 rag_lab이 받은 전체 문자열에서 계산합니다. 자세한 계약은 `API.md`를 보세요.
 
 ---
 
-## 구조
+## 🔴 절대 바꾸지 말 것
 
-| 파일 | 역할 |
-|---|---|
-| `config.py` | 모든 파라미터 |
-| `chunker.py` | 코드는 줄 윈도우, 문서는 `##` 섹션 |
-| `embedder.py` | Ollama bge-m3. **fallback 없음** (R18 차단) |
-| `store.py` | Chroma. ⚠ 거리→유사도 변환 |
-| `indexer.py` | git commit 버전 + 상태 + threading |
-| `searcher.py` | 검색 + 임계값 + 프롬프트 조립 |
-
-### 8/3 설계 결정 반영
-
-| 결정 | 구현 |
-|---|---|
-| git commit 기반 버전 | `indexer.is_stale()` — commit + **파라미터 지문** 비교 |
-| `job_id` 미사용 (C안) | `project_id`로 상태 조회 |
-| 비동기 = threading | Redis 불필요 |
-| 상태 = 1단계 JSON | `./data/state.json` → 2단계 SQLite |
-
-### ⚠ 파라미터 지문이 왜 필요한가
-
-`chunk_size`를 바꿨는데 commit이 같으면 "최신"으로 오판합니다. md가 튜닝하는 상황에서 실제로 발생하므로, `fingerprint`를 함께 저장해 비교합니다.
-
----
-
-## 산출 형식
-
-`searcher.search()`의 `contexts`는 **백엔드 `Source` 스키마와 호환**됩니다.
-
-```python
-{"path": "src/payment/router.py", "type": "code",
- "line_start": 20, "line_end": 42, "section": None,
- "text": "...", "score": 0.7231}
-```
-
-`render_prompt()`는 **백엔드 `generation.py`의 현행 형식**을 그대로 씁니다.
+`AGENTS.md` §2 가 정본입니다. 요약만:
 
 ```
-프로젝트 검색 결과:
-[1] src/payment/router.py lines 20-42
-...
-
-질문:
-...
+BGE-M3 모델 고정 · cosine 거리 · 임베딩 폴백 없음
+프롬프트 형식 · [N] ↔ contexts 인덱스 대응
+전체 인덱싱은 선삭제 금지 (begin_build → promote)
 ```
 
-> ⚠ 학습 데이터도 같은 형식이어야 fine-tuning 효과가 샙니다.
-> (`PROMPT_DATA_FORMAT_SPEC` §0 "렌더러 하나" 원칙)
-
----
-
-## 알려진 한계
-
-| 항목 | 내용 |
-|---|---|
-| 상태 소실 | 1단계 JSON — 프로세스 중단 시 진행 중 상태가 남음. 재인덱싱하면 복구 |
-| 동시성 | 파일 락 없음. md 단독 사용 전제 |
-| 증분 인덱싱 | 미구현. commit을 저장하므로 `git diff --name-only`로 확장 가능 |
-| 평가 | Hit@k 측정 미포함 — 평가셋이 나오면 `eval.py` 추가 |
-
----
-
-## 다음
-
-1. `health` → 연결 확인
-2. `index` → 첫 인덱싱, 청크 수·소요 시간 기록
-3. `search` → 임계값 0.54가 이 레포에서도 유효한지 확인
-4. **평가셋 작성** — S1~S5 + no-answer + 정답 근거
-5. `sweep` → 청킹 파라미터 결정
-
-⚠ **4번이 없으면 3·5번의 결과를 판정할 수 없습니다.** 사내 문서 4편이 나오면 문서 검색 미검증(R9)도 여기서 풀립니다.
-
----
-
-# 검색 개선 토글 (2026-08-05 추가)
-
-전부 **기본 꺼짐**입니다. 평가셋으로 A/B 비교한 뒤 켜세요.
-
-| 환경변수 | 기본 | 효과 | 재인덱싱 |
-|---|---|---|---|
-| `VSS_CONTEXT_HEADER` | 0 | 청크에 `# 경로 > class X > def y` 주입 | 🔴 **필요** |
-| `VSS_USE_BM25` | 0 | 어휘 검색을 벡터와 융합 | 🔴 **필요** |
-| `VSS_USE_MMR` | 0 | 같은 파일 편중 완화 | ❌ 즉시 |
-| `VSS_REORDER` | 0 | 근거 배치 조정 | ❌ 즉시 |
-| `VSS_MMR_LAMBDA` | 0.7 | 낮을수록 다양성 중시 | ❌ |
-| `VSS_FUSION_POOL` | 20 | 융합 전 후보 수 | ❌ |
-
-## 재인덱싱이 필요한 이유
-
-`context_header` 와 `use_bm25` 는 **`fingerprint` 에 포함**됩니다.
-켜고 끄면 `is_stale()` 이 감지하지만, **자동 재인덱싱은 하지 않습니다.**
-
-```powershell
-$env:VSS_CONTEXT_HEADER=1
-$env:VSS_USE_BM25=1
-python cli.py index <경로> --project <이름>-v2 --force
-```
-
-📌 **다른 `project_id` 로 만들면 원본과 나란히 비교**할 수 있습니다.
-
-## A/B 비교 절차
-
-```
-1. 평가셋 확보 (질문 + 정답 위치)
-2. 현재 설정으로 채점        → 기준선
-3. 토글 하나만 켜고 재측정    → 그 항목의 효과
-4. 반복
-```
-
-⚠ **한 번에 여러 개를 켜면 무엇이 효과였는지 알 수 없습니다.**
+**코드를 고치기 전에 `AGENTS.md` 를 읽으세요.** 근거를 모르고 되돌리면 안 되는 것들입니다.
