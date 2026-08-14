@@ -16,7 +16,7 @@ export class APIService {
     }
 
     async checkHealth(): Promise<BackendStatus> {
-        const endpoint = vscode.workspace.getConfiguration().get<string>("vision.endpoint",
+        const endpoint = vscode.workspace.getConfiguration("vision").get<string>("endpoint",
             "http://127.0.0.1:5000"
         )!;
         let startime = Date.now();
@@ -62,7 +62,7 @@ export class APIService {
     }
 
     async get(path: string, timeoutMs: number = 3000) {
-        const endpoint = vscode.workspace.getConfiguration().get<string>("vision.endpoint",
+        const endpoint = vscode.workspace.getConfiguration("vision").get<string>("endpoint",
             "http://127.0.0.1:5000"
         )!;
         const response = await fetch(
@@ -75,7 +75,7 @@ export class APIService {
     }
 
     async post(path: string, body: any, timeoutMs: number = 10000) {
-        const endpoint = vscode.workspace.getConfiguration().get<string>("vision.endpoint",
+        const endpoint = vscode.workspace.getConfiguration("vision").get<string>("endpoint",
             "http://127.0.0.1:5000"
         )!;
         const response = await fetch(
@@ -100,7 +100,7 @@ export class APIService {
         ) => void | Promise<void>,
         signal?: AbortSignal
     ): Promise<void> {
-        const endpoint = vscode.workspace.getConfiguration().get<string>("vision.endpoint",
+        const endpoint = vscode.workspace.getConfiguration("vision").get<string>("endpoint",
             "http://127.0.0.1:5000"
         )!;
         const response = await fetch(
