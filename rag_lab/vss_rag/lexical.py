@@ -31,9 +31,14 @@ import json
 import math
 import re
 from collections import Counter
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 
 from .config import CFG
+
+
+class BM25BuildError(RuntimeError):
+    """입력 청크가 완전하지 않아 BM25 파일을 만들 수 없습니다."""
 
 # ── 토크나이저 ───────────────────────────────────────────────
 # 코드 검색에 맞춘 규칙입니다.
@@ -158,13 +163,37 @@ def staging_path(project_id: str) -> Path:
     return final.with_name(f"building-{final.name}")
 
 
-def build(project_id: str, chunks: list[dict], *, path: str | Path | None = None) -> BM25:
-    """청크 목록으로 역색인을 만들고 저장합니다."""
+def build(project_id: str, chunks: Iterable[Mapping], *,
+          path: str | Path | None = None,
+          expected_count: int | None = None) -> BM25:
+    """청크 iterable로 역색인을 만들고 검증이 끝난 뒤에만 저장합니다.
+
+    Store의 페이지 generator가 중간에 실패하면 ``save``까지 도달하지 않으므로
+    기존 파일 또는 staging 파일을 빈/부분 BM25로 덮어쓰지 않습니다.
+    """
     idx = BM25()
+    seen: set[str] = set()
     for c in chunks:
+        if not isinstance(c, Mapping):
+            raise BM25BuildError(
+                f"BM25 청크 형식 오류: project_id={project_id!r}, "
+                f"type={type(c).__name__}")
+        raw_id = c.get("_id")
+        if raw_id is None or not str(raw_id):
+            raise BM25BuildError(
+                f"BM25 청크 ID가 없습니다: project_id={project_id!r}")
+        doc_id = str(raw_id)
+        if doc_id in seen:
+            raise BM25BuildError(
+                f"BM25 청크 ID 중복: project_id={project_id!r}, id={doc_id!r}")
+        seen.add(doc_id)
         # 경로도 색인에 넣습니다 — "payment 관련 파일" 같은 질문에 걸리도록
         body = f"{c.get('path','')} {c.get('section') or ''} {c.get('text','')}"
-        idx.add(c["_id"], body)
+        idx.add(doc_id, body)
+    if expected_count is not None and len(idx.doc_ids) != expected_count:
+        raise BM25BuildError(
+            f"BM25 문서 수 불일치: project_id={project_id!r}, "
+            f"expected={expected_count}, actual={len(idx.doc_ids)}")
     idx.finalize()
     idx.save(path or index_path(project_id))
     return idx

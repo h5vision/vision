@@ -354,8 +354,12 @@ class ResumableIndexer:
                 staged.unlink()
             return 0
         staged = lexical.staging_path(project_id)
-        chunks = self.store.all_chunks(collection_name)
-        idx = lexical.build(project_id, chunks, path=staged)
+        idx = lexical.build(
+            project_id,
+            self.store.iter_chunks(collection_name),
+            path=staged,
+            expected_count=run["completed_chunks"],
+        )
         if len(idx.doc_ids) != run["completed_chunks"]:
             raise RuntimeError(
                 f"BM25 문서 수 불일치: bm25={len(idx.doc_ids)}, "
@@ -413,24 +417,48 @@ class ResumableIndexer:
                           on_done: CompletionHook | None) -> None:
         """승격 직후 프로세스가 죽은 경우 BM25/state/브리핑만 마칩니다."""
         project_id = run["project_id"]
+        final = lexical.index_path(project_id)
+        backup = final.with_name(final.name + ".resume-prev")
+        staged = lexical.staging_path(project_id)
         bm25_count = 0
-        if bool(run["fingerprint"]["use_bm25"]):
-            staged = lexical.staging_path(project_id)
-            idx = lexical.BM25.load(staged)
-            if idx is None or len(idx.doc_ids) != run["completed_chunks"]:
-                bm25_count = self._prepare_bm25(run, project_id)
-            else:
-                bm25_count = len(idx.doc_ids)
-            staged.replace(lexical.index_path(project_id))
-        else:
-            final = lexical.index_path(project_id)
-            if final.exists():
+        bm25_changed = False
+        try:
+            if bool(run["fingerprint"]["use_bm25"]):
+                idx = lexical.BM25.load(staged)
+                if idx is None or len(idx.doc_ids) != run["completed_chunks"]:
+                    bm25_count = self._prepare_bm25(run, project_id)
+                else:
+                    bm25_count = len(idx.doc_ids)
+                staged.replace(final)
+                bm25_changed = True
+            elif final.exists():
                 final.unlink()
-        self.store.finish_promote(project_id)
-        backup = lexical.index_path(project_id).with_name(
-            lexical.index_path(project_id).name + ".resume-prev")
-        if backup.exists():
-            backup.unlink()
+                bm25_changed = True
+            self.store.finish_promote(project_id)
+            if backup.exists():
+                backup.unlink()
+        except Exception as original:
+            rollback_errors: list[str] = []
+            try:
+                self.store.rollback_promote(project_id)
+            except Exception as e:
+                rollback_errors.append(
+                    f"Chroma rollback: {type(e).__name__}: {e}")
+            try:
+                if backup.exists():
+                    backup.replace(final)
+                elif bm25_changed and final.exists():
+                    final.unlink()
+            except Exception as e:
+                rollback_errors.append(
+                    f"BM25 rollback: {type(e).__name__}: {e}")
+            self.checkpoints.set_run(run["run_id"], phase="indexing_lexical")
+            if rollback_errors:
+                raise RuntimeError(
+                    f"{type(original).__name__}: {original}; "
+                    + "; ".join(rollback_errors)
+                ) from original
+            raise
         self._mark_index_done(run, bm25_count=bm25_count)
         self._finish_briefing(self.checkpoints.get_run(run["run_id"]) or run,
                               on_done)

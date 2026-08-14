@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Iterator
 from pathlib import Path
 
 from .config import CFG, normalize_fingerprint
@@ -31,6 +32,22 @@ from .config import CFG, normalize_fingerprint
 BUILD_PREFIX = "building-"
 PREV_SUFFIX = "-prev"
 MAX_PROJECT_ID = 63 - len(BUILD_PREFIX)
+
+
+class ChunkScanError(RuntimeError):
+    """Chroma 청크를 BM25용으로 순회하지 못했을 때 발생합니다."""
+
+
+class ChunkScanMismatch(ChunkScanError):
+    """페이지 순회 중 누락·중복·동시 변경이 감지됐습니다."""
+
+
+class DuplicateChunkId(ChunkScanMismatch):
+    """페이지 경계에서 같은 청크 ID가 두 번 관측됐습니다."""
+
+
+class ChunkMutationError(RuntimeError):
+    """파일 단위 삭제·snapshot 작업을 신뢰할 수 없을 때 발생합니다."""
 
 
 def is_internal(name: str) -> bool:
@@ -359,16 +376,27 @@ class Store:
         """
         if not paths:
             return 0
-        col = self._collection(project_id)
+        try:
+            col = self._client.get_collection(project_id)
+        except Exception as e:
+            raise ChunkMutationError(
+                f"컬렉션을 열 수 없습니다: project_id={project_id!r}"
+            ) from e
         try:
             col.delete(where={"path": {"$in": list(paths)}})
-        except Exception:
+        except Exception as bulk_error:
             # $in 미지원 버전 대비 — 경로별로 개별 삭제
+            failed: list[str] = []
             for p in paths:
                 try:
                     col.delete(where={"path": p})
                 except Exception:
-                    pass
+                    failed.append(p)
+            if failed:
+                raise ChunkMutationError(
+                    f"경로별 청크 삭제 실패: project_id={project_id!r}, "
+                    f"failed={failed[:5]!r}, total_failed={len(failed)}"
+                ) from bulk_error
         return len(paths)
 
     def snapshot_by_paths(self, project_id: str, paths: list[str]) -> dict:
@@ -383,15 +411,21 @@ class Store:
         if not unique:
             return empty
 
-        col = self._collection(project_id)
+        try:
+            col = self._client.get_collection(project_id)
+        except Exception as e:
+            raise ChunkMutationError(
+                f"컬렉션을 열 수 없습니다: project_id={project_id!r}"
+            ) from e
         rows: list[dict] = []
         try:
             rows.append(col.get(
                 where={"path": {"$in": unique}},
                 include=["documents", "metadatas", "embeddings"],
             ))
-        except Exception:
+        except Exception as bulk_error:
             # 구 Chroma의 $in 미지원에 대비합니다.
+            failed: list[str] = []
             for path in unique:
                 try:
                     rows.append(col.get(
@@ -399,7 +433,12 @@ class Store:
                         include=["documents", "metadatas", "embeddings"],
                     ))
                 except Exception:
-                    continue
+                    failed.append(path)
+            if failed:
+                raise ChunkMutationError(
+                    f"경로별 snapshot 실패: project_id={project_id!r}, "
+                    f"failed={failed[:5]!r}, total_failed={len(failed)}"
+                ) from bulk_error
 
         out = {k: [] for k in empty}
         seen: set[str] = set()
@@ -410,6 +449,11 @@ class Store:
             embeddings = row.get("embeddings")
             if embeddings is None:
                 embeddings = []
+            if not (len(ids) == len(docs) == len(metas) == len(embeddings)):
+                raise ChunkMutationError(
+                    f"snapshot 응답 길이 불일치: ids={len(ids)}, "
+                    f"documents={len(docs)}, metadatas={len(metas)}, "
+                    f"embeddings={len(embeddings)}")
             for cid, doc, meta, vec in zip(ids, docs, metas, embeddings):
                 if cid in seen:
                     continue
@@ -479,26 +523,85 @@ class Store:
             }
         return out
 
-    def all_chunks(self, project_id: str) -> list[dict]:
-        """BM25 색인을 만들 때 씁니다. 전체를 메모리에 올립니다."""
-        col = self._collection(project_id)
-        if col.count() == 0:
-            return []
+    def iter_chunks(self, project_id: str, *, batch_size: int = 500) -> Iterator[dict]:
+        """BM25 구축용 청크를 제한된 크기의 Chroma 페이지로 순회합니다.
+
+        전체 ``get()``은 큰 컬렉션에서 SQLite 변수 제한을 넘을 수 있습니다.
+        페이지 조회 하나라도 실패하거나 ID 중복·누락·동시 변경이 감지되면
+        빈 결과로 바꾸지 않고 예외를 발생시켜 기존 BM25 승격을 막습니다.
+        """
+        if batch_size <= 0:
+            raise ValueError("batch_size는 1 이상이어야 합니다")
         try:
-            res = col.get(include=["documents", "metadatas"])
-        except Exception:
-            return []
-        out = []
-        for cid, doc, meta in zip(res.get("ids") or [],
-                                  res.get("documents") or [],
-                                  res.get("metadatas") or []):
-            meta = meta or {}
-            out.append({
-                "_id": cid, "text": doc,
-                "path": meta.get("path", ""),
-                "section": meta.get("section") or None,
-            })
-        return out
+            col = self._client.get_collection(project_id)
+            expected = int(col.count())
+        except Exception as e:
+            raise ChunkScanError(
+                f"BM25 청크 스캔 시작 실패: project_id={project_id!r}"
+            ) from e
+
+        seen: set[str] = set()
+        offset = 0
+        while offset < expected:
+            limit = min(batch_size, expected - offset)
+            try:
+                res = col.get(
+                    limit=limit,
+                    offset=offset,
+                    include=["documents", "metadatas"],
+                )
+            except Exception as e:
+                raise ChunkScanError(
+                    f"BM25 청크 페이지 조회 실패: project_id={project_id!r}, "
+                    f"offset={offset}, limit={limit}"
+                ) from e
+
+            ids = list(res.get("ids") or [])
+            docs = list(res.get("documents") or [])
+            metas = list(res.get("metadatas") or [])
+            if not ids:
+                raise ChunkScanMismatch(
+                    f"BM25 청크 페이지가 조기에 비었습니다: "
+                    f"project_id={project_id!r}, offset={offset}, expected={expected}")
+            if not (len(ids) == len(docs) == len(metas)):
+                raise ChunkScanMismatch(
+                    f"BM25 청크 페이지 길이 불일치: project_id={project_id!r}, "
+                    f"offset={offset}, ids={len(ids)}, documents={len(docs)}, "
+                    f"metadatas={len(metas)}")
+            if len(ids) > limit:
+                raise ChunkScanMismatch(
+                    f"BM25 청크 페이지 크기 초과: project_id={project_id!r}, "
+                    f"offset={offset}, limit={limit}, actual={len(ids)}")
+
+            for cid, doc, meta in zip(ids, docs, metas):
+                cid = str(cid)
+                if cid in seen:
+                    raise DuplicateChunkId(
+                        f"BM25 청크 ID 중복: project_id={project_id!r}, id={cid!r}, "
+                        f"offset={offset}")
+                seen.add(cid)
+                meta = meta or {}
+                yield {
+                    "_id": cid, "text": doc or "",
+                    "path": meta.get("path", ""),
+                    "section": meta.get("section") or None,
+                }
+            offset += len(ids)
+
+        try:
+            final_count = int(col.count())
+        except Exception as e:
+            raise ChunkScanError(
+                f"BM25 청크 스캔 종료 건수 확인 실패: project_id={project_id!r}"
+            ) from e
+        if offset != expected or final_count != expected:
+            raise ChunkScanMismatch(
+                f"BM25 청크 스캔 건수 불일치: project_id={project_id!r}, "
+                f"scanned={offset}, initial={expected}, final={final_count}")
+
+    def all_chunks(self, project_id: str) -> list[dict]:
+        """호환용 전체 목록. 내부적으로는 안전한 페이지 순회를 사용합니다."""
+        return list(self.iter_chunks(project_id))
 
     def count(self, project_id: str) -> int:
         try:

@@ -31,6 +31,7 @@
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -48,6 +49,14 @@ from .store import Store
 # 증분은 파일 단위 삭제·재삽입 오버헤드가 있어서, 절반 이상이 바뀌면
 # 처음부터 다시 만드는 쪽이 단순하고 빠릅니다.
 FULL_REINDEX_RATIO = 0.5
+
+
+class IncrementalApplyError(RuntimeError):
+    """로컬 Git 증분 갱신 실패와 rollback 결과를 함께 전달합니다."""
+
+    def __init__(self, detail: str, *, rollback_ok: bool):
+        super().__init__(detail)
+        self.rollback_ok = rollback_ok
 
 
 # ── git 변경 감지 ────────────────────────────────────────────
@@ -269,24 +278,93 @@ def update(project_root: str, project_id: str, store: Store,
         )   # 실패 시 예외 → 여기서 중단
         pending.append((batch, vecs))
 
-    # ── ③ 옛 청크 삭제 ──────────────────────────────────────
-    # 임베딩이 전부 성공한 뒤에만 실행됩니다.
-    deleted_n = store.delete_by_paths(project_id, to_delete) if to_delete else 0
-
-    # ── ④ 저장 ──────────────────────────────────────────────
+    # 임베딩이 전부 성공한 뒤, 영향 경로의 기존 ID·문서·embedding을 보관합니다.
+    # 새 파일 경로도 포함해야 부분 add 실패 시 그 경로를 깨끗하게 지울 수 있습니다.
+    affected_paths = list(dict.fromkeys([*to_delete, *to_index]))
+    before = store.snapshot_by_paths(project_id, affected_paths)
+    staged_bm25 = lexical.staging_path(project_id)
+    final_bm25 = lexical.index_path(project_id)
+    bm25_backup = final_bm25.with_name(final_bm25.name + ".incremental-prev")
+    use_bm25 = bool(profile["use_bm25"])
+    bm25_committed = False
+    keep_bm25_backup = False
+    deleted_n = 0
     embedded = 0
-    for batch, vecs in pending:
-        store.add(project_id, batch, vecs)
-        embedded += len(batch)
 
-    # ── ⑤ BM25 역색인 재구축 ────────────────────────────────
-    # ⚠ 역색인은 부분 갱신이 까다롭습니다 (df 값이 전역이라).
-    #    다만 임베딩 호출이 없어 전체 재구축도 수 초면 끝납니다.
-    if bool(profile["use_bm25"]):
-        lexical.build(project_id, store.all_chunks(project_id))
+    try:
+        # ── ③ 옛 청크 삭제 ──────────────────────────────────
+        deleted_n = (store.delete_by_paths(project_id, to_delete)
+                     if to_delete else 0)
+        remaining = store.snapshot_by_paths(project_id, to_delete)
+        if remaining["ids"]:
+            raise RuntimeError(
+                f"기존 청크 삭제 불완전: {len(remaining['ids'])}개가 남았습니다")
 
-    # 구 지문에 새 키가 빠져 있었다면 성공한 증분 갱신을 계기로 정규화합니다.
-    store.set_index_fingerprint(project_id, profile)
+        # ── ④ 저장 ──────────────────────────────────────────
+        for batch, vecs in pending:
+            store.add(project_id, batch, vecs)
+            embedded += len(batch)
+
+        replaced = store.snapshot_by_paths(project_id, affected_paths)
+        if len(replaced["ids"]) != len(new_chunks):
+            raise RuntimeError(
+                f"교체 청크 수 불일치: expected={len(new_chunks)}, "
+                f"actual={len(replaced['ids'])}")
+
+        # ── ⑤ BM25 staging 구축·검증·원자 교체 ─────────────
+        # 역색인은 df가 전역이므로 증분 요청이어도 전체 청크를 페이지 순회합니다.
+        if use_bm25:
+            expected_bm25 = store.count(project_id)
+            lexical.build(
+                project_id,
+                store.iter_chunks(project_id),
+                path=staged_bm25,
+                expected_count=expected_bm25,
+            )
+            if bm25_backup.exists():
+                bm25_backup.unlink()
+            if final_bm25.exists():
+                shutil.copy2(final_bm25, bm25_backup)
+            staged_bm25.replace(final_bm25)
+            bm25_committed = True
+
+        # 구 지문에 새 키가 빠져 있었다면 성공한 증분 갱신을 계기로 정규화합니다.
+        store.set_index_fingerprint(project_id, profile)
+    except Exception as original:
+        rollback_errors: list[str] = []
+        try:
+            if staged_bm25.exists():
+                staged_bm25.unlink()
+            if bm25_committed:
+                if bm25_backup.exists():
+                    bm25_backup.replace(final_bm25)
+                elif final_bm25.exists():
+                    final_bm25.unlink()
+        except Exception as e:
+            keep_bm25_backup = True
+            rollback_errors.append(f"BM25 rollback: {type(e).__name__}: {e}")
+
+        try:
+            store.delete_by_paths(project_id, affected_paths)
+            store.restore_snapshot(project_id, before)
+            restored = store.snapshot_by_paths(project_id, affected_paths)
+            if len(restored["ids"]) != len(before["ids"]):
+                raise RuntimeError(
+                    f"복원 청크 수 불일치: expected={len(before['ids'])}, "
+                    f"actual={len(restored['ids'])}")
+            if index_fp is not None:
+                store.set_index_fingerprint(project_id, index_fp)
+        except Exception as e:
+            rollback_errors.append(f"Chroma rollback: {type(e).__name__}: {e}")
+
+        detail = f"{type(original).__name__}: {original}"
+        if rollback_errors:
+            detail += "; " + "; ".join(rollback_errors)
+        raise IncrementalApplyError(
+            detail, rollback_ok=not rollback_errors) from original
+    finally:
+        if use_bm25 and bm25_backup.exists() and not keep_bm25_backup:
+            bm25_backup.unlink()
 
     elapsed = round(time.perf_counter() - t0, 1)
     return {

@@ -61,9 +61,9 @@ class FakeStore:
     def count(self, collection_name):
         return sum(self.collections[collection_name]["paths"].values())
 
-    def all_chunks(self, collection_name):
+    def iter_chunks(self, collection_name):
         del collection_name
-        return []
+        return iter(())
 
     def promote_resumable(self, project_id, *, expected_run_id):
         build = "building-" + project_id

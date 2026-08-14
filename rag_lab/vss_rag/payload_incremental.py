@@ -344,12 +344,17 @@ def apply(plan: dict, store: Store,
                 f"actual={len(replaced['ids'])}")
 
         if bool(profile["use_bm25"]):
-            chunks = store.all_chunks(project_id)
-            idx = lexical.build(project_id, chunks, path=staged_bm25)
-            if len(idx.doc_ids) != store.count(project_id):
+            expected_bm25 = store.count(project_id)
+            idx = lexical.build(
+                project_id,
+                store.iter_chunks(project_id),
+                path=staged_bm25,
+                expected_count=expected_bm25,
+            )
+            if len(idx.doc_ids) != expected_bm25:
                 raise RuntimeError(
                     f"BM25 문서 수 불일치: bm25={len(idx.doc_ids)}, "
-                    f"chroma={store.count(project_id)}")
+                    f"chroma={expected_bm25}")
             if bm25_backup.exists():
                 bm25_backup.unlink()
             if final_bm25.exists():

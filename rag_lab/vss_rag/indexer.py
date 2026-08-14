@@ -307,8 +307,12 @@ def _run(project_root: str, project_id: str, store: Store,
         if bool(fp["use_bm25"]):
             _update(project_id, state="indexing_lexical")
             staged_bm25 = lexical.staging_path(project_id)
-            chunks_for_bm25 = store.all_chunks(build)
-            idx = lexical.build(project_id, chunks_for_bm25, path=staged_bm25)
+            idx = lexical.build(
+                project_id,
+                store.iter_chunks(build),
+                path=staged_bm25,
+                expected_count=total_chunks,
+            )
             bm25_count = len(idx.doc_ids)
             if bm25_count != total_chunks:
                 raise RuntimeError(

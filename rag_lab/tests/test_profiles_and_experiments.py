@@ -113,8 +113,8 @@ class ExplicitIndexProfileTests(unittest.TestCase):
             promoted = False
             def begin_build(self, project_id, **kwargs): return "building-unit-hybrid"
             def add(self, project_id, chunks, vectors, id_prefix=None): pass
-            def all_chunks(self, project_id):
-                return [{"_id": "one", "path": "a.py", "text": "a", "section": None}]
+            def iter_chunks(self, project_id):
+                yield {"_id": "one", "path": "a.py", "text": "a", "section": None}
             def promote(self, project_id): self.promoted = True
 
         class BadIndex:
