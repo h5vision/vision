@@ -73,7 +73,10 @@ class Store:
     def begin_build(self, project_id: str, *, fingerprint: dict | None = None,
                     project_root: str | None = None,
                     profile_id: str | None = None,
-                    profile_hash: str | None = None) -> str:
+                    profile_hash: str | None = None,
+                    run_id: str | None = None,
+                    manifest_hash: str | None = None,
+                    replace_existing: bool = True) -> str:
         """임시 컬렉션을 만들고 그 이름을 돌려줍니다.
 
         인덱싱은 여기에 쌓고, 끝나면 `promote()` 로 교체합니다.
@@ -84,7 +87,11 @@ class Store:
                 f"project_id 가 {MAX_PROJECT_ID}자를 넘습니다: {len(project_id)}자"
             )
         name = BUILD_PREFIX + project_id
-        self.reset(name)                      # 이전 시도 잔재 제거
+        if replace_existing:
+            self.reset(name)                  # 기존 엔진 호환: 이전 시도 잔재 제거
+        elif self.collection_info(name) is not None:
+            raise RuntimeError(
+                f"기존 building 컬렉션을 덮어쓰지 않습니다: {name}")
         meta = {
             "hnsw:space": "cosine",           # ⚠ D9 전제
             "status": "building",
@@ -100,8 +107,82 @@ class Store:
             meta["profile_id"] = profile_id
         if profile_hash:
             meta["profile_hash"] = profile_hash
+        if run_id:
+            meta["run_id"] = run_id
+            meta["resumable"] = True
+        if manifest_hash:
+            meta["manifest_hash"] = manifest_hash
         self._client.create_collection(name=name, metadata=meta)
         return name
+
+    def collection_info(self, name: str) -> dict | None:
+        """컬렉션을 생성하지 않고 이름·청크 수·metadata를 조회합니다."""
+        try:
+            col = self._client.get_collection(name)
+            return {"name": name, "chunks": col.count(),
+                    "metadata": dict(col.metadata or {})}
+        except Exception:
+            return None
+
+    def open_build(self, project_id: str, *, expected_run_id: str) -> str:
+        """체크포인트와 일치하는 기존 building 컬렉션만 엽니다."""
+        name = BUILD_PREFIX + project_id
+        info = self.collection_info(name)
+        if info is None:
+            raise RuntimeError(f"재개할 임시 컬렉션이 없습니다: {name}")
+        meta = info["metadata"]
+        if meta.get("status") != "building" or meta.get("target") != project_id:
+            raise RuntimeError(f"임시 컬렉션 metadata가 올바르지 않습니다: {name}")
+        if meta.get("run_id") != expected_run_id:
+            raise RuntimeError(
+                f"run_id가 다른 임시 컬렉션입니다: expected={expected_run_id}, "
+                f"actual={meta.get('run_id')}")
+        return name
+
+    def path_chunk_count(self, collection_name: str, path: str) -> int:
+        """파일 체크포인트 확정 전에 해당 경로의 실제 청크 수를 셉니다."""
+        col = self._client.get_collection(collection_name)
+        try:
+            row = col.get(where={"path": path}, include=[])
+            return len(row.get("ids") or [])
+        except Exception:
+            return 0
+
+    def promote_resumable(self, project_id: str, *, expected_run_id: str) -> None:
+        """중단 후 다시 호출해도 이어갈 수 있는 promote 1·2단계입니다.
+
+        ``<pid>-prev``는 외부 BM25 커밋이 끝날 때까지 보존하며,
+        최종 정리는 기존 ``finish_promote()``가 담당합니다.
+        """
+        build = BUILD_PREFIX + project_id
+        prev = project_id + PREV_SUFFIX
+        names = {c.name for c in self._client.list_collections()}
+
+        # 이미 2단계까지 끝난 뒤 프로세스만 죽은 경우입니다.
+        if build not in names and project_id in names:
+            info = self.collection_info(project_id) or {}
+            if (info.get("metadata") or {}).get("run_id") != expected_run_id:
+                raise RuntimeError("완성 이름에 다른 run_id 컬렉션이 있습니다")
+        else:
+            if build not in names:
+                raise RuntimeError(f"승격할 임시 컬렉션이 없습니다: {build}")
+            build_info = self.collection_info(build) or {}
+            if (build_info.get("metadata") or {}).get("run_id") != expected_run_id:
+                raise RuntimeError("승격 대상 building 컬렉션의 run_id가 다릅니다")
+
+            if project_id in names and prev not in names:
+                self._client.get_collection(project_id).modify(name=prev)
+            names = {c.name for c in self._client.list_collections()}
+            if project_id not in names:
+                self._client.get_collection(build).modify(name=project_id)
+
+        col = self._client.get_collection(project_id)
+        meta = dict(col.metadata or {})
+        if meta.get("run_id") != expected_run_id:
+            raise RuntimeError("승격 후 target run_id 검증에 실패했습니다")
+        meta.pop("hnsw:space", None)
+        meta.update({"status": "ready", "promoted_at": time.time()})
+        col.modify(metadata=meta)
 
     def promote(self, project_id: str, *, keep_previous: bool = False) -> None:
         """`building-<pid>` 를 `<pid>` 로 승격합니다. 3단계라 중간에 죽어도 복구 가능합니다.

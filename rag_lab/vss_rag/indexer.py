@@ -131,6 +131,11 @@ def _update(project_id: str, **fields) -> None:
         _save_all(data)
 
 
+def update_state(project_id: str, **fields) -> None:
+    """선택 기능이 private state 구현에 의존하지 않도록 한 public adapter."""
+    _update(project_id, **fields)
+
+
 def _reserve_payload_update(project_id: str, base_revision: str,
                             total: int) -> dict | None:
     """검증과 worker 시작 사이의 동시 요청을 원자적으로 차단합니다."""
@@ -209,9 +214,9 @@ def is_stale(project_root: str | Path, project_id: str, *,
 
 # ── 인덱싱 실행 ──────────────────────────────────────────────
 
-def _run_completion_hook(project_id: str, project_root: str,
-                         commit: str | None,
-                         on_done: "Callable | None") -> None:
+def run_completion_hook(project_id: str, project_root: str,
+                        commit: str | None,
+                        on_done: "Callable | None") -> None:
     """완료 후 브리핑 같은 부수 작업을 실행하되 완성 인덱스는 보존합니다."""
     if on_done is None:
         return
@@ -382,7 +387,7 @@ def _run(project_root: str, project_id: str, store: Store,
     # ⚠ 훅 실패가 인덱싱을 실패로 만들면 안 됩니다.
     #    55분짜리 인덱싱이 마지막 LLM 호출 하나 때문에 무효가 되는 상황을 막습니다.
     #    그래서 try 블록 **밖**에 두고, state 는 done 인 채로 둡니다.
-    _run_completion_hook(project_id, str(root), git_head(root), on_done)
+    run_completion_hook(project_id, str(root), git_head(root), on_done)
 
 
 def start_index(project_root: str, project_id: str, blocking: bool = False,

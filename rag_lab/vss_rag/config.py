@@ -188,6 +188,10 @@ class Config:
     # ── 저장 ─────────────────────────────────────────────────
     index_dir: str = field(default_factory=lambda: _env("VSS_INDEX_DIR", "./data/index"))
     state_path: str = field(default_factory=lambda: _env("VSS_STATE_PATH", "./data/state.json"))
+    # 체크포인트 엔진은 안전한 점진 도입을 위해 기본 비활성화합니다.
+    # 명시적 --resumable/--resume/--restart는 이 값과 무관하게 새 엔진을 선택합니다.
+    resume_index_enabled: bool = field(
+        default_factory=lambda: _env("VSS_RESUME_INDEX_ENABLED", False))
 
     def briefings_dir(self) -> "Path":
         """브리핑 저장 위치. index_dir 의 **부모** 기준입니다.
@@ -197,6 +201,11 @@ class Config:
         """
         from pathlib import Path
         return Path(self.index_dir).resolve().parent / "briefings"
+
+    def resume_db_path(self) -> "Path":
+        """재개 체크포인트 DB. 완성 인덱스와 분리해 기능 제거가 쉽도록 둡니다."""
+        from pathlib import Path
+        return Path(self.index_dir).resolve().parent / "checkpoints" / "resume.sqlite3"
 
     def fingerprint(self) -> dict:
         """인덱스와 함께 저장할 파라미터 지문.

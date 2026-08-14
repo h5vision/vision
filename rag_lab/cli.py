@@ -436,19 +436,26 @@ def cmd_index(args):
             print(f"!! {e}")
             return 1
     fp = selected["fingerprint"] if selected else None
-    check = indexer.is_stale(args.root, args.project, profile=fp)
-    print(f"현재 상태: {check}")
-    if not check["stale"] and not args.force:
-        print("이미 최신입니다. 다시 하려면 --force")
-        return 0
+    resume_mode = bool(args.resumable or args.resume or args.restart or
+                       CFG.resume_index_enabled)
+    if not args.resume and not args.root:
+        print("!! 신규·재시작 인덱싱에는 레포 경로가 필요합니다.")
+        return 1
+    if not args.resume:
+        check = indexer.is_stale(args.root, args.project, profile=fp)
+        print(f"현재 상태: {check}")
+        if not check["stale"] and not args.force and not args.restart:
+            print("이미 최신입니다. 다시 하려면 --force 또는 --restart")
+            return 0
 
     if selected:
         print(f"프로필: {selected['profile_id']}  hash={selected['profile_hash']}")
         print("해석값: " + "  ".join(f"{k}={v}" for k, v in fp.items()))
-        recommended = profiles.project_id_for(args.root, selected["profile_id"])
-        if args.project != recommended:
+        recommended = (profiles.project_id_for(args.root, selected["profile_id"])
+                       if args.root else None)
+        if recommended and args.project != recommended:
             print(f"ℹ 동일 레포 버전 비교 권장 project_id: {recommended}")
-    print(f"인덱싱 시작: {args.root}  →  project_id={args.project}")
+    print(f"인덱싱 시작: {args.root or '(체크포인트 경로)'}  →  project_id={args.project}")
 
     # ⚠ 브리핑은 LLM 을 씁니다. indexer 는 그 사실을 모르고,
     #    여기서 콜백으로 주입합니다. 실패해도 인덱싱은 done 으로 남습니다.
@@ -462,11 +469,34 @@ def cmd_index(args):
         return _brf.build(root, pid, args.model, CFG.ollama_url, commit=commit)
 
     t0 = time.time()
-    r = indexer.start_index(args.root, args.project, blocking=True,
-                            force=args.force, on_done=hook,
-                            profile=fp,
-                            profile_id=(selected or {}).get("profile_id"),
-                            profile_hash=(selected or {}).get("profile_hash"))
+    if resume_mode:
+        from vss_rag.resume import ResumableIndexer
+        engine = ResumableIndexer()
+        if args.resume:
+            r = engine.resume(
+                args.project, blocking=True, force=args.force, on_done=hook,
+                expected_profile=fp,
+            )
+        elif args.restart:
+            r = engine.restart(
+                args.root, args.project, blocking=True, force=args.force,
+                on_done=hook, profile=fp,
+                profile_id=(selected or {}).get("profile_id"),
+                profile_hash=(selected or {}).get("profile_hash"),
+            )
+        else:
+            r = engine.start_new(
+                args.root, args.project, blocking=True, force=args.force,
+                on_done=hook, profile=fp,
+                profile_id=(selected or {}).get("profile_id"),
+                profile_hash=(selected or {}).get("profile_hash"),
+            )
+    else:
+        r = indexer.start_index(args.root, args.project, blocking=True,
+                                force=args.force, on_done=hook,
+                                profile=fp,
+                                profile_id=(selected or {}).get("profile_id"),
+                                profile_hash=(selected or {}).get("profile_hash"))
     if not r.get("accepted"):
         print(f"!! 거부됨: {r}")
         return 1
@@ -480,6 +510,12 @@ def cmd_index(args):
     elif st.get("briefing") == "failed":
         print(f"브리핑 : 실패 — {st.get('briefing_error')}")
         print("        인덱싱은 정상입니다. python cli.py briefing 으로 재시도하세요.")
+    return 0
+
+
+def cmd_resume_status(args):
+    from vss_rag.resume import resume_status
+    print(json.dumps(resume_status(args.project), ensure_ascii=False, indent=2))
     return 0
 
 
@@ -651,14 +687,25 @@ def main():
     p.add_argument("--force", action="store_true", help="캐시를 무시하고 다시 생성")
 
     p = sub.add_parser("index"); p.set_defaults(fn=cmd_index)
-    p.add_argument("root"); p.add_argument("--project", required=True)
+    p.add_argument("root", nargs="?", default=None)
+    p.add_argument("--project", required=True)
     p.add_argument("--profile",
                    help="명시적 인덱싱 프로필(rag-v1/v2/v3). 생략하면 현재 CFG 사용")
     p.add_argument("--force", action="store_true")
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument("--resumable", action="store_true",
+                      help="새 파일 체크포인트 실행으로 시작")
+    mode.add_argument("--resume", action="store_true",
+                      help="중단된 체크포인트 실행 재개(root 생략 가능)")
+    mode.add_argument("--restart", action="store_true",
+                      help="소유권이 확인된 체크포인트를 폐기하고 새로 시작")
     p.add_argument("--model", default=CFG.briefing_model,
                    help="인덱싱 후 자동 생성할 브리핑의 모델")
     p.add_argument("--no-briefing", action="store_true",
                    help="폐기된 호환 옵션(무시됨). 반복 평가는 experiment.py 사용")
+
+    p = sub.add_parser("resume-status"); p.set_defaults(fn=cmd_resume_status)
+    p.add_argument("--project", required=True)
 
     p = sub.add_parser("status"); p.set_defaults(fn=cmd_status)
     p.add_argument("--project", required=True)

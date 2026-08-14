@@ -158,6 +158,8 @@ class Handler(BaseHTTPRequestHandler):
                         "reorder_context": CFG.reorder_context,
                         "auto_briefing": CFG.auto_briefing,
                         "briefing_model": CFG.briefing_model,
+                        "resume_index_enabled": CFG.resume_index_enabled,
+                        "resume_db": str(CFG.resume_db_path()),
                     },
                 })
 
@@ -172,6 +174,13 @@ class Handler(BaseHTTPRequestHandler):
                 if not pid:
                     return self._send(400, {"error": "project_id required"})
                 return self._send(200, indexer.has_index(pid))
+
+            if path == "/index/resume/status":
+                pid = (q.get("project_id") or [None])[0]
+                if not pid:
+                    return self._send(400, {"error": "project_id required"})
+                from vss_rag.resume import resume_status
+                return self._send(200, resume_status(pid))
 
             if path == "/profiles":
                 return self._send(200, {"profiles": profiles.list_profiles()})
@@ -316,12 +325,70 @@ class Handler(BaseHTTPRequestHandler):
                     body.get("ollama_url", CFG.ollama_url),
                 )
 
-                r = indexer.start_index(root, pid, blocking=False,
-                                        force=bool(body.get("force")),
-                                        on_done=hook,
-                                        profile=(selected or {}).get("fingerprint"),
-                                        profile_id=(selected or {}).get("profile_id"),
-                                        profile_hash=(selected or {}).get("profile_hash"))
+                if body.get("resumable") or CFG.resume_index_enabled:
+                    from vss_rag.resume import ResumableIndexer
+                    r = ResumableIndexer(store=get_store()).start_new(
+                        root, pid, blocking=False,
+                        force=bool(body.get("force")), on_done=hook,
+                        profile=(selected or {}).get("fingerprint"),
+                        profile_id=(selected or {}).get("profile_id"),
+                        profile_hash=(selected or {}).get("profile_hash"),
+                    )
+                else:
+                    r = indexer.start_index(
+                        root, pid, blocking=False,
+                        force=bool(body.get("force")), on_done=hook,
+                        profile=(selected or {}).get("fingerprint"),
+                        profile_id=(selected or {}).get("profile_id"),
+                        profile_hash=(selected or {}).get("profile_hash"))
+                return self._send(202 if r.get("accepted") else 409, r)
+
+            if path == "/index/resume":
+                pid = body.get("project_id")
+                if not pid:
+                    return self._send(400, {"error": "project_id required"})
+                expected = None
+                if body.get("profile"):
+                    try:
+                        expected = profiles.resolve_profile(
+                            str(body["profile"]))["fingerprint"]
+                    except profiles.ProfileError as e:
+                        return self._send(400, {"error": "invalid_profile",
+                                                "detail": str(e)})
+                from vss_rag.resume import ResumableIndexer
+                r = ResumableIndexer(store=get_store()).resume(
+                    pid, run_id=body.get("run_id"), blocking=False,
+                    force=bool(body.get("force")),
+                    on_done=_briefing_hook(
+                        body.get("model", CFG.briefing_model),
+                        body.get("ollama_url", CFG.ollama_url)),
+                    expected_profile=expected,
+                )
+                return self._send(202 if r.get("accepted") else 409, r)
+
+            if path == "/index/restart":
+                pid = body.get("project_id")
+                root = body.get("project_root")
+                if not pid or not root:
+                    return self._send(
+                        400, {"error": "project_root, project_id required"})
+                selected = None
+                if body.get("profile"):
+                    try:
+                        selected = profiles.resolve_profile(str(body["profile"]))
+                    except profiles.ProfileError as e:
+                        return self._send(400, {"error": "invalid_profile",
+                                                "detail": str(e)})
+                from vss_rag.resume import ResumableIndexer
+                r = ResumableIndexer(store=get_store()).restart(
+                    root, pid, blocking=False, force=bool(body.get("force")),
+                    on_done=_briefing_hook(
+                        body.get("model", CFG.briefing_model),
+                        body.get("ollama_url", CFG.ollama_url)),
+                    profile=(selected or {}).get("fingerprint"),
+                    profile_id=(selected or {}).get("profile_id"),
+                    profile_hash=(selected or {}).get("profile_hash"),
+                )
                 return self._send(202 if r.get("accepted") else 409, r)
 
             # ── 프론트 snapshot 기반 증분 인덱싱 ─────────────
@@ -522,9 +589,12 @@ def main():
     print("  GET  /health")
     print("  GET  /index/status?project_id=...")
     print("  GET  /index/exists?project_id=...")
+    print("  GET  /index/resume/status?project_id=...")
     print("  GET  /projects")
     print("  GET  /profiles")
-    print("  POST /index    {project_root, project_id, profile?, force?}")
+    print("  POST /index    {project_root, project_id, profile?, force?, resumable?}")
+    print("  POST /index/resume  {project_id, run_id?, force?}")
+    print("  POST /index/restart {project_root, project_id, profile?, force?}")
     print("  POST /index/update {project_id, dry_run?}  (로컬 Git)")
     print("  POST /index/update/files {project_id, base_revision, target_revision, files, ...}")
     print("  POST /search   {query, project_id, top_k?, threshold?}")

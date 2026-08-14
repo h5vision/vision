@@ -87,6 +87,10 @@ python cli.py health
 `auto`나 유사 이름 fallback은 없습니다. 파일 payload 증분의 `content_sha256`은 선택값이며,
 생략하면 rag_lab이 받은 전체 문자열에서 계산합니다. 자세한 계약은 `API.md`를 보세요.
 
+중단 재개형 전체 인덱싱은 기본 OFF인 선택 기능입니다. 새 작업을 `--resumable`로 시작해야
+파일 단위 체크포인트가 생기며, 기존 실행에는 소급 적용되지 않습니다. 사용법과 제거 절차는
+`RESUMABLE_INDEXING_GUIDE.md`를 보세요.
+
 ---
 
 ## 🔴 절대 바꾸지 말 것

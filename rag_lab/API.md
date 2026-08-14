@@ -102,6 +102,9 @@ rag_lab prompt를 대체하지 마세요.
 `profile`은 선택값이지만 정식 비교 실험에서는 필수로 취급합니다. 등록된 프로필은
 `GET /profiles`로 확인합니다. 생략하면 호환을 위해 서버의 현재 CFG로 전체 인덱싱합니다.
 
+새 작업에 파일 단위 중단 재개 체크포인트를 남기려면 `"resumable": true`를 추가합니다.
+기본값은 false이며 기존 방식으로 이미 진행 중인 작업에는 소급 적용되지 않습니다.
+
 ### `GET /profiles` — 인덱싱 프로필 목록
 
 ```json
@@ -139,8 +142,8 @@ rag_lab prompt를 대체하지 마세요.
 질의와 증분 요청은 이 목록에 있는 **완성된 정확한 `project_id`**를 사용합니다.
 `auto`, 폴더명 추정, 유사 이름 fallback은 지원하지 않습니다.
 
-📌 `job_id`가 없습니다. `project_id`가 식별자입니다 (8/3 결정, C안).
-동시에 같은 프로젝트를 두 번 인덱싱할 일이 없다는 전제입니다.
+📌 공개 상태 조회 키는 계속 `project_id`입니다. 선택적 재개 엔진만 남은 `building-*`의
+소유권을 검증하기 위한 내부 `run_id`를 발급하며, 대화·프로젝트 식별자로 사용하지 않습니다.
 
 ---
 
@@ -161,6 +164,31 @@ rag_lab prompt를 대체하지 마세요.
 ```
 
 **폴링 주기는 2~3초를 권합니다.**
+
+---
+
+### 중단 재개형 전체 인덱싱 — 선택 기능
+
+```http
+GET  /index/resume/status?project_id=fest-api
+POST /index/resume
+POST /index/restart
+```
+
+```json
+POST /index/resume
+{"project_id":"fest-api", "run_id":"idx_...", "profile":"rag-v2"}
+
+POST /index/restart
+{"project_root":"C:\\Pj\\fest-api", "project_id":"fest-api", "profile":"rag-v2"}
+```
+
+`POST /index/resume`은 저장된 manifest와 현재 파일 SHA-256, profile fingerprint,
+building 컬렉션의 run_id가 모두 일치할 때만 `202`를 반환합니다. 불일치하면 `409`이며
+남은 위치를 추측하지 않습니다. `restart`도 체크포인트가 소유한 building만 폐기하고,
+체크포인트 없는 과거 building은 자동 삭제하지 않습니다.
+
+구체적인 단계·CLI·오류·제거 절차는 `RESUMABLE_INDEXING_GUIDE.md`가 정본입니다.
 
 ---
 
