@@ -98,21 +98,31 @@ export class SidebarController {
                 vscode.window.showInformationMessage(
                     "Model ID가 변경되었습니다."
                 );
-                return this.APIHandler.handle(message);
+                this.view.webview.postMessage({
+                    command: "modelIdUpdated",
+                    data: message.data
+                });
+                return ;
 
 
             case SidebarCommand.UpdateCommitId:
                 await vscode.workspace.getConfiguration('vision')
                     .update(
-                        "commitId",
-                        message.data,
+                        "projectId",
+                        message.data.project_id,
                         vscode.ConfigurationTarget.Workspace
                     );
-                vscode.window.showInformationMessage(
-                    "Commit ID가 변경되었습니다."
-                );
-                return this.APIHandler.handle(message);
-
+                await vscode.workspace.getConfiguration('vision')
+                    .update(
+                        "commitId",
+                        message.data.commit,
+                        vscode.ConfigurationTarget.Workspace
+                    );
+                this.view.webview.postMessage({
+                    command: "commitIdUpdated",
+                    data: message.data
+                });
+                return;
             
             case SidebarCommand.GetGuideStatus:
                 const guideStatus = vscode.workspace.getConfiguration('vision').get('showGuideBook', false);

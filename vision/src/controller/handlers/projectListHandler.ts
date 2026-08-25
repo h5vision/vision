@@ -21,7 +21,7 @@ export class ProjectListHandler {
             id: project.project_id,
             location: "DB",
             name: project.name,
-            commits: project.commit ? [[project.commit.slice(0,7), '']] : []
+            commits: project.commit ? [[project.commit, '']] : []
         }));
         console.log(indexedProjectsList);
         
@@ -30,7 +30,7 @@ export class ProjectListHandler {
         await this.gitService.initialize();
         if (this.gitService.exists()) {
             const gitCommits = (await this.gitService.getRecentCommits()).map(m=>
-                [m.hash.slice(0,7), m.message]);
+                [m.hash, m.message]);
             const localPrj = {
                 id:0, 
                 location: "Local",

@@ -25,7 +25,7 @@ export class ChatHandler {
             controller.abort();
         });
 
-        const project_id = vscode.workspace.name || 'none';
+        const project_id = vscode.workspace.getConfiguration("vision").get<string>("projectId") || vscode.workspace.name || 'none';
         let messages = PromptBuilder.build(request.prompt);
 
         // get all the previous participant messages

@@ -102,7 +102,7 @@ body {
     font-size:12px;
 }
 
-#current-project-name {
+.project-name {
     text-align:center;
     font-size:16px;
     font-weight:600;

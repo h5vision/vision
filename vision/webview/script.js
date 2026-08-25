@@ -177,10 +177,19 @@ function renderProjectList(projects) {
         if (proj.commits && proj.commits.length > 0 && !!proj.commits[0][0]) {
             proj.commits.forEach(([SHA, message]) => {
                 const commitItem = document.createElement('div');
-                commitItem.innerHTML = `<i class="codicon codicon-git-commit"></i>${SHA} ─ ${message}`;
+                commitItem.innerHTML = `<i class="codicon codicon-git-commit"></i>${SHA.slice(0,7)} ─ ${message}`;
                 commitItem.className = 'commit-item badge ellipsis';
                 commitItem.addEventListener('click', () => {
-                    vscode.postMessage({ command: "updateCommitId", data: SHA });
+                    vscode.postMessage({ 
+                        command: "updateCommitId", 
+                        data: { 
+                            project_id: proj.id, 
+                            name: proj.name,
+                            commit: SHA, 
+                            path: proj.location,
+                            branch: '임시'
+                        } 
+                    });
                 });
                 commitListEl.appendChild(commitItem);
             });
@@ -267,6 +276,21 @@ window.addEventListener("message", event => {
                 elgit.textContent = git;
             }
             
+            break;
+        }
+
+        case "commitIdUpdated": {
+            document.getElementById('ask-project-info').classList.remove('hidden');
+            document.getElementById('ask-project-header').classList.remove('hidden');
+            const data = message.data;
+            document.getElementById('ask-project-name').textContent = data.name.toUpperCase();
+            document.getElementById('ask-project-path').textContent = data.path;
+            if (data.path === 'Local') {
+                document.getElementById('ask-project-path').style.color = '#32b1ff';
+            } else if (data.path === 'DB') {
+                document.getElementById('ask-project-path').style.color = '#4CAF50';
+            }
+            document.getElementById('ask-git-info').innerHTML = `<i class="codicon codicon-git-commit"></i> ${data.commit.slice(0,7)} &nbsp; <b><i class="codicon codicon-target"></i>${data.branch}</b>`;
             break;
         }
         

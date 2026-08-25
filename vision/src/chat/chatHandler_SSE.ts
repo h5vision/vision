@@ -47,7 +47,8 @@ export class ChatHandler {
             controller.abort();
         });
 
-        const projectName =
+        const projectId =
+            vscode.workspace.getConfiguration("vision").get<string>("projectId") ??
             vscode.workspace.workspaceFolders?.[0]?.name ??
             "__auto__";
 
@@ -100,7 +101,7 @@ export class ChatHandler {
 
         const payload: ChatRequest_SSE = {
             role: "user",
-            project_id: projectName,
+            project_id: projectId,
             commit_id: commit_id,
             content: request.prompt,
             stream: true,
@@ -109,7 +110,7 @@ export class ChatHandler {
         console.log('payload', payload);
         try {
             this.historyService.save(
-                projectName,
+                projectId,
                 session_id,
                 "user",
                 request.prompt
@@ -186,7 +187,7 @@ export class ChatHandler {
 
             if (finalAnswer) {
                 this.historyService.save(
-                    projectName,
+                    projectId,
                     "frontend-stream",
                     "assistant",
                     finalAnswer
