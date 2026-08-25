@@ -71,6 +71,9 @@ export class SidebarController {
             case SidebarCommand.GenerateRAGTEST:
                 return this.ragtestHandler.handle(message);
 
+            case SidebarCommand.RemoveRAGTEST:
+                return this.ragtestHandler.removeRAGTEST(message);
+
 
             case SidebarCommand.UpdateEndpoint:
                 await vscode.workspace.getConfiguration('vision')

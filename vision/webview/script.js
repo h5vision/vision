@@ -77,6 +77,11 @@ document.addEventListener("DOMContentLoaded", () => {
     //     vscode.postMessage({ command: "generateRAGTEST", data: Number(testN)});
     // });
 
+    // const removeRAGTBtn = document.getElementById("remove-RAGTEST-btn");
+    // removeRAGTBtn.addEventListener("click", () => {
+    //     vscode.postMessage({ command: "removeRAGTEST" });
+    // });
+
     // Chat History.db 열기 버튼 이벤트
     const openDBExternalBtn = document.getElementById("open-db-external-btn");
     openDBExternalBtn.addEventListener("click", () => {
@@ -172,7 +177,7 @@ function renderProjectList(projects) {
         if (proj.commits && proj.commits.length > 0 && !!proj.commits[0][0]) {
             proj.commits.forEach(([SHA, message]) => {
                 const commitItem = document.createElement('div');
-                commitItem.innerHTML = `<i class="codicon codicon-git-commit"></i>${SHA.slice(0,7)} ─ ${message}`;
+                commitItem.innerHTML = `<i class="codicon codicon-git-commit"></i>${SHA} ─ ${message}`;
                 commitItem.className = 'commit-item badge ellipsis';
                 commitItem.addEventListener('click', () => {
                     vscode.postMessage({ command: "updateCommitId", data: SHA });
@@ -186,7 +191,6 @@ function renderProjectList(projects) {
             commitListEl.appendChild(noCommit);
         }
 
-        // 클릭 시 안전하게 토글 실행 (CSP 보안 정책 우회)
         titleEl.addEventListener('click', () => {
             const isHidden = commitListEl.classList.contains('hidden');
             if (isHidden) {

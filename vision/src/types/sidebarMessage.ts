@@ -24,6 +24,8 @@ export enum SidebarCommand {
 
     GenerateRAGTEST = "generateRAGTEST",
 
+    RemoveRAGTEST = "removeRAGTEST",
+
     UpdateEndpoint = "updateEndpoint",
 
     UpdateModelId = "updateModelId",

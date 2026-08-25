@@ -1,12 +1,10 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { ChatService } from "../services/chatServices";
 import { APIService } from "../services/APIService";
 import * as session from "../utils/session";
 import { PromptBuilder } from "./promptBuilder";
 import { HistoryService } from "../services/historyService";
-import { ChatResponse } from "../types/chat";
 
 export class ChatHandler {
 
@@ -21,7 +19,6 @@ export class ChatHandler {
         token : vscode.CancellationToken
     ) => {
         const backendService = new APIService();
-        const chatService = new ChatService(backendService);
 
         const controller = new AbortController();
         const cancellation = token.onCancellationRequested(() => {
@@ -123,7 +120,6 @@ export class ChatHandler {
 
             for (const source of response1.sources) {
                 const sourceUri = this.getWorkspaceFileUri(source.path);
-                console.log("sourceUri", sourceUri);
 
                 if (!sourceUri) {
                     stream.markdown(`\n- \`${source.path}\``);
@@ -152,7 +148,6 @@ export class ChatHandler {
                     arguments: openArguments
                 });
             }
-            console.log(response.source);
             this.historyServcie.save(project_id, session_id, 'assistant', response.message.content);
 
         }
