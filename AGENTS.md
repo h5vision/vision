@@ -7,7 +7,9 @@
 - 구현 대상 저장소: `https://github.com/h5vision/vision.git`
 - 구현 대상 브랜치: `backend_P`
 - 현재 기준 HEAD: `ad17f9c06bdf89a84edaefb2c508569d8ba50cd9`
-- 핵심 역할: VS Code Frontend가 보낸 Git 변경 파일을 받아 Model/RAG Lab 규약으로 전달하고 Snapshot 처리 상태를 내부적으로 관리하는 FastAPI Backend
+- 핵심 역할: VS Code Frontend가 보낸 Git 변경 파일을 받아 Model/RAG Lab 규약으로
+  전달하고, 독립 Admin Web이 선택한 Repository/Branch별 Snapshot 처리 상태와 이력을
+  관리하는 FastAPI Backend
 
 ## 필수 읽기 순서
 
@@ -51,9 +53,21 @@ backend_P
              ↓
 Model/RAG Lab
     POST /index/update/files
+
+독립 Admin Web Server
+    /v1/admin/*
+             ↓
+backend_P
+    Repository/Branch binding · Snapshot 이력/재시도 · 인증/감사
 ```
 
 Snapshot ID가 필요하면 Backend 내부 레코드 식별자로만 생성합니다. 외부 Git SHA와 혼동하지 않으며 Frontend 필수 입력으로 만들지 않습니다.
+
+Admin Web은 VS Code Webview가 아니라 독립 서버에서 제공하며 RAG Lab, PostgreSQL,
+Git provider credential에 직접 접근하지 않습니다. 현재 Frontend payload에는
+`branch`가 없으므로 Admin의 활성 Repository/Branch/Model binding을 Snapshot 수신
+시점에 복사해 과거 이력을 고정합니다. 기존 Frontend에 `branch`를 새 필수 필드로
+추가하지 않습니다.
 
 ## 런타임 주소 경계
 

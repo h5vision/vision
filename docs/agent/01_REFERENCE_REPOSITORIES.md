@@ -70,6 +70,23 @@ vision/package.json
 - `chatHandler_SSE.ts`가 존재하더라도 현재 `extension.ts` import만으로 활성 경로를
   판정합니다. 파일명만 보고 실행 계약으로 간주하지 않습니다.
 
+## 독립 Admin Web 기준
+
+Repository와 Branch 선택, project 매핑, Snapshot 이력 조회와 재시도는 VS Code
+Sidebar가 아니라 브라우저에서 접속하는 독립 Admin Web 서버가 담당합니다.
+
+- VS Code Frontend는 기존 Workspace Overlay 전송 클라이언트 역할을 유지합니다.
+- Admin Web은 Snapshot Backend의 `/v1/admin/*` API만 호출합니다.
+- Admin Web이 RAG Lab, PostgreSQL 또는 Git provider credential에 직접 접근하지
+  않습니다.
+- Admin Web의 구현 저장소와 배포 주소는 아직 확정되지 않았습니다. 별도 저장소와
+  독립 컨테이너 배포를 우선하며, 같은 저장소에 둘 경우에도 `admin-web/`을 별도
+  빌드·배포 단위로 유지합니다.
+- 현재 VS Code payload에는 `branch`가 없으므로 Admin에서 확정한 활성
+  Repository/Branch 바인딩을 Backend가 Snapshot 수신 시점에 복사해 보존합니다.
+  동시에 여러 Branch를 안전하게 구분해야 하면 Frontend의 선택적 Branch 식별 계약을
+  별도로 합의해야 하며 기존 필수 payload를 일방적으로 변경하지 않습니다.
+
 ## Model/RAG Lab 참조
 
 | 항목 | 값 |
