@@ -4,6 +4,16 @@
 
 기능별 디렉터리를 만들고, 각 기능 안에서 HTTP, schema, service, persistence 역할을 분리합니다. 엔드포인트마다 파일 하나를 만드는 방식과 모든 기능을 하나의 대형 `main.py`에 넣는 방식을 모두 피합니다.
 
+관리자 화면은 VS Code Extension에 포함하지 않습니다. 독립 Admin Web 서버를 별도
+빌드·배포 단위로 두고 Snapshot Backend의 관리 API만 호출합니다.
+
+```text
+VS Code Frontend ── POST /v1/workspace-overlays ──┐
+                                                  ├─ Snapshot Backend ── PostgreSQL
+Admin Web Server ── /v1/admin/* ──────────────────┘          │
+                                                             └─ RAG Lab
+```
+
 ## 목표 구조
 
 ```text
@@ -49,6 +59,19 @@ backend_P/
 │  │  │  ├─ repository.py
 │  │  │  └─ service.py
 │  │  │
+│  │  ├─ repositories/
+│  │  │  ├─ __init__.py
+│  │  │  ├─ models.py
+│  │  │  ├─ schemas.py
+│  │  │  ├─ repository.py
+│  │  │  └─ service.py
+│  │  │
+│  │  ├─ admin/
+│  │  │  ├─ __init__.py
+│  │  │  ├─ router.py
+│  │  │  ├─ schemas.py
+│  │  │  └─ authorization.py
+│  │  │
 │  │  └─ indexing/
 │  │     ├─ __init__.py
 │  │     ├─ router.py
@@ -87,6 +110,26 @@ backend_P/
 └─ README.md
 ```
 
+Admin Web 소스는 별도 저장소를 우선합니다. 조직 사정으로 같은 저장소에 둘 때만
+최상위 `admin-web/`을 사용하며 FastAPI package나 정적 파일에 결합하지 않습니다.
+배포도 Backend와 다른 서버 또는 컨테이너로 수행합니다.
+
+```text
+admin-web/
+├─ src/
+│  ├─ api/
+│  ├─ auth/
+│  ├─ features/repositories/
+│  ├─ features/branch-bindings/
+│  └─ features/snapshots/
+├─ tests/
+├─ package.json
+└─ vite.config.ts
+```
+
+React, TypeScript와 Vite는 권장 조합이며 Admin 구현 저장소가 확정되기 전까지
+필수 외부 계약으로 간주하지 않습니다.
+
 ## 파일별 책임
 
 | 파일명 | 책임 |
@@ -103,6 +146,9 @@ backend_P/
 | `client.py` | 외부 RAG Lab HTTP 호출 |
 | `errors.py` | 외부 연결 및 도메인 오류 타입 |
 | `config.py` | 환경변수 로딩과 설정 검증 |
+| `features/admin/router.py` | `/v1/admin/*` HTTP 경계와 관리자 권한 검사 |
+| `features/repositories/service.py` | Repository와 Branch 바인딩의 등록·검증·비활성화 |
+| `admin-web/src/api/` | 관리 API client, 인증, 구조화된 오류 처리 |
 
 ## 외부 계약 분리
 
@@ -154,6 +200,12 @@ backend/features/snapshots/state.py
 backend/features/projects/mapping.py
 backend/features/projects/repository.py
 backend/features/projects/service.py
+backend/features/repositories/models.py
+backend/features/repositories/repository.py
+backend/features/repositories/service.py
+backend/features/admin/router.py
+backend/features/admin/schemas.py
+backend/features/admin/authorization.py
 backend/features/indexing/router.py
 backend/features/indexing/schemas.py
 backend/features/indexing/service.py
@@ -165,5 +217,7 @@ backend/infrastructure/database/migrations/
 ```
 
 이 범위는 Workspace Overlay 수신, Snapshot/attempt 영속화, project 매핑과
-`/v1/index/status` 프록시까지 포함하는 MVP 최소 경계입니다. 관리자 UI, Snapshot 목록
-API와 background stale 재시도 worker는 핵심 proxy 흐름이 통과한 뒤 추가합니다.
+`/v1/index/status` 프록시까지 포함하는 Backend MVP 경계입니다. 독립 Admin Web은
+Phase 3부터 별도 작업 트랙으로 구성하고 Snapshot 목록·상세는 Phase 4, 상태·재시도는
+Phase 5에 연결합니다. Background stale 재시도 worker와 보존 정책은 Phase 6에서
+마무리합니다.

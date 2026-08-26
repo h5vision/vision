@@ -313,3 +313,83 @@ Model project_id    = vision--rag-v2
 `candidates`는 관리자 판단을 돕는 정보일 뿐 첫 항목을 자동 선택하지 않습니다.
 명시적 매핑이 Model `/projects`에서 사라지면 같은 형식의
 `409 PROJECT_MAPPING_STALE`을 반환하고 Model을 호출하지 않습니다.
+
+## Admin Web → Backend
+
+Admin Web은 VS Code Extension과 분리된 브라우저용 독립 서비스입니다. Admin
+Web은 Backend의 관리 API만 호출하며 RAG Lab, PostgreSQL 또는 Git provider에
+직접 접근하지 않습니다.
+
+권장 API 경계:
+
+```http
+GET    /v1/admin/repositories
+POST   /v1/admin/repositories
+GET    /v1/admin/repositories/{repository_id}
+PATCH  /v1/admin/repositories/{repository_id}
+DELETE /v1/admin/repositories/{repository_id}
+GET    /v1/admin/repositories/{repository_id}/branches
+
+GET    /v1/admin/branch-bindings
+POST   /v1/admin/branch-bindings
+PATCH  /v1/admin/branch-bindings/{binding_id}
+DELETE /v1/admin/branch-bindings/{binding_id}
+
+GET    /v1/admin/snapshots?repository_id=...&branch_ref=...
+GET    /v1/admin/snapshots/{snapshot_id}
+POST   /v1/admin/snapshots/{snapshot_id}/retry
+```
+
+Branch에는 `/`가 포함될 수 있으므로 Snapshot 목록 필터는 path segment보다
+`branch_ref` query parameter를 사용합니다. `DELETE` Repository/Binding은 최초
+MVP에서 물리 삭제가 아니라 `active=false` 비활성화로 처리합니다.
+
+### Repository/Branch 바인딩
+
+현재 VS Code Workspace Overlay payload에는 `branch`가 없습니다. 기존 payload에
+새 필수 필드를 추가하지 않으면서 Branch별 이력을 보존하기 위해 Admin이 다음 활성
+바인딩을 명시적으로 확정합니다.
+
+```json
+{
+  "frontend_project_id": "h5vision/vision",
+  "repository_id": "github:h5vision/vision",
+  "branch_ref": "refs/heads/backend_P",
+  "model_project_id": "vision--rag-v2",
+  "active": true
+}
+```
+
+- Backend는 Snapshot 수신 시점의 `binding_id`, `repository_id`, `branch_ref`,
+  `model_project_id`를 Snapshot 레코드에 복사합니다.
+- 이후 Admin이 활성 바인딩을 변경해도 과거 Snapshot의 Repository/Branch 소속을
+  다시 쓰지 않습니다.
+- 현재 Frontend 계약에서는 `frontend_project_id`당 활성 바인딩을 하나만 허용합니다.
+  없거나 둘 이상이면 Model을 호출하지 않고 구조화된 `409`를 반환합니다.
+- 같은 Model project는 단일 완료 revision을 가지므로 서로 독립적인 Branch를 같은
+  `model_project_id`에 자동 연결하지 않습니다. Branch별 exact Model project 매핑을
+  관리자가 확정합니다.
+- 여러 사용자가 같은 `frontend_project_id`에서 서로 다른 Branch를 동시에 전송해야
+  하면 Admin의 전역 활성 바인딩만으로 구분할 수 없습니다. 이 경우 Frontend에
+  선택적 `repository_id`/`branch_ref` 또는 별도 binding 식별자를 전달하는 계약을
+  상대 팀과 합의해야 합니다.
+
+권장 Backend 오류 코드는 다음과 같습니다.
+
+| 상황 | HTTP | `reason` | `retryable` |
+|---|---:|---|---:|
+| 활성 저장 대상 없음 | `409` | `SNAPSHOT_DESTINATION_REQUIRED` | `false` |
+| 활성 바인딩이 둘 이상 | `409` | `SNAPSHOT_DESTINATION_AMBIGUOUS` | `false` |
+| Repository/Branch 비활성 | `409` | `SNAPSHOT_DESTINATION_INACTIVE` | `false` |
+| 관리자 인증 없음 | `401` | `ADMIN_AUTHENTICATION_REQUIRED` | `false` |
+| 관리자 권한 부족 | `403` | `ADMIN_PERMISSION_DENIED` | `false` |
+
+관리 API도 모든 응답에 `X-Request-ID`와 구조화된 `reason`, `detail`을 반환합니다.
+Admin Web 브라우저에는 RAG Lab token, DATABASE_URL, Git credential을 반환하지
+않습니다.
+
+여기서 `repository_id`와 `branch_ref`는 최소한 Snapshot 이력을 분류하는 불변
+namespace입니다. 이 계약만으로 Backend가 Git remote에 commit 또는 ref를 생성하고
+push하도록 허가된 것은 아닙니다. 실제 Git 저장이 제품 요구라면 provider API/SSH
+방식, credential 소유 주체, expected branch head, force-push 금지, 충돌·부분 실패
+응답을 Phase 2에서 별도 확정해야 합니다.

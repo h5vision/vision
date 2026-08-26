@@ -85,6 +85,9 @@ snapshot_id
 request_id
 frontend_project_id
 model_project_id
+binding_id
+repository_id
+branch_ref
 base_revision
 target_revision
 source_type
@@ -98,6 +101,9 @@ updated_at
 ```
 
 `snapshot_id`는 내부 레코드 ID이며 Git SHA가 아닙니다.
+
+`repository_id`, `branch_ref`, `model_project_id`는 수신 시점의 활성 바인딩에서
+복사한 불변 이력 값입니다. 이후 바인딩 변경이 과거 Snapshot을 변경하지 않습니다.
 
 ### 변경 파일 레코드
 
@@ -176,6 +182,16 @@ update_error is null or absent
 (model_project_id, target_revision)
 ```
 
+Admin의 Branch별 이력 조회 기준은 다음과 같습니다.
+
+```text
+(repository_id, branch_ref, target_revision)
+```
+
+첫 기준은 Model 중복 작업을 막고 두 번째 기준은 사용자가 선택한 Repository/Branch의
+이력을 식별합니다. 같은 Model project를 서로 독립적인 Branch에 자동 재사용하지
+않습니다.
+
 단, project 매핑이 확정되기 전에는 Frontend project ID와 target revision으로 임시 수신 레코드를 구분합니다.
 
 - 매핑 전에는 `(frontend_project_id, target_revision)` unique 기준을 사용합니다.
@@ -232,11 +248,51 @@ request 검증
 - Snapshot 수신, 전달, 응답, 완료 이벤트 로그
 - request ID와 snapshot ID 상관관계
 - Model latency와 timeout 기록
-- 실패 요청 수동 재시도
+- 독립 Admin Web에서 실패 요청 수동 재시도
 - stale `accepted` 상태 탐지
-- 관리자 project mapping CRUD
-- Snapshot 목록과 상태 조회
+- Repository 등록·조회·수정·비활성화
+- Repository/Branch와 exact Model project의 명시적 바인딩 CRUD
+- Repository/Branch별 Snapshot 목록과 상세·attempt 조회
 - 보존 기간 및 대용량 본문 정리 정책
+
+## P1/P2 — 독립 Admin Web
+
+Admin Web은 VS Code에서 열리는 Webview가 아니라 독립 서버에서 제공되는 브라우저
+애플리케이션입니다.
+
+### Repository와 Branch 바인딩
+
+- Repository는 안정적인 `repository_id`, 표시 이름, provider, remote URL,
+  기본 Branch, 활성 상태를 저장합니다.
+- Branch는 full ref인 `refs/heads/...` 형태를 정본으로 저장하고 화면에는 짧은 이름을
+  표시할 수 있습니다.
+- 현재 VS Code payload에는 Branch가 없으므로 `frontend_project_id`당 활성 바인딩은
+  하나만 허용합니다.
+- 바인딩은 `frontend_project_id`, `repository_id`, `branch_ref`, exact
+  `model_project_id`를 포함합니다.
+- 바인딩 없음·중복·비활성 상태에서는 Model을 호출하지 않습니다.
+- 여러 Branch 동시 전송은 선택적 Branch 또는 binding 식별 계약이 합의되기 전에는
+  지원 완료로 표시하지 않습니다.
+- 기본 MVP의 Repository/Branch는 PostgreSQL 또는 Object Storage에 저장된 Snapshot
+  이력을 구분하는 namespace입니다. 실제 Git remote에 commit/ref를 push하는 기능은
+  저장 방식과 credential 정책이 명시적으로 확정된 경우에만 활성화합니다.
+
+### Snapshot 관리 제한
+
+- Snapshot 생성은 기존 VS Code `POST /v1/workspace-overlays` 경로가 담당합니다.
+- Admin Web은 Snapshot 목록, 상세, 상태, 실패 이유와 attempt를 조회합니다.
+- 재시도는 새 Snapshot을 만들지 않고 같은 `snapshot_id`에 attempt를 추가합니다.
+- Snapshot의 revision과 파일 본문을 수정하는 update API를 제공하지 않습니다.
+- Snapshot 삭제는 `LIVE-07` 보존·삭제 정책이 확정되기 전에는 제공하지 않습니다.
+- Repository와 바인딩의 삭제는 초기에는 물리 삭제가 아니라 비활성화입니다.
+
+### 관리자 보안
+
+- Admin Web은 RAG Lab token, DATABASE_URL, Git credential을 보관하거나 받지 않습니다.
+- 관리 API는 일반 Snapshot 수신 API와 분리된 인증과 역할 권한을 적용합니다.
+- Repository/Binding 변경, 재시도, 비활성화는 관리자 ID, request ID, 대상 ID,
+  시각과 결과를 감사 로그에 기록합니다.
+- 독립 origin에서 호출하므로 허용된 Admin Web origin만 CORS에 등록합니다.
 
 ## 비기능 요구사항
 
@@ -246,6 +302,9 @@ request 검증
 - 외부 HTTP client는 connection pooling과 명시적인 timeout을 사용합니다.
 - DB 기록 실패와 Model 전달 실패의 순서를 명확히 하고 부분 성공을 숨기지 않습니다.
 - 로그에 파일 전체 content와 비밀정보를 출력하지 않습니다.
+- Admin Web과 Backend는 독립 배포하며 브라우저에 서비스 credential을 노출하지
+  않습니다.
+- 관리 API mutation은 인증·권한·감사 로그 없이 운영에 노출하지 않습니다.
 - transport payload 크기, 파일 수, 단일 파일 크기와 보존 기간은
   `06_READINESS_AND_VERIFICATION.md`의 실환경 필수 결정값입니다. 합의 없이
   Frontend나 Model보다 더 작은 고정 제한을 코드에 넣지 않습니다.
