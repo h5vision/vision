@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "project_id": "vision--rag-v2",
+  "state": "updating",
+  "base_revision": "1111111111111111111111111111111111111111",
+  "target_revision": "2222222222222222222222222222222222222222",
+  "files_received": 1,
+  "files_indexed": 1,
+  "files_deleted": 1,
+  "files_renamed": 1,
+  "ignored_paths": []
+}
