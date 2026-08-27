@@ -353,7 +353,7 @@ MVP에서 물리 삭제가 아니라 `active=false` 비활성화로 처리합니
 ```json
 {
   "frontend_project_id": "h5vision/vision",
-  "repository_id": "github:h5vision/vision",
+  "repository_id": "55555555-5555-4555-8555-555555555555",
   "branch_ref": "refs/heads/backend_P",
   "model_project_id": "vision--rag-v2",
   "active": true
@@ -388,8 +388,10 @@ MVP에서 물리 삭제가 아니라 `active=false` 비활성화로 처리합니
 Admin Web 브라우저에는 RAG Lab token, DATABASE_URL, Git credential을 반환하지
 않습니다.
 
-여기서 `repository_id`와 `branch_ref`는 최소한 Snapshot 이력을 분류하는 불변
-namespace입니다. 이 계약만으로 Backend가 Git remote에 commit 또는 ref를 생성하고
-push하도록 허가된 것은 아닙니다. 실제 Git 저장이 제품 요구라면 provider API/SSH
-방식, credential 소유 주체, expected branch head, force-push 금지, 충돌·부분 실패
-응답을 Phase 2에서 별도 확정해야 합니다.
+`repository_id`는 Backend가 발급하는 UUID이고 provider상의 `owner/name`은 별도
+`canonical_name`으로 저장합니다. 따라서 `/repositories/{repository_id}` path에 `/`가
+포함되지 않습니다. `repository_id`와 `branch_ref`는 최소한 Snapshot 이력을 분류하는
+불변 namespace입니다. 이 계약만으로 Backend가 Git remote에 commit 또는 ref를
+생성하고 push하도록 허가된 것은 아닙니다. 실제 Git 저장이 제품 요구라면 provider
+API/SSH 방식, credential 소유 주체, expected branch head, force-push 금지,
+충돌·부분 실패 응답을 Phase 2에서 별도 확정해야 합니다.

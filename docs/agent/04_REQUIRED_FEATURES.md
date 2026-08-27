@@ -262,8 +262,9 @@ Admin Web은 VS Code에서 열리는 Webview가 아니라 독립 서버에서 �
 
 ### Repository와 Branch 바인딩
 
-- Repository는 안정적인 `repository_id`, 표시 이름, provider, remote URL,
-  기본 Branch, 활성 상태를 저장합니다.
+- Repository는 Backend가 발급한 UUID `repository_id`, provider상의 안정적인
+  `canonical_name`, 표시 이름, provider, remote URL, 기본 Branch, 활성 상태를
+  저장합니다.
 - Branch는 full ref인 `refs/heads/...` 형태를 정본으로 저장하고 화면에는 짧은 이름을
   표시할 수 있습니다.
 - 현재 VS Code payload에는 Branch가 없으므로 `frontend_project_id`당 활성 바인딩은

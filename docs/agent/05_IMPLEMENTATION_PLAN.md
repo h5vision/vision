@@ -75,7 +75,7 @@ SNAPSHOT_FORWARDING_STALE_SECONDS=30
 완료 조건:
 
 ```text
-현재 Frontend payload → 2xx schema validation
+현재 Frontend payload → WorkspaceOverlayRequest schema validation 성공
 임의 SHA/잘못된 경로 → 422 또는 구조화된 400
 Frontend에 snapshot_id/content_sha256 요구하지 않음
 empty commit → revision-only request로 유효
@@ -86,6 +86,26 @@ Snapshot update/delete와 Repository 물리 삭제는 계약에서 제외
 Admin Web은 Backend 관리 API만 호출하고 서비스 credential을 받지 않음
 실제 Git 저장 여부와 credential·충돌 계약이 추측 없이 결정됨
 ```
+
+Phase 2 계약 구현에서는 유효 요청에 임시 `2xx/202`를 반환하는 placeholder HTTP
+endpoint를 만들지 않습니다. Snapshot DB 저장과 Model 접수 없이 성공으로 응답하면
+외부 계약을 위반하므로 실제 `/v1/workspace-overlays` HTTP 흐름은 Phase 4에서
+연결합니다.
+
+### Phase 2 완료 기록 — 2026-08-27 KST
+
+- 실제 Frontend `GitCommitPayload`와 분리된 `WorkspaceOverlayRequest` schema 고정
+- Model request/response schema와 원문 extra field 보존 고정
+- Git SHA, POSIX 경로, rename content, 중복·충돌 검증 구현
+- empty commit과 remote 조회 없는 로컬 SHA fixture 고정
+- Admin Repository, Branch binding, Snapshot 목록·상세·재시도 schema 고정
+- Admin `401`, `403`, binding `409` 오류 body와 화면 상태 인계 문서 고정
+- Snapshot 저장 방식의 안전 기본값을 PostgreSQL 내부 이력으로 결정
+- 실제 Git remote commit/ref 생성과 push는 명시적 후속 결정 전까지 비활성화
+
+구현 및 fixture 위치는 `07_ADMIN_WEB_HANDOFF.md`에 기록합니다. Phase 2는 계약
+계층까지만 완료하며 Repository/Binding persistence와 Admin HTTP router는 Phase 3,
+Snapshot 수신·전달과 이력 조회 router는 Phase 4 범위입니다.
 
 ## Phase 3 — Repository/Project 매핑과 Admin Web 골격
 

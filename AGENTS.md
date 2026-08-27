@@ -6,7 +6,7 @@
 
 - 구현 대상 저장소: `https://github.com/h5vision/vision.git`
 - 구현 대상 브랜치: `backend_P`
-- 현재 기준 HEAD: `ad17f9c06bdf89a84edaefb2c508569d8ba50cd9`
+- 초기 구현 기준 HEAD: `ad17f9c06bdf89a84edaefb2c508569d8ba50cd9`
 - 핵심 역할: VS Code Frontend가 보낸 Git 변경 파일을 받아 Model/RAG Lab 규약으로
   전달하고, 독립 Admin Web이 선택한 Repository/Branch별 Snapshot 처리 상태와 이력을
   관리하는 FastAPI Backend
@@ -19,6 +19,7 @@
 4. `docs/agent/04_REQUIRED_FEATURES.md`
 5. `docs/agent/05_IMPLEMENTATION_PLAN.md`
 6. `docs/agent/06_READINESS_AND_VERIFICATION.md`
+7. `docs/agent/07_ADMIN_WEB_HANDOFF.md`
 
 ## 규약 권위
 

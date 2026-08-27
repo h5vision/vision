@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "reason": "base_revision_mismatch",
+  "detail": "현재 인덱스 revision과 요청 base_revision이 다릅니다",
+  "conflict": true,
+  "current_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}

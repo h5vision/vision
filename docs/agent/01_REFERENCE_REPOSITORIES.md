@@ -1,6 +1,6 @@
 # 참조 저장소와 기준선
 
-최종 확인일: 2026-08-26 KST
+최종 확인일: 2026-08-27 KST
 
 ## 구현 대상
 
@@ -8,10 +8,13 @@
 |---|---|
 | 저장소 | `https://github.com/h5vision/vision.git` |
 | 브랜치 | `backend_P` |
-| 기준 SHA | `ad17f9c06bdf89a84edaefb2c508569d8ba50cd9` |
+| 초기 구현 기준 SHA | `ad17f9c06bdf89a84edaefb2c508569d8ba50cd9` |
+| Phase 2 시작 SHA | `c8ac6d5a33df241ba80cf3d7748d83fe32db459b` |
 | 역할 | Frontend와 Model/RAG Lab 사이의 FastAPI Backend 및 Snapshot 처리 |
 
-`backend_P`는 현재 설계 골격 단계입니다. 과거 mock `main.py` 또는 `ingest.py`가 존재했다는 가정으로 구현하지 말고 현재 HEAD의 실제 파일을 기준으로 시작합니다.
+`backend_P`는 Phase 1 실행 골격 뒤 Phase 2 계약 schema와 fixture를 구현한 상태입니다.
+과거 mock `main.py` 또는 `ingest.py`가 존재했다는 가정으로 구현하지 말고 현재 HEAD의
+실제 파일을 기준으로 시작합니다.
 
 ## Frontend 참조
 
@@ -133,7 +136,10 @@ git ls-remote https://github.com/h5vision/vision.git `
   refs/heads/backend_P
 ```
 
-SHA가 이 문서와 다르면 변경 파일과 통신 계약을 다시 읽은 뒤 문서의 기준 SHA를 갱신합니다.
+Frontend 또는 Model SHA가 이 문서와 다르면 변경 파일과 통신 계약을 다시 읽은 뒤
+문서의 기준 SHA를 갱신합니다. `backend_P`는 완료된 Phase commit으로 계속 전진하므로
+Phase 시작 SHA는 이력을 위한 기준점이며 문서 자신의 최신 commit과 같을 필요가
+없습니다.
 
 SHA가 같아도 실환경 연결 전에는 Backend 호스트 관점의 `RAG_LAB_BASE_URL`, token,
 `GET /projects` 결과와 현재 index revision을 별도로 확인합니다. Git 브랜치 SHA가

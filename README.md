@@ -4,8 +4,13 @@ FastAPI Backend that receives VS Code workspace overlays, records Snapshot state
 and forwards validated file payloads to Model/RAG Lab.
 
 Phase 1 provides the application skeleton, environment validation, structured JSON
-errors, request correlation, liveness, and readiness. Snapshot forwarding is added
-in later phases.
+errors, request correlation, liveness, and readiness. Phase 2 fixes the current
+Frontend, Model/RAG Lab, and independent Admin Web contracts as Pydantic schemas and
+versioned test fixtures. Snapshot persistence and forwarding are added in later phases.
+
+Phase 2 does not mount a placeholder `/v1/workspace-overlays` route: returning an
+acceptance response before PostgreSQL persistence and RAG Lab forwarding exist would
+misrepresent the operation. The HTTP workflow is connected in Phase 4.
 
 ## Local setup
 

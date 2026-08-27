@@ -1,21 +1,24 @@
 # 구현 준비와 필수 검증
 
-최종 확인일: 2026-08-26 KST
+최종 확인일: 2026-08-27 KST
 
 이 문서는 Snapshot Backend를 구현하면서 Agent가 실환경 값이나 미정 정책을 추측하지
 않도록 구현 가능 범위, 필수 입력값, 중단 조건과 검증 증거를 고정합니다.
 
-## 현재 기준선
+## 외부 규약 기준선과 Phase 2 시작점
 
-2026-08-26 KST에 `git ls-remote`로 확인한 값입니다.
+2026-08-27 KST에 `git ls-remote`로 다시 확인한 값입니다.
 
 | 브랜치 | SHA |
 |---|---|
-| `backend_P` | `ad17f9c06bdf89a84edaefb2c508569d8ba50cd9` |
+| `backend_P` 초기 구현 기준 | `ad17f9c06bdf89a84edaefb2c508569d8ba50cd9` |
+| `backend_P` Phase 2 시작 | `c8ac6d5a33df241ba80cf3d7748d83fe32db459b` |
 | `frontend` | `56b71405e568b059158b1a666fa362f465c6c10a` |
 | `model` | `423f45689689df9dd12bd50150e7663d386e4858` |
 
-SHA가 달라지면 이 문서보다 상대 브랜치 실제 코드를 먼저 다시 읽습니다.
+Frontend 또는 Model SHA가 달라지면 이 문서보다 상대 브랜치 실제 코드를 먼저 다시
+읽습니다. `backend_P` SHA는 완료된 Phase 커밋에 따라 전진하므로 위 값은 계약 구현을
+시작할 때 확인한 기준점이며 문서 자신의 최신 commit SHA를 의미하지 않습니다.
 
 ## 확정된 런타임 경계
 
@@ -94,6 +97,11 @@ UI에는 그 이유가 표시되지 않습니다.
 확정합니다. Admin Web을 production에 노출하려면 특히 `LIVE-09`부터 `LIVE-13`까지가
 차단 조건입니다.
 
+Phase 2의 안전 기본값은 PostgreSQL에 Snapshot 이력을 저장하고 Git remote에는 쓰지
+않는 것입니다. 이 기본값으로 로컬 계약과 이후 DB 구현을 진행할 수 있습니다. 실제
+Git commit/ref push가 제품 요구로 확정되면 `LIVE-11`, `LIVE-13`을 다시 열고 provider,
+credential, expected-head와 충돌 계약을 검증합니다.
+
 ## Project 매핑 레코드 최소 계약
 
 명시적 매핑은 최소한 다음 정보를 저장합니다.
@@ -129,6 +137,8 @@ created_at
 updated_at
 ```
 
+- `repository_id`는 Backend가 발급한 UUID이며 provider `owner/name`은 Repository
+  레코드의 `canonical_name`으로 분리합니다.
 - `branch_ref`는 `refs/heads/...` full ref를 정본으로 사용합니다.
 - 현재 VS Code payload에는 Branch가 없으므로 `frontend_project_id`당 활성 binding을
   하나만 허용합니다.
