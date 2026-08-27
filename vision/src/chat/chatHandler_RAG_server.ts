@@ -156,8 +156,7 @@ export class ChatHandler {
                 stream.progress("요청 취소됨");
                 return;
             }
-            stream.markdown("❌ Backend 연결에 실패했습니다.");
-            console.error(err);
+            stream.markdown("❌ Backend 연결에 실패했습니다.\n\n" + "```" + err?.toString() + "```");
         } finally {
             cancellation.dispose();
         }

@@ -32,7 +32,7 @@ export class ProjectListHandler {
             const gitCommits = (await this.gitService.getRecentCommits()).map(m=>
                 [m.hash, m.message]);
             const localPrj = {
-                id:0, 
+                id: response.name, 
                 location: "Local",
                 name: response.name, 
                 commits: gitCommits,
