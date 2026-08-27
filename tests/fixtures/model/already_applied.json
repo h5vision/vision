@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "already_applied": true,
+  "project_id": "vision--rag-v2",
+  "state": "done",
+  "base_revision": "1111111111111111111111111111111111111111",
+  "target_revision": "2222222222222222222222222222222222222222",
+  "commit": "2222222222222222222222222222222222222222"
+}
