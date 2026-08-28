@@ -43,14 +43,21 @@
         </div>
         <div id="current-project-info" class="project-info-box">
             <div id="current-project-name" class="project-name">없음</div>
-            <div><i class="codicon codicon-folder-active"></i>
-                <span id="current-project-path"></span>
-            </div>
             <div id="current-git-info"></div>
+            <div>
+                <i class="codicon codicon-type-hierarchy-sub"></i> 
+                <span id="graph-status">분석 대기 중</span>
+                <i id="graph-status-icon" class="hidden"></i> 
+            </div>
         </div>
-        <hr>
+        <div class="graph-progress-bar">
+            <div id="graph-progress-fill" class="graph-progress-fill"></div>
+        </div>
+        <button id="open-graph-btn" class="icon-btn block-btn hidden" title="의존성 그래프 열기">
+            <i class="codicon codicon-type-hierarchy-sub"></i> Vision ─ 의존성 그래프
+        </button>
         <button id="project-brief-btn" class="icon-btn block-btn" title="프로젝트 브리핑 생성">
-            <i class="codicon codicon-comment-unresolved"></i> <span id="brief-name">Vision</span> ─ 프로젝트 브리핑
+            <i class="codicon codicon-comment-unresolved"></i> Vision ─ 프로젝트 브리핑
         </button>
     </div>
 

@@ -18,7 +18,7 @@
       "properties": {
         "vision.endpoint": {
           "type": "string",
-          "default": "http://192.168.0.7/v1",
+          "default": "http://44.208.79.122:8200",
           "description": "vision backendAI endpoint"
         },
         "vision.modelId": {

@@ -29,7 +29,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') {changeEndpoint.click();}
     });
     changeEndpoint.addEventListener("click", ()=>{
-        if (endpoint.textContent === endpointEditInput.value) {cancelEndpoint.click(); return;};
+        if (endpoint.textContent === endpointEditInput.value) {cancelEndpoint.click(); return;}
+        else if (endpointEditInput.value.trim() === "") {
+            cancelEndpoint.click();
+            return;
+        };
         endpoint.textContent = endpointEditInput.value;
         endpoint.click();
         document.getElementById("backend-status").textContent = '🟡 Server Reconnecting...';
@@ -50,6 +54,13 @@ document.addEventListener("DOMContentLoaded", () => {
     prjBriefBtn.addEventListener("click", () => {
         vscode.postMessage({ command: "getProjectBrief" });
     });
+
+    // 의존성 그래프 열기 버튼 이벤트
+    const openGraphBtn = document.getElementById("open-graph-btn");
+    openGraphBtn.addEventListener("click", () => {
+        vscode.postMessage({ command: "openGraph" });
+    });
+    openGraphBtn.style.display = 'none';
 
     // Project List 새로고침
     const refreshProjectBtn = document.getElementById("refresh-projects-btn");
@@ -162,7 +173,7 @@ function renderProjectList(projects) {
         if (proj.location === 'Local') {
             locationEl.style.color = '#32b1ff';
         } else if (proj.location === 'DB') {
-            locationEl.style.color = '#4CAF50';
+            locationEl.style.color = 'var(--vscode-terminal-ansiGreen';
         }
         locationEl.textContent = `${proj.location}`;
 
@@ -184,7 +195,7 @@ function renderProjectList(projects) {
                         command: "updateCommitId", 
                         data: { 
                             project_id: proj.id, 
-                            name: proj.name,
+                            name: proj.name || 'unknown',
                             commit: SHA, 
                             path: proj.location,
                             branch: '임시'
@@ -217,8 +228,55 @@ function renderProjectList(projects) {
     });
 }
 
+function updateDependencyGraphStatus(progress) {
+    const graphStatus = document.getElementById('graph-status');    
+    const gIcon = document.getElementById('graph-status-icon');
+    const progressFill = document.getElementById('graph-progress-fill');
+
+    graphStatus.textContent = progress.message || '';
+    
+    switch (progress.status) {
+        case 'idle':
+            return;
+        case 'building [Node]':
+            graphStatus.textContent = '프로젝트 구조 분석 중 [Node]';
+            break;
+        case 'building [Edge]':
+            graphStatus.textContent = '프로젝트 구조 분석 중 [Edge]';
+            break;
+        case 'ready':
+            gIcon.className = 'codicon codicon-verified';
+            break;
+        case 'error':
+            gIcon.className = 'codicon codicon-error';
+            return;
+        default:
+            gIcon.className = 'codicon codicon-unverified';
+            graphStatus.textContent = '알 수 없는 상태';
+            return;
+    }
+    if (progress.status === 'building [Node]' && progress.total > 0) {
+        const percent = Math.round((progress.current / progress.total) * 20);
+        progressFill.style.width = `${percent}%`;
+        graphStatus.textContent += ` (${progress.current} / ${progress.total})`;
+    }
+    if (progress.status === 'building [Edge]' && progress.total > 0) {
+        const percent = 20 + Math.round((progress.current / progress.total) * 80);
+        progressFill.style.width = `${percent}%`;
+        graphStatus.textContent += ` (${progress.current} / ${progress.total})`;
+    }
+
+    if (progress.status === 'ready') {
+        progressFill.style.width = '100%';
+        progressFill.style.backgroundColor = 'var(--vscode-terminal-ansiGreen)';
+        document.getElementById('open-graph-btn').style.display = 'block';
+    }
+    
+}
+
 vscode.postMessage({ command: "getProjectInfo" });
 vscode.postMessage({ command: "getGuideStatus" });
+vscode.postMessage({ command: "getDependencyGraphStatus" });
 
 setTimeout(() => {
     vscode.postMessage({ command: "checkBackend" });
@@ -257,10 +315,8 @@ window.addEventListener("message", event => {
 
         case "showProjectInfo": {
             const el = document.getElementById('current-project-name');
-            const elPath = document.getElementById('current-project-path');
             const data = message.data;
             el.textContent = data.name.toUpperCase();
-            elPath.textContent = data.path;
             break;
         }
 
@@ -276,6 +332,11 @@ window.addEventListener("message", event => {
                 elgit.textContent = git;
             }
             
+            break;
+        }
+
+        case "dependencyGraphStatus": {
+            updateDependencyGraphStatus(message.data);
             break;
         }
 

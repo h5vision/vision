@@ -9,6 +9,8 @@ import { HistoryService } from './services/historyService';
 import { DependencyService } from './services/dependencyService';
 import { GitService } from './services/gitService';
 import { CommitDiffService } from './services/commitDiffService';
+import { DependencyGraphService } from './services/dependencyGraphService';
+import { DependencyGraphManager } from './services/dependencyGraphManager';
 
 
 // 이 메서드는 확장 프로그램이 활성화될 때 호출됩니다. 확장 프로그램이 처음으로 명령을 실행할 때 활성화됩니다.
@@ -27,14 +29,28 @@ export async function activate(context: vscode.ExtensionContext) {
 	const gitService = new GitService();
 	const commitDiffService = new CommitDiffService(gitService);
 	context.subscriptions.push(gitService, commitDiffService);
-
+	let commitId;
 	gitService.initialize().then(() => {
+		commitId = gitService.getCurrentCommit();
+		vscode.workspace.getConfiguration('vision').update(
+			"projectId",
+			vscode.workspace.name || 'none',
+			vscode.ConfigurationTarget.Global
+		);
+		vscode.workspace.getConfiguration('vision').update(
+			"commitId",
+			commitId,
+			vscode.ConfigurationTarget.Global
+		);
 		commitDiffService.start();
 	});
 
+	
+	const dependencyGraphService = new DependencyGraphService();
+    const dependencyGraphManager = new DependencyGraphManager(dependencyGraphService, gitService);
 
 	// SidebarProvider를 등록하여 웹뷰를 표시할 수 있도록 설정
-	const provider = new SidebarProvider(context.extensionUri);
+	const provider = new SidebarProvider(context.extensionUri, dependencyGraphManager);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
             "VisionAssistant.sidebar",
@@ -74,10 +90,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			data: false
 		});
 	}
-	
-	
-	// Extension을 실행할 때 vscode chat 창을 자동으로 열어줍니다. 
-	
+		
 	// vscode 내의 Storage에 history.db 파일을 만듭니다. 
 	const storagePath = path.join(context.globalStorageUri.fsPath);
 	try {
@@ -156,8 +169,11 @@ export async function activate(context: vscode.ExtensionContext) {
         });
     });
 
-    context.subscriptions.push(explainFileDisposable);
+    context.subscriptions.push(explainFileDisposable);	
 
+	dependencyGraphManager.initialize()
+		.then(() => console.log('[DependencyGraph] Ready'))
+		.catch(err => console.log('[DependencyGraph] Error',err));
 }
 
 // 이 메서드는 확장 프로그램이 비활성화될 때 호출됩니다.

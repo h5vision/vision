@@ -33,6 +33,16 @@ export class ProjectInfoHandler {
             command: "showProjectGitInfo",
             data: response
         });
+        await vscode.workspace.getConfiguration('vision').update(
+                "projectId",
+                repo?.rootPath.split('\\').pop(),
+                vscode.ConfigurationTarget.Global
+            );
+        await vscode.workspace.getConfiguration('vision').update(
+                "commitId",
+                repo?.commit,
+                vscode.ConfigurationTarget.Global
+            );
         console.log("Git info sent to webview:", response);
         
         

@@ -89,6 +89,10 @@ export class ChatHandler {
             this.historyServcie.save(project_id, session_id, 'user', request.prompt);
             const response1:any = await backendService.post("/prompt", message);
             console.log(response1);
+            if (response1.error) {
+                throw new Error(response1.error.split(';')[0]);
+            }
+
             // response 객체 확인용
             // const dbPath = path.join(vscode.workspace.workspaceFolders?.[0].uri.fsPath || '', 'response.json');
             // fs.writeFileSync(dbPath, JSON.stringify(response, null, 2));
@@ -156,7 +160,7 @@ export class ChatHandler {
                 stream.progress("요청 취소됨");
                 return;
             }
-            stream.markdown("❌ Backend 연결에 실패했습니다.\n\n" + "```" + err?.toString() + "```");
+            stream.markdown("❌ " + err?.toString());
         } finally {
             cancellation.dispose();
         }

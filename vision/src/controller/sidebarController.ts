@@ -110,13 +110,13 @@ export class SidebarController {
                     .update(
                         "projectId",
                         message.data.project_id,
-                        vscode.ConfigurationTarget.Workspace
+                        vscode.ConfigurationTarget.Global
                     );
                 await vscode.workspace.getConfiguration('vision')
                     .update(
                         "commitId",
                         message.data.commit,
-                        vscode.ConfigurationTarget.Workspace
+                        vscode.ConfigurationTarget.Global
                     );
                 this.view.webview.postMessage({
                     command: "commitIdUpdated",
