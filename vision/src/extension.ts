@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from "fs";
 import { SidebarProvider } from "./providers/sidebarProvider";
 import { GuideProvider } from "./providers/guideProvider";	
+import { DependencyGraphProvider } from "./providers/dependencyGraphProvider";
 import { ChatHandler } from './chat/chatHandler_RAG_server';	
 import { FileDependencyProvider } from "./providers/dependencyProvider";
 import { HistoryService } from './services/historyService';
@@ -174,6 +175,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	dependencyGraphManager.initialize()
 		.then(() => console.log('[DependencyGraph] Ready'))
 		.catch(err => console.log('[DependencyGraph] Error',err));
+
+	// Dependency Graph Provider 초기화
+	const dependencyGraphProvider = new DependencyGraphProvider(context, dependencyGraphManager);
+	context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'vision.showDependencyGraph',
+            () => dependencyGraphProvider.show()
+        )
+	);
 }
 
 // 이 메서드는 확장 프로그램이 비활성화될 때 호출됩니다.

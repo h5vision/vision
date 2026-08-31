@@ -22,8 +22,7 @@ export class DependencyGraphProvider {
                     localResourceRoots: [
                         vscode.Uri.joinPath(
                             this.context.extensionUri,
-                            'webview',
-                            'dependencyGraph',
+                            'webview_graph',
                             'dist'
                         )
                     ]
@@ -33,14 +32,22 @@ export class DependencyGraphProvider {
         panel.webview.html =
             this.getHtml(panel.webview);
 
-        const graph =
-            this.manager.getGraph();
+        const graph = this.manager.getGraph();
 
+        panel.webview.onDidReceiveMessage(async (message) => {
+            if (message.type === 'ready') {
+                if (graph) {
+                    this.sendGraph(panel, graph);
+                }
+            }
+        });
+    }
+
+    private async sendGraph(panel: vscode.WebviewPanel, graph: any): Promise<void> {
         if (graph) {
-
             panel.webview.postMessage({
-                type: 'graph',
-                graph
+                type: 'graphData',
+                data: graph
             });
         }
     }
@@ -53,11 +60,10 @@ export class DependencyGraphProvider {
             webview.asWebviewUri(
                 vscode.Uri.joinPath(
                     this.context.extensionUri,
-                    'webview',
-                    'dependencyGraph',
+                    'webview_graph',
                     'dist',
                     'assets',
-                    'index.js'
+                    'index-DmgNUks0.js'
                 )
             );
 
@@ -65,16 +71,14 @@ export class DependencyGraphProvider {
             webview.asWebviewUri(
                 vscode.Uri.joinPath(
                     this.context.extensionUri,
-                    'webview',
-                    'dependencyGraph',
+                    'webview_graph',
                     'dist',
                     'assets',
-                    'index.css'
+                    'index-DgIqE3F2.css'
                 )
             );
 
-        const nonce =
-            getNonce();
+        const nonce = getNonce();
 
         return `
             <!DOCTYPE html>
@@ -85,14 +89,20 @@ export class DependencyGraphProvider {
                     charset="UTF-8"
                 />
 
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
                 <meta
                     http-equiv="Content-Security-Policy"
                     content="
                         default-src 'none';
-                        style-src ${webview.cspSource};
-                        script-src 'nonce-${nonce}';
+                        style-src ${webview.cspSource} 'unsafe-inline';
+                        script-src ${webview.cspSource} 'nonce-${nonce}';
                     "
                 />
+
+                <title>
+                    webview_graph
+                </title>
 
                 <link
                     rel="stylesheet"
@@ -105,6 +115,7 @@ export class DependencyGraphProvider {
                 <div id="root"></div>
 
                 <script
+                    type="module" 
                     nonce="${nonce}"
                     src="${scriptUri}"
                 ></script>

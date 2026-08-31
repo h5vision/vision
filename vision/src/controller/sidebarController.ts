@@ -136,6 +136,10 @@ export class SidebarController {
             case SidebarCommand.ToggleGuide:
                 vscode.commands.executeCommand('vision.toggleGuide');
                 return;
+            
+            case SidebarCommand.ShowDependencyGraph:
+                vscode.commands.executeCommand('vision.showDependencyGraph');
+                return;
         }
     }
 }

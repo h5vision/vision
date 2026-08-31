@@ -40,6 +40,9 @@
     <div class="card" id="project-info">
         <div class="card-header">
             <span><i class="codicon codicon-files"></i> 현재 프로젝트 정보</span>
+            <button id="reconnect-project-info-btn" class="icon-btn" title="재연결">
+                <i class="codicon codicon-sync"></i>
+            </button>
         </div>
         <div id="current-project-info" class="project-info-box">
             <div id="current-project-name" class="project-name">없음</div>
@@ -82,8 +85,8 @@
         </div>
         
         <!-- 자바스크립트가 안전하게 아코디언 목록을 그려 넣을 영역 -->
-        <div id="project-list-content" class="project-list" style="margin-top: 6px; flex: 1; overflow-y: auto;">
-            <div style="padding: 4px 0; opacity: 0.8;">• 프로젝트 목록을 불러오는 중...</div>
+        <div id="project-list-content" class="project-list">
+            <div>• 프로젝트 목록을 불러오는 중...</div>
         </div>
     </div>
 

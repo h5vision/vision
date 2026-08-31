@@ -32,7 +32,9 @@ export enum SidebarCommand {
 
     UpdateCommitId = "updateCommitId",
 
-    ToggleGuide = "toggleGuide"
+    ToggleGuide = "toggleGuide",
+
+    ShowDependencyGraph = "showDependencyGraph"
 }
 
 export interface SidebarMessage {

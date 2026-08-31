@@ -7,4 +7,8 @@ node_modules
 .style*
 .sidebar*
 .guide*
-rag_lab
+rag_lab/node_modules
+rag_lab/
+webview_graph/node_modules
+webview_graph/dist
+webview_graph/.gitignore

@@ -576,7 +576,7 @@ export class DependencyGraphService {
         const files =
             await vscode.workspace.findFiles(
                 '**/*',
-                '**/{node_modules,.git,.vscode,out,dist,build}/**'
+                '**/{node_modules,.git,.vscode,out,dist,build,.venv,__pycache__,tests,test}/**'
             );
 
         return files

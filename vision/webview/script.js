@@ -3,14 +3,12 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // 서버 재연결 버튼
     const reconnectBtn = document.getElementById("reconnect-btn");
-    if (reconnectBtn) {
-        reconnectBtn.addEventListener("click", () => {
-            document.getElementById("backend-status").textContent = '🟡 Server Reconnecting...';
-            document.getElementById("endpoint").textContent = '';
-            vscode.postMessage({ command: "checkBackend" });
-            vscode.postMessage({ command: "getModelsInfo" });
-        });
-    }
+    reconnectBtn.addEventListener("click", () => {
+        document.getElementById("backend-status").textContent = '🟡 Server Reconnecting...';
+        document.getElementById("endpoint").textContent = '';
+        vscode.postMessage({ command: "checkBackend" });
+        vscode.postMessage({ command: "getModelsInfo" });
+    });
 
     // endpoint 변경 버튼
     const endpoint = document.getElementById("endpoint");
@@ -43,10 +41,18 @@ document.addEventListener("DOMContentLoaded", () => {
         endpoint.click();
     });
 
+    // 모델 선택 드롭다운
     const scrollContainer = document.getElementById("model-list-scroll");
     scrollContainer.addEventListener('change', (event) => {
         const selectedModelId = event.target.value;
         vscode.postMessage({ command: "updateModelId", data: selectedModelId });
+    });
+
+    // 현재 프로젝트 정보 재연결 버튼
+    const reconnectProjectInfoBtn = document.getElementById("reconnect-project-info-btn");
+    reconnectProjectInfoBtn.addEventListener("click", () => {
+        vscode.postMessage({ command: "getProjectInfo" });
+        vscode.postMessage({ command: "getProjectGitInfo" });
     });
 
     // 프로젝트 브리핑 열기
@@ -58,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 의존성 그래프 열기 버튼 이벤트
     const openGraphBtn = document.getElementById("open-graph-btn");
     openGraphBtn.addEventListener("click", () => {
-        vscode.postMessage({ command: "openGraph" });
+        vscode.postMessage({ command: "showDependencyGraph" });
     });
     openGraphBtn.style.display = 'none';
 
@@ -322,14 +328,13 @@ window.addEventListener("message", event => {
 
         case "showProjectGitInfo": {
             const elgit = document.getElementById('current-git-info');
+            elgit.textContent = "";
             const data = message.data;
-            let git = '';
             if (data.git) {
                 elgit.textContent = data.repository.branch;
                 elgit.innerHTML = `<i class="codicon codicon-git-branch"></i> ${data.repository.commit.slice(0,7)} &nbsp; <b><i class="codicon codicon-target"></i>${data.repository.branch}</b>`;
             } else {
-                git = "❌ 정보없음";
-                elgit.textContent = git;
+                elgit.textContent = "❌ 정보없음";
             }
             
             break;
