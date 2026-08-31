@@ -1,0 +1,11 @@
+node_modules/**
+webview_graph/node_modules/**
+webview_graph/src/**
+webview_graph/*.ts
+webview_graph/package.json
+webview_graph/package-lock.json
+webview_graph/tsconfig*.json
+webview_graph/vite.config.*
+.git/**
+.vscode/**
+*.map

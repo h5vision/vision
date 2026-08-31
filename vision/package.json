@@ -3,7 +3,7 @@
   "displayName": "vision",
   "publisher": "Team-vision",
   "description": "On-premise sLLM Coding Assistance and Intelligence",
-  "version": "0.0.3",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.125.0"
   },

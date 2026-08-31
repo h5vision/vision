@@ -1,11 +1,24 @@
-.vscode/**
-.vscode-test/**
+# Development
 src/**
+.vscode/**
+.git/**
 .gitignore
-.yarnrc
-vsc-extension-quickstart.md
-**/tsconfig.json
-**/eslint.config.mjs
+
+# Extension development dependencies
+node_modules/**
+
+# React source
+webview_graph/src/**
+webview_graph/node_modules/**
+webview_graph/public/**
+
+# React project configuration
+webview_graph/package.json
+webview_graph/package-lock.json
+webview_graph/tsconfig*.json
+webview_graph/vite.config.*
+webview_graph/README.md
+webview_graph/eslint.config.*
+
+# Build artifacts that aren't needed
 **/*.map
-**/*.ts
-**/.vscode-test.*
