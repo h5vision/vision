@@ -50,6 +50,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	const dependencyGraphService = new DependencyGraphService();
     const dependencyGraphManager = new DependencyGraphManager(dependencyGraphService, gitService);
 
+	// Dependency Graph Provider 초기화 (chat handler에서 근거 문서 강조에 사용)
+	const dependencyGraphProvider = new DependencyGraphProvider(context, dependencyGraphManager);
+	context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'vision.showDependencyGraph',
+            () => dependencyGraphProvider.show()
+        )
+	);
+
 	// SidebarProvider를 등록하여 웹뷰를 표시할 수 있도록 설정
 	const provider = new SidebarProvider(context.extensionUri, dependencyGraphManager);
     context.subscriptions.push(
@@ -105,7 +114,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 
 		// ChatParticipantProvider를 구독에 추가하여 확장 프로그램이 비활성화될 때 정리할 수 있도록 합니다.
-		const chatHandler = new ChatHandler(historyService);
+		const chatHandler = new ChatHandler(historyService, dependencyGraphProvider);
 		vscode.chat.createChatParticipant("vision.chat", chatHandler.handle);
 
 		// history.db 파일을 외부에서 열 수 있도록 명령어를 등록합니다.
@@ -175,15 +184,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	dependencyGraphManager.initialize()
 		.then(() => console.log('[DependencyGraph] Ready'))
 		.catch(err => console.log('[DependencyGraph] Error',err));
-
-	// Dependency Graph Provider 초기화
-	const dependencyGraphProvider = new DependencyGraphProvider(context, dependencyGraphManager);
-	context.subscriptions.push(
-        vscode.commands.registerCommand(
-            'vision.showDependencyGraph',
-            () => dependencyGraphProvider.show()
-        )
-	);
 }
 
 // 이 메서드는 확장 프로그램이 비활성화될 때 호출됩니다.

@@ -5,12 +5,19 @@ import { getNonce } from '../utils/nonce';
 
 export class DependencyGraphProvider {
 
+    private panel: vscode.WebviewPanel | undefined;
+
     constructor(
         private readonly context: vscode.ExtensionContext,
         private readonly manager: DependencyGraphManager
     ) {}
 
     public show(): void {
+
+        if (this.panel) {
+            this.panel.reveal(vscode.ViewColumn.One);
+            return;
+        }
 
         const panel =
             vscode.window.createWebviewPanel(
@@ -29,6 +36,12 @@ export class DependencyGraphProvider {
                 }
             );
 
+        this.panel = panel;
+
+        panel.onDidDispose(() => {
+            this.panel = undefined;
+        });
+
         panel.webview.html =
             this.getHtml(panel.webview);
 
@@ -40,6 +53,14 @@ export class DependencyGraphProvider {
                     this.sendGraph(panel, graph);
                 }
             }
+        });
+    }
+
+    // 챗 응답의 근거 문서 경로를 그래프 웹뷰로 전달해 노드를 강조 표시
+    public highlightSources(paths: string[]): void {
+        this.panel?.webview.postMessage({
+            type: 'highlightSources',
+            paths
         });
     }
 
@@ -63,7 +84,7 @@ export class DependencyGraphProvider {
                     'webview_graph',
                     'dist',
                     'assets',
-                    'index-DmgNUks0.js'
+                    'index-CGJ8Ok-C.js'
                 )
             );
 

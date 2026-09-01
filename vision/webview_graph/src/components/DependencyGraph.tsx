@@ -56,6 +56,9 @@ function DependencyGraph({
     const [graphData, setGraphData] =
         useState<GraphData | null>(null);
 
+    const [highlightedPaths, setHighlightedPaths] =
+        useState<Set<string>>(new Set());
+
     const [theme, setTheme] = useState<'light' | 'dark'>(
         getVSCodeTheme()
     );
@@ -84,6 +87,10 @@ function DependencyGraph({
             if (message.type === 'graphData') {
                 setGraphData(message.data);
             }
+
+            if (message.type === 'highlightSources') {
+                setHighlightedPaths(new Set(message.paths ?? []));
+            }
         };
 
         window.addEventListener(
@@ -111,20 +118,32 @@ function DependencyGraph({
             };
         }
 
-        const nodes = graphData.nodes.map((node) => ({
-            id: node.id,
+        const nodes = graphData.nodes.map((node) => {
+            const isHighlighted = highlightedPaths.has(node.path);
 
-            data: {
-                label: node.label,
-                path: node.path,
-                language: node.language,
-            },
+            return {
+                id: node.id,
 
-            position: {
-                x: 0,
-                y: 0,
-            },
-        }));
+                data: {
+                    label: node.label,
+                    path: node.path,
+                    language: node.language,
+                },
+
+                position: {
+                    x: 0,
+                    y: 0,
+                },
+
+                style: isHighlighted
+                    ? {
+                        background: '#ffd54f',
+                        border: '2px solid #f57f17',
+                        color: '#1a1a1a',
+                    }
+                    : undefined,
+            };
+        });
 
         const edges = graphData.edges.map((edge) => ({
             id: edge.id,
@@ -137,7 +156,7 @@ function DependencyGraph({
             nodes,
             edges
         );
-    }, [graphData]);
+    }, [graphData, highlightedPaths]);
 
     return (
         <ReactFlow

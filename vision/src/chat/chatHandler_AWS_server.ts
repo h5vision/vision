@@ -4,11 +4,13 @@ import { APIService } from "../services/APIService";
 import * as session from "../utils/session";
 import { HistoryService } from "../services/historyService";
 import { ChatService } from "../services/chatServices_SSE";
+import { DependencyGraphProvider } from "../providers/dependencyGraphProvider";
 
 export class ChatHandler {
 
     constructor (
-        private readonly historyServcie: HistoryService
+        private readonly historyServcie: HistoryService,
+        private readonly dependencyGraphProvider?: DependencyGraphProvider
     ) {}
 
     public handle: vscode.ChatRequestHandler = async (
@@ -69,7 +71,7 @@ export class ChatHandler {
             request.prompt
         );
         let response: any;
-
+        console.log("Payload:", payload);
 
         try {
             await chatService.sendMessage(
@@ -105,12 +107,18 @@ export class ChatHandler {
             );
         
             console.log(response);
+            const highlightedPaths: string[] = [];
             for (const source of response.reference_files) {
                 const sourceUri = this.getWorkspaceFileUri(source.path);
 
                 if (!sourceUri) {
                     stream.markdown(`\n- \`${source.path}\``);
                     continue;
+                }
+
+                const relativePath = this.getWorkspaceRelativePath(sourceUri);
+                if (relativePath) {
+                    highlightedPaths.push(relativePath);
                 }
 
                 const lineStart = Number(source.line);
@@ -133,6 +141,9 @@ export class ChatHandler {
                     title: `${path.basename(source.path)} ${source.line_start ? `:${source.line_start}-${source.lines[1]}` : ''}`,
                     arguments: openArguments
                 });
+            }
+            if (highlightedPaths.length) {
+                this.dependencyGraphProvider?.highlightSources(highlightedPaths);
             }
             this.historyServcie.save(project_id, session_id, 'assistant', response.answer);
         }
@@ -165,6 +176,17 @@ export class ChatHandler {
         });
 
         return isInWorkspace ? vscode.Uri.file(filePath) : undefined;
+    }
+
+    // 그래프 노드의 path(워크스페이스 상대 posix 경로)와 매칭시키기 위한 변환
+    private getWorkspaceRelativePath(fileUri: vscode.Uri): string | undefined {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders?.length) {
+            return undefined;
+        }
+
+        const relativePath = path.relative(workspaceFolders[0].uri.fsPath, fileUri.fsPath);
+        return relativePath.split(path.sep).join('/');
     }
 
 }

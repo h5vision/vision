@@ -14,6 +14,7 @@ interface GraphNode {
         x: number;
         y: number;
     };
+    style?: Record<string, string>;
 }
 
 interface GraphEdge {

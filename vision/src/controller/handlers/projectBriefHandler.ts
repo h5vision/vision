@@ -40,7 +40,7 @@ export class ProjectBriefHandler {
 
         try {
             const response = await this.APIService.get(
-                `/briefing?project_id=${encodeURIComponent(workspace.name)}`
+                `/briefing?project_id=${vscode.workspace.getConfiguration("vision").get<string>("projectId") || vscode.workspace.name || ''}`
             );
             const brief = (response as { briefing?: unknown }).briefing;
 
