@@ -96,7 +96,6 @@ export class ChatHandler {
         // }
 
 
-        const model_id = vscode.workspace.getConfiguration('vision').get('modelId', 'backandai-default');
         const commit_id = vscode.workspace.getConfiguration('vision').get('commitId', 'None');
 
         let rag = true;

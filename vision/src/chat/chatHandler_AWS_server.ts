@@ -1,10 +1,9 @@
 import * as vscode from "vscode";
-import * as fs from "fs";
 import * as path from "path";
 import { APIService } from "../services/APIService";
 import * as session from "../utils/session";
-import { PromptBuilder } from "./promptBuilder";
 import { HistoryService } from "../services/historyService";
+import { ChatService } from "../services/chatServices_SSE";
 
 export class ChatHandler {
 
@@ -19,14 +18,24 @@ export class ChatHandler {
         token : vscode.CancellationToken
     ) => {
         const backendService = new APIService();
-
+        const chatService = new ChatService(backendService);
         const controller = new AbortController();
         const cancellation = token.onCancellationRequested(() => {
             controller.abort();
         });
 
+        let finalAnswer = "";
+        let collectedDelta = "";
+        let lastEvent = "";
+        const dummyLabels: Record<string, string> = {
+            meta: "sLLM 서버로 질문 전송 중",
+            stage: "RAG 기반으로 답변 생성 중",
+            delta: "답변 전송 중",
+            done: "sLLM 답변 완료",
+            error: "답변 실패"
+        };
+
         const project_id = vscode.workspace.getConfiguration("vision").get<string>("projectId") || vscode.workspace.name || 'none';
-        let messages = PromptBuilder.build(request.prompt);
 
         // get all the previous participant messages
         const previousMessages = context.history.filter(
@@ -37,75 +46,59 @@ export class ChatHandler {
         if (!previousMessages) {
             session_id = session.resetSessionId();
         } 
-
-        // add the previous messages to the messages 
-        let responseHistory = [''];
-        previousMessages.forEach(m => {
-            let fullMessage = '';
-            m.response.forEach(r => {
-                const mdPart = r as vscode.ChatResponseMarkdownPart;
-                if (mdPart.value.value !== 'NO_EVIDENCE') {fullMessage += mdPart.value.value;}
-            });
-            responseHistory.push(fullMessage);
-        });
-        messages += responseHistory.join('\n');
-
-        // 에디터 화면에 열려 있는 파일의 텍스트 전체를 가져옵니다. 
-        const editor = vscode.window.activeTextEditor;
-        let file = '';
-        if (editor) {
-            file = fs.readFileSync(editor.document.uri.fsPath).toString();
-            messages += file;
-        }
         
-        // 'vision:이 코드 설명해줘' 를 바탕으로 선택한 코드를 가져옵니다. 
-        // 가져온 코드를 vscode Search기능으로 검색하고, 검색 결과를 searchFiles로 반환합니다. 
-        const match = request.prompt.match(/```\n([\s\S]*?)\n```/);
-
-        let searchFilesStr = '';
-        if (!!match) {
-            const searchFiles = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
-                "vscode.executeWorkspaceSymbolProvider",
-                match[1]
-            );
-            searchFilesStr = searchFiles.map(f => {return f.name;}).join('\t');
-        } else {
-            searchFilesStr = '';
-        }
-        messages += searchFilesStr;
-        
-        // 백엔드에서 어떤 모델을 사용해 질문할지를 결정합니다. 
-        const modelId = vscode.workspace.getConfiguration("vision").get<string>("modelId");
-        const commitId = vscode.workspace.getConfiguration("vision").get<string>("commitId");
+        // // 추후 snapshot 기능을 위해 commitId를 가져옵니다. 
+        // const commitId = vscode.workspace.getConfiguration("vision").get<string>("commitId");
 
         let rag = true;
         if (request.command === 'no-rag') {
             rag = false;
         }
 
+        const isStream = vscode.workspace.getConfiguration("vision").get<boolean>("streaming", false);
+        const payload = {
+            project_id: project_id,
+            message: request.prompt,
+            rag: rag, 
+            stream: true
+        };
+        let response: any;
+
         try {
-            stream.progress("VisionAI가 답변을 생성하고 있습니다...");
+            await chatService.sendMessage(
+                payload,
+                (event, data) => {
 
-            const message = {
-                project_id: project_id,
-                query: request.prompt,
-                rag: rag, 
-                stream: false
-            };
+                    if (event !== lastEvent) {
+                        stream.progress(dummyLabels[event]);
+                        lastEvent = event;
+                    }
 
-            console.log(message);
-            this.historyServcie.save(project_id, session_id, 'user', request.prompt);
-            const response:any = await backendService.post("/v1/chat", message);
-            if (response.error) {
-                throw new Error(response.error.split(';')[0]);
-            }
+                    if (event === "delta") {
+                        collectedDelta += data.text ?? '';
+                        if (isStream) {stream.markdown(data.text ?? '');}
+                        return;
+                    }
 
-            console.log(response);
-            
-            stream.markdown(response.answer);
+                    if (event === "done") {
+                        finalAnswer = data.answer ?? collectedDelta;
+                        if (!isStream) {stream.markdown(finalAnswer);}
+                        response = data;
+                        return;
+                    }
 
-            for (let n = 1; n < response.reference_files.length+1; n++) {
-                const source = response.reference_files[n-1];
+                    if (event === "error") {
+                        throw new Error(
+                            data.error ??
+                            "답변 생성에 실패했습니다."
+                        );
+                    }
+                },
+                controller.signal
+            );
+        
+            console.log(response.reference_files);
+            for (const source of response.reference_files) {
                 const sourceUri = this.getWorkspaceFileUri(source.path);
 
                 if (!sourceUri) {
@@ -135,7 +128,6 @@ export class ChatHandler {
                 });
             }
             this.historyServcie.save(project_id, session_id, 'assistant', response.answer);
-
         }
         catch (err) {
             if (token.isCancellationRequested) {

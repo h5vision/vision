@@ -124,6 +124,27 @@ export class SidebarController {
                 });
                 return;
             
+            case SidebarCommand.SetStreaming:
+                await vscode.workspace.getConfiguration('vision')
+                    .update(
+                        "streaming",
+                        message.data,
+                        vscode.ConfigurationTarget.Global
+                    );
+                vscode.window.showInformationMessage(
+                    `Streaming 설정이 ${message.data ? "활성화" : "비활성화"}되었습니다.`
+                );
+                return;
+            
+            case SidebarCommand.GetStreamingStatus:
+                const streamingStatus = vscode.workspace.getConfiguration('vision')
+                    .get('streaming', false);
+                this.view.webview.postMessage({
+                    command: "streamingStatus",
+                    data: streamingStatus
+                });
+                return;
+            
             case SidebarCommand.GetGuideStatus:
                 const guideStatus = vscode.workspace.getConfiguration('vision').get('showGuideBook', false);
                 this.view.webview.postMessage({

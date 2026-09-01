@@ -32,6 +32,10 @@ export enum SidebarCommand {
 
     UpdateCommitId = "updateCommitId",
 
+    SetStreaming = "setStreaming",
+    
+    GetStreamingStatus = "getStreamingStatus",
+
     ToggleGuide = "toggleGuide",
 
     ShowDependencyGraph = "showDependencyGraph"

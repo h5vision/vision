@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("backend-status").textContent = '🟡 Server Reconnecting...';
         document.getElementById("endpoint").textContent = '';
         vscode.postMessage({ command: "checkBackend" });
-        vscode.postMessage({ command: "getModelsInfo" });
     });
 
     // endpoint 변경 버튼
@@ -41,11 +40,18 @@ document.addEventListener("DOMContentLoaded", () => {
         endpoint.click();
     });
 
-    // 모델 선택 드롭다운
-    const scrollContainer = document.getElementById("model-list-scroll");
-    scrollContainer.addEventListener('change', (event) => {
-        const selectedModelId = event.target.value;
-        vscode.postMessage({ command: "updateModelId", data: selectedModelId });
+    // 스트리밍 토글 버튼 이벤트
+    const toggleStreamingBtn = document.getElementById("toggle-streaming-btn");
+    toggleStreamingBtn.addEventListener("click", () => {
+        if (toggleStreamingBtn.classList.contains('ON')) {
+            toggleStreamingBtn.classList.remove('ON');
+            toggleStreamingBtn.textContent = "OFF";
+            vscode.postMessage({ command: "setStreaming", data: false });
+        } else {
+            toggleStreamingBtn.classList.add('ON');
+            toggleStreamingBtn.textContent = "ON";
+            vscode.postMessage({ command: "setStreaming", data: true });
+        }
     });
 
     // 현재 프로젝트 정보 재연결 버튼
@@ -124,29 +130,6 @@ function updateBackendStatus(status) {
         el3.classList.replace('codicon-vm-active', 'codicon-vm');
     }
 
-}
-
-function updateModelsInfo(command_data) {
-    const models = command_data.models;
-    const current_model_id = command_data.current_model_id;
-    const scrollContainer = document.getElementById("model-list-scroll");
-    if (!scrollContainer) {return;}
-
-    if (!models || models.length === 0) {
-        scrollContainer.textContent = '• 등록된 모델이 없습니다.';
-        return;
-    }
-
-    scrollContainer.innerHTML = '';
-    models.forEach(model => {
-        const option = document.createElement('option');
-        option.value = model.model_id;
-        option.textContent = model.model_name;
-        scrollContainer.appendChild(option);
-        if (model.model_id === current_model_id) {
-            option.selected = true;
-        }
-    });
 }
 
 function renderProjectList(projects) {
@@ -283,24 +266,20 @@ function updateDependencyGraphStatus(progress) {
 vscode.postMessage({ command: "getProjectInfo" });
 vscode.postMessage({ command: "getGuideStatus" });
 vscode.postMessage({ command: "getDependencyGraphStatus" });
+vscode.postMessage({ command: "getStreamingStatus" });
 
 setTimeout(() => {
     vscode.postMessage({ command: "checkBackend" });
 }, 100);
 
 setTimeout(() => {
-    vscode.postMessage({ command: "getModelsInfo" });
-}, 250);
-
-setTimeout(() => {
     vscode.postMessage({ command: "getProjectGitInfo" });
     vscode.postMessage({ command: "getProjectList" });
-}, 500);
+}, 1000);
 
 
 setInterval(() => {
     vscode.postMessage({ command: "checkBackend" });
-    vscode.postMessage({ command: "getModelsInfo" });
 }, 30 * 1000);
 
 
@@ -309,13 +288,23 @@ window.addEventListener("message", event => {
     const message = event.data;
 
     switch (message.command) {
-
-        case "backendStatus": {
-            updateBackendStatus(message.data);
+        case "streamingStatus": {
+            const toggleStreamingBtn = document.getElementById("toggle-streaming-btn");
+            if (message.data) {
+                if (!toggleStreamingBtn.classList.contains("ON")) {
+                    toggleStreamingBtn.classList.add("ON");
+                }
+                toggleStreamingBtn.textContent = "ON";
+            } else {
+                if (toggleStreamingBtn.classList.contains("ON")) {
+                    toggleStreamingBtn.classList.remove("ON");
+                }
+                toggleStreamingBtn.textContent = "OFF";
+            }
             break;
         }
-        case "showModelsInfo": {
-            updateModelsInfo(message.data);
+        case "backendStatus": {
+            updateBackendStatus(message.data);
             break;
         }
 
@@ -336,7 +325,6 @@ window.addEventListener("message", event => {
             } else {
                 elgit.textContent = "❌ 정보없음";
             }
-            
             break;
         }
 

@@ -44,6 +44,11 @@
           "type": "boolean",
           "default": false,
           "description": "Show guidebook when extension is activated"
+        }, 
+        "vision.streaming": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable sLLM answer streaming"
         }
       }
     },
@@ -108,7 +113,7 @@
           {
             "name": "brief",
             "description": "프로젝트 브리핑을 생성합니다. "
-          }, 
+          },
           {
             "name": "no-rag",
             "description": "RAG 기능을 사용하지 않습니다."
@@ -141,6 +146,6 @@
     "serialize-javascript": "^7.0.6"
   },
   "dependencies": {
-    "@vscode/codicons": "^0.0.45"
+    "@vscode/codicons": "^0.0.46-24"
   }
 }

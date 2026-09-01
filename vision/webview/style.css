@@ -60,20 +60,26 @@ body {
     height: fit-content;
 }
 
-#model-list-scroll {
-    background: none;
-    color: inherit;
-    font-size: 12px;
-    padding: 0px;
-    margin: 0px;
-    width: 90%;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
+
+#toggle-streaming-btn {
+    margin-left: 5px;
+    padding: 1px 8px;
+    background: var(--vscode-terminal-ansiRed);
+    border-radius: 4px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: inherit;
+    text-align:left;
+    vertical-align: text-top;
 }
-#model-list-scroll:hover {
-    cursor:pointer;
-    color: var(--vscode-focusBorder);
+#toggle-streaming-btn.ON {
+    background: var(--vscode-terminal-ansiGreen);
+    color: black;
+}
+#toggle-streaming-btn:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease-in-out;
 }
 
 .badge {
