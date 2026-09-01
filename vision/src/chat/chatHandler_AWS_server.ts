@@ -62,7 +62,14 @@ export class ChatHandler {
             rag: rag, 
             stream: true
         };
+        this.historyServcie.save(
+            project_id,
+            session_id,
+            'user',
+            request.prompt
+        );
         let response: any;
+
 
         try {
             await chatService.sendMessage(
@@ -97,7 +104,7 @@ export class ChatHandler {
                 controller.signal
             );
         
-            console.log(response.reference_files);
+            console.log(response);
             for (const source of response.reference_files) {
                 const sourceUri = this.getWorkspaceFileUri(source.path);
 
@@ -138,7 +145,6 @@ export class ChatHandler {
         } finally {
             cancellation.dispose();
         }
-
     };
 
     private getWorkspaceFileUri(sourcePath: string): vscode.Uri | undefined {
