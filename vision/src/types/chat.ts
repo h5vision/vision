@@ -31,9 +31,13 @@ export interface ChatRequest {
 }
 
 export interface SourceDocument {
-    file: string;
-    chunk: string;
-    score?: number;
+    path: string;
+    type: string;
+    chunk_count: string;
+    best_score: number;
+    citations: number[];
+    line_start: number;
+    lines: number[];
 }
 
 /**
@@ -47,11 +51,11 @@ export interface ChatResponse {
 
 export interface ChatRequest_SSE {
     project_id: string;
-    role: "user";
     model_id?: string;
     commit_id?: string;
-    content: string;
+    message: string;
     stream: boolean;
+    rag: boolean;
 }
 
 export type ChatStreamEventName =
@@ -77,6 +81,7 @@ export interface ChatStreamData {
 
     answer?: string;
     source?: SourceDocument[];
+    reference_files?: SourceDocument[];
     metadata?: Record<string, unknown>;
 
     status_code?: number;

@@ -89,7 +89,8 @@ export class ChatHandler {
             const message = {
                 project_id: project_id,
                 query: request.prompt,
-                rag: rag
+                rag: rag, 
+                stream: false
             };
 
             console.log(message);
@@ -129,7 +130,7 @@ export class ChatHandler {
                         : [sourceUri];
                 stream.button({
                     command: "vscode.open",
-                    title: `${path.basename(source.path || '')}${source.line_start ? `:${source.line_start}-${source.lines[1]}` : ''}`,
+                    title: `${path.basename(source.path)} ${source.line_start ? `:${source.line_start}-${source.lines[1]}` : ''}`,
                     arguments: openArguments
                 });
             }

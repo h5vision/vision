@@ -19,13 +19,13 @@ export class ChatService {
         signal?: AbortSignal
     ): Promise<void> {
         await this.apiService.postStream(
-            "/chat",
+            "/v1/chat",
             request,
             async (event, rawData) => {
                 if (
                     ![
                         "meta",
-                        "status",
+                        "stage",
                         "delta",
                         "done",
                         "error"

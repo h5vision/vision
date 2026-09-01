@@ -58,9 +58,9 @@ export class ChatHandler {
 
         const dummyLabels: Record<string, string> = {
             meta: "sLLM 서버로 질문 전송 중",
-            status: "RAG 검색 중",
-            delta: "RAG 기반으로 답변 생성 중",
-            done: "답변 생성 완료",
+            stage: "RAG 기반으로 답변 생성 중",
+            delta: "답변 전송 중",
+            done: "sLLM 답변 완료",
             error: "답변 실패"
         };
 
@@ -99,23 +99,26 @@ export class ChatHandler {
         const model_id = vscode.workspace.getConfiguration('vision').get('modelId', 'backandai-default');
         const commit_id = vscode.workspace.getConfiguration('vision').get('commitId', 'None');
 
+        let rag = true;
+        if (request.command === 'no-rag') {
+            rag = false;
+        }
+
         const payload: ChatRequest_SSE = {
-            role: "user",
             project_id: projectId,
-            commit_id: commit_id,
-            content: request.prompt,
+            message: request.prompt,
             stream: true,
-            model_id: model_id
+            rag: rag
         };
         console.log('payload', payload);
-        try {
-            this.historyService.save(
-                projectId,
-                session_id,
-                "user",
-                request.prompt
-            );
+        this.historyService.save(
+            projectId,
+            session_id,
+            "user",
+            request.prompt
+        );
 
+        try {
             await chatService.sendMessage(
                 payload,
                 (event, data) => {
@@ -126,48 +129,44 @@ export class ChatHandler {
                     }
 
                     if (event === "delta") {
-                        // 화면에는 출력하지 않고 비상용으로만 합침
-                        if (data.text) {
-                            collectedDelta += data.text;
-                        }
-
+                        collectedDelta += data.text ?? '';
+                        stream.markdown(data.text ?? '');
                         return;
                     }
 
                     if (event === "done") {
-                        finalAnswer =
-                            data.answer ??
-                            collectedDelta;
-
-                        // 완성된 답변을 한 번만 표시
-                        // stream.markdown(finalAnswer);
-                        for (const fragment of finalAnswer.split("\n")) {
-                            stream.markdown(fragment + '\n');
-                        }
-                        console.log("finalAnswer", finalAnswer);
-
-                        if (data.source?.length) {
-                            stream.markdown(
-                                "\n\n---\n**근거 문서**\n"
-                            );
-
-                            for (const source of data.source) {
-                                const sourceUri = this.getWorkspaceFileUri(source.file);
-                                console.log("sourceUri", sourceUri);
-                                const score =
-                                    typeof source.score === "number"
-                                        ? ` · ${source.score.toFixed(3)}`
-                                        : "";
-
+                        finalAnswer = data.answer ?? collectedDelta;
+                        console.log("finalAnswer: ", finalAnswer);
+                        console.log(data);
+                        if (data.reference_files && data.reference_files.length > 0) {
+                            for (let n = 1; n < data.reference_files.length+1; n++) {
+                                const source = data.reference_files[n-1];
+                                const sourceUri = this.getWorkspaceFileUri(source.path);
+                
                                 if (!sourceUri) {
-                                    stream.markdown(`\n- \`${source.file}\`${score}`);
+                                    stream.markdown(`\n- \`${source.path}\``);
                                     continue;
                                 }
-
+                
+                                const lineStart = Number(source.line_start);
+                                const openArguments =
+                                    Number.isInteger(lineStart) && lineStart > 0
+                                        ? [
+                                            sourceUri,
+                                            {
+                                                selection: new vscode.Range(
+                                                    lineStart - 1,
+                                                    0,
+                                                    lineStart - 1,
+                                                    0
+                                                )
+                                            }
+                                        ]
+                                        : [sourceUri];
                                 stream.button({
                                     command: "vscode.open",
-                                    title: `${path.basename(source.file)}${score}`,
-                                    arguments: [sourceUri]
+                                    title: `${path.basename(source.path)} ${source.line_start ? `:${source.line_start}-${source.lines[1]}` : ''}`,
+                                    arguments: openArguments
                                 });
                             }
                         }
