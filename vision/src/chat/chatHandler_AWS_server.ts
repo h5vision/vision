@@ -87,42 +87,17 @@ export class ChatHandler {
 
             console.log(message);
             this.historyServcie.save(project_id, session_id, 'user', request.prompt);
-            const response1:any = await backendService.post("/prompt", message);
-            console.log(response1);
-            if (response1.error) {
-                throw new Error(response1.error.split(';')[0]);
+            const response:any = await backendService.post("/v1/chat", message);
+            if (response.error) {
+                throw new Error(response.error.split(';')[0]);
             }
 
-            // response 객체 확인용
-            // const dbPath = path.join(vscode.workspace.workspaceFolders?.[0].uri.fsPath || '', 'response.json');
-            // fs.writeFileSync(dbPath, JSON.stringify(response, null, 2));
-
-            const chatPayload = {
-                model: "qwen2.5-coder:7b",
-                messages: response1.messages,
-                stream: false,
-                options: {
-                    temperature: 0.0,
-                    num_predict: 1024,
-                    num_ctx: 8192
-                },
-                vision_context: response1.references
-            };
-
-            const res = await fetch('http://127.0.0.1/api/chat', 
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(chatPayload)
-                });
-            const response:any = await res.json();
             console.log(response);
             
-            stream.markdown(response.message.content);
+            stream.markdown(response.answer);
 
-            for (const source of response1.sources) {
+            for (let n = 1; n < response.reference_files.length+1; n++) {
+                const source = response.reference_files[n-1];
                 const sourceUri = this.getWorkspaceFileUri(source.path);
 
                 if (!sourceUri) {
@@ -130,7 +105,7 @@ export class ChatHandler {
                     continue;
                 }
 
-                const lineStart = Number(source.line_start);
+                const lineStart = Number(source.line);
                 const openArguments =
                     Number.isInteger(lineStart) && lineStart > 0
                         ? [
@@ -145,14 +120,13 @@ export class ChatHandler {
                             }
                         ]
                         : [sourceUri];
-
                 stream.button({
                     command: "vscode.open",
-                    title: `${path.basename(source.path.split('/').pop() || '')}${source.line_start ? `:${source.line_start}-${source.line_end}` : ''}`,
+                    title: `${path.basename(source.path || '')}${source.line_start ? `:${source.line_start}-${source.lines[1]}` : ''}`,
                     arguments: openArguments
                 });
             }
-            this.historyServcie.save(project_id, session_id, 'assistant', response.message.content);
+            this.historyServcie.save(project_id, session_id, 'assistant', response.answer);
 
         }
         catch (err) {
