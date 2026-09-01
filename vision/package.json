@@ -2,8 +2,12 @@
   "name": "vision",
   "displayName": "vision",
   "publisher": "Team-vision",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/h5vision/vision.git"
+  },
   "description": "On-premise sLLM Coding Assistance and Intelligence",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "engines": {
     "vscode": "^1.125.0"
   },
@@ -104,6 +108,10 @@
           {
             "name": "brief",
             "description": "프로젝트 브리핑을 생성합니다. "
+          }, 
+          {
+            "name": "no-rag",
+            "description": "RAG 기능을 사용하지 않습니다."
           }
         ]
       }

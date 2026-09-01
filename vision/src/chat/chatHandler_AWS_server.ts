@@ -33,6 +33,7 @@ export class ChatHandler {
             h => h instanceof vscode.ChatResponseTurn
         );
         let session_id = session.getSessionId();
+        
         if (!previousMessages) {
             session_id = session.resetSessionId();
         } 
@@ -77,12 +78,18 @@ export class ChatHandler {
         const modelId = vscode.workspace.getConfiguration("vision").get<string>("modelId");
         const commitId = vscode.workspace.getConfiguration("vision").get<string>("commitId");
 
+        let rag = true;
+        if (request.command === 'no-rag') {
+            rag = false;
+        }
+
         try {
             stream.progress("VisionAI가 답변을 생성하고 있습니다...");
 
             const message = {
                 project_id: project_id,
-                query: request.prompt
+                query: request.prompt,
+                rag: rag
             };
 
             console.log(message);
