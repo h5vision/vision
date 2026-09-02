@@ -66,6 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
     reconnectProjectInfoBtn.addEventListener("click", () => {
         vscode.postMessage({ command: "getProjectInfo" });
         vscode.postMessage({ command: "getProjectGitInfo" });
+        vscode.postMessage({ command: "initializeDependencyGraph" });
     });
 
     // 프로젝트 브리핑 열기
@@ -304,15 +305,16 @@ function updateDependencyGraphStatus(progress) {
 
 vscode.postMessage({ command: "getProjectInfo" });
 vscode.postMessage({ command: "getGuideStatus" });
-vscode.postMessage({ command: "getDependencyGraphStatus" });
 vscode.postMessage({ command: "getStreamingStatus" });
 
 setTimeout(() => {
     vscode.postMessage({ command: "checkBackend" });
+    vscode.postMessage({ command: "getModelsInfo" });
 }, 100);
     
 setTimeout(() => {
-    vscode.postMessage({ command: "getModelsInfo" });
+    vscode.postMessage({ command: "initializeDependencyGraph" });
+    vscode.postMessage({ command: "getDependencyGraphStatus" });
 }, 250);
 
 setTimeout(() => {
@@ -320,9 +322,9 @@ setTimeout(() => {
     vscode.postMessage({ command: "getProjectList" });
 }, 1000);
 
-
 setInterval(() => {
     vscode.postMessage({ command: "checkBackend" });
+    vscode.postMessage({ command: "getModelsInfo" });
 }, 30 * 1000);
 
 

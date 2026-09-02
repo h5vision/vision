@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { APIService } from "../../services/APIService";
 import * as session from "../../utils/session";
+import { ChatStreamEventName } from "../../types/chat";
 import { HistoryService } from "../../services/historyService";
 import { ChatService } from "../../services/chatServices_SSE";
 import { WorkspaceService } from "../../services/workspaceService";
@@ -29,15 +30,17 @@ export class ChatHandler {
         const cancellation = token.onCancellationRequested(() => {
             controller.abort();
         });
+        const isStream = vscode.workspace.getConfiguration("vision").get<boolean>("streaming", false);
+        const model_id = vscode.workspace.getConfiguration("vision").get<string>("modelId");
 
         let finalAnswer = "";
         let collectedDelta = "";
         let lastEvent = "";
-        const dummyLabels: Record<string, string> = {
-            meta: "sLLM 서버로 질문 전송 중",
-            stage: "RAG 기반으로 답변 생성 중",
+        const dummyLabels: Record<ChatStreamEventName, string> = {
+            meta: "RAG 검색 완료",
+            stage: `${model_id?.split(':')[0]} 답변 생성 중`,
             delta: "답변 전송 중",
-            done: "sLLM 답변 완료",
+            done: `ollama의 ${model_id?.split(':')[0]}에 의해 생성된 답변`,
             error: "답변 실패"
         };
 
@@ -61,13 +64,12 @@ export class ChatHandler {
             rag = false;
         }
 
-        const isStream = vscode.workspace.getConfiguration("vision").get<boolean>("streaming", false);
         const payload = {
             project_id: project_id,
             message: request.prompt,
             rag: rag, 
             stream: true,
-            model_id: "gpt-oss:20b"
+            model_id: model_id
         };
         this.historyServcie.save(
             project_id,
@@ -81,26 +83,32 @@ export class ChatHandler {
         try {
             await chatService.sendMessage(
                 payload,
-                (event, data) => {
-
+                (event: ChatStreamEventName, data) => {
                     if (event !== lastEvent) {
-                        stream.progress(dummyLabels[event]);
+                        if (rag || event !== "meta") {
+                            stream.progress(dummyLabels[event]);
+                        }
                         lastEvent = event;
                     }
-
+                    if (event === "meta") {
+                        console.log("[meta]", data);
+                        return;
+                    }
+                    if (event === "stage") {
+                        console.log("[stage]", data);
+                        return;
+                    }
                     if (event === "delta") {
                         collectedDelta += data.text ?? '';
                         if (isStream) {stream.markdown(data.text ?? '');}
                         return;
                     }
-
                     if (event === "done") {
                         finalAnswer = data.answer ?? collectedDelta;
                         if (!isStream) {stream.markdown(finalAnswer);}
                         response = data;
                         return;
                     }
-
                     if (event === "error") {
                         throw new Error(
                             data.error ??

@@ -144,6 +144,10 @@ export class SidebarController {
             case SidebarCommand.ShowDependencyGraph:
                 vscode.commands.executeCommand('vision.showDependencyGraph');
                 return;
+            
+            case SidebarCommand.InitializeDependencyGraph:
+                vscode.commands.executeCommand('vision.initializeDependencyGraph');
+                return;
         }
     }
 }

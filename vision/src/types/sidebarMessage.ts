@@ -38,7 +38,9 @@ export enum SidebarCommand {
 
     ToggleGuide = "toggleGuide",
 
-    ShowDependencyGraph = "showDependencyGraph"
+    ShowDependencyGraph = "showDependencyGraph",
+
+    InitializeDependencyGraph = "initializeDependencyGraph"
 }
 
 export interface SidebarMessage {

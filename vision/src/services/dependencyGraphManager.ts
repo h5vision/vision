@@ -69,7 +69,7 @@ export class DependencyGraphManager {
         this.setProgress('building [Node]', '프로젝트 구조 분석 중...');
 
         const saved = await this.graphService.load();
-
+        
         try {
             /*
             * 최초 생성

@@ -8,5 +8,4 @@
 	},
 	// Turn off tsc task auto detection since we have the necessary tasks as npm scripts
 	"js/ts.tsc.autoDetect": "off",
-	"vision.commitId": "2c90fe93c75b362bb6f8243cf2502e131d4ee808",
 }
