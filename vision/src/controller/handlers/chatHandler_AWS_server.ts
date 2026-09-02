@@ -1,17 +1,21 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { APIService } from "../services/APIService";
-import * as session from "../utils/session";
-import { HistoryService } from "../services/historyService";
-import { ChatService } from "../services/chatServices_SSE";
-import { DependencyGraphProvider } from "../providers/dependencyGraphProvider";
+import { APIService } from "../../services/APIService";
+import * as session from "../../utils/session";
+import { HistoryService } from "../../services/historyService";
+import { ChatService } from "../../services/chatServices_SSE";
+import { WorkspaceService } from "../../services/workspaceService";
+import { DependencyGraphProvider } from "../../providers/dependencyGraphProvider";
 
 export class ChatHandler {
 
     constructor (
         private readonly historyServcie: HistoryService,
-        private readonly dependencyGraphProvider?: DependencyGraphProvider
+        private readonly dependencyGraphProvider?: DependencyGraphProvider,
     ) {}
+
+    private readonly workspaceService = new WorkspaceService();
+    private readonly workspace = this.workspaceService.getWorkspace();
 
     public handle: vscode.ChatRequestHandler = async (
         request : vscode.ChatRequest,
@@ -37,7 +41,7 @@ export class ChatHandler {
             error: "답변 실패"
         };
 
-        const project_id = vscode.workspace.getConfiguration("vision").get<string>("projectId") || vscode.workspace.name || 'none';
+        const project_id = vscode.workspace.getConfiguration("vision").get<string>("projectId") || this.workspace?.name || 'none';
 
         // get all the previous participant messages
         const previousMessages = context.history.filter(
@@ -160,33 +164,30 @@ export class ChatHandler {
     };
 
     private getWorkspaceFileUri(sourcePath: string): vscode.Uri | undefined {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders?.length) {
+        if (!this.workspace) {
             return undefined;
         }
-
         const filePath = path.isAbsolute(sourcePath)
             ? path.normalize(sourcePath)
-            : path.resolve(workspaceFolders[0].uri.fsPath, sourcePath);
-        const isInWorkspace = workspaceFolders.some(folder => {
-            const relativePath = path.relative(folder.uri.fsPath, filePath);
+            : path.resolve(this.workspace.path, sourcePath);
+        const isInWorkspace = this.workspace ? (() => {
+            const relativePath = path.relative(this.workspace.path, filePath);
             return relativePath === "" ||
                 (!relativePath.startsWith(`..${path.sep}`) &&
                     relativePath !== ".." &&
                     !path.isAbsolute(relativePath));
-        });
+        })() : false;
 
         return isInWorkspace ? vscode.Uri.file(filePath) : undefined;
     }
 
     // 그래프 노드의 path(워크스페이스 상대 posix 경로)와 매칭시키기 위한 변환
     private getWorkspaceRelativePath(fileUri: vscode.Uri): string | undefined {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders?.length) {
+        if (!this.workspace) {
             return undefined;
         }
 
-        const relativePath = path.relative(workspaceFolders[0].uri.fsPath, fileUri.fsPath);
+        const relativePath = path.relative(this.workspace.path, fileUri.fsPath);
         return relativePath.split(path.sep).join('/');
     }
 

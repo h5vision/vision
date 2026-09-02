@@ -3,38 +3,29 @@ import * as vscode from "vscode";
 import { SidebarMessage, SidebarCommand } from "../types/sidebarMessage";
 
 import { APIHandler } from "./handlers/checkHealthHandler";
-import { HistoryHandler } from "./handlers/historyHandler";
-import { IndexingHandler } from "./handlers/indexingHandler";
 import { ModelInfoHandler } from "./handlers/modelInfoHandler";
 import { ProjectInfoHandler } from "./handlers/projectInfoHandler";
 import { ProjectListHandler } from "./handlers/projectListHandler";
 import { ProjectBriefHandler } from "./handlers/projectBriefHandler";
-import { RAGTESTHandler } from "./handlers/RAGTESTHandler";
 import { GitService } from "../services/gitService";
 
 export class SidebarController {
 
     private readonly APIHandler: APIHandler;
-    private readonly historyHandler: HistoryHandler;
-    private readonly indexingHandler: IndexingHandler;
     private readonly modelInfoHandler: ModelInfoHandler;
     private readonly projectInfoHandler: ProjectInfoHandler;
     private readonly projectListHandler: ProjectListHandler;
     private readonly projectBriefHandler: ProjectBriefHandler;
-    private readonly ragtestHandler: RAGTESTHandler;
     private readonly gitService = new GitService();
 
     constructor(
         private readonly view: vscode.WebviewView
     ) {
         this.APIHandler = new APIHandler(view);
-        this.historyHandler = new HistoryHandler(view);
-        this.indexingHandler = new IndexingHandler(view);
         this.modelInfoHandler = new ModelInfoHandler(view);
         this.projectInfoHandler = new ProjectInfoHandler(view, this.gitService);
         this.projectListHandler = new ProjectListHandler(view, this.gitService);
         this.projectBriefHandler = new ProjectBriefHandler();
-        this.ragtestHandler = new RAGTESTHandler(view);
     }
 
     public async handle(message: SidebarMessage) {
@@ -46,12 +37,6 @@ export class SidebarController {
 
             case SidebarCommand.GetModelsInfo:
                 return this.modelInfoHandler.handle(message);
-
-            case SidebarCommand.InitialProjectIndexing:
-                return this.indexingHandler.handle(message);
-
-            case SidebarCommand.OpenDBExternal:
-                return this.historyHandler.handle(message);
 
             case SidebarCommand.GetProjectInfo:
                 return this.projectInfoHandler.handle(message);
@@ -67,12 +52,6 @@ export class SidebarController {
 
             case SidebarCommand.GenerateBriefByCopilot:
                 return this.projectBriefHandler.CopilotGenBrief(message);
-
-            case SidebarCommand.GenerateRAGTEST:
-                return this.ragtestHandler.handle(message);
-
-            case SidebarCommand.RemoveRAGTEST:
-                return this.ragtestHandler.removeRAGTEST(message);
 
 
             case SidebarCommand.UpdateEndpoint:
@@ -153,6 +132,10 @@ export class SidebarController {
                 });
                 return;
             
+
+            case SidebarCommand.OpenDBExternal:
+                await vscode.commands.executeCommand('vision.openDBExternal');
+                return;
 
             case SidebarCommand.ToggleGuide:
                 vscode.commands.executeCommand('vision.toggleGuide');

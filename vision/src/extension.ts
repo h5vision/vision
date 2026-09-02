@@ -4,7 +4,7 @@ import * as fs from "fs";
 import { SidebarProvider } from "./providers/sidebarProvider";
 import { GuideProvider } from "./providers/guideProvider";	
 import { DependencyGraphProvider } from "./providers/dependencyGraphProvider";
-import { ChatHandler } from './chat/chatHandler_AWS_server';
+import { ChatHandler } from './controller/handlers/chatHandler_AWS_server';
 import { FileDependencyProvider } from "./providers/dependencyProvider";
 import { HistoryService } from './services/historyService';
 import { DependencyService } from './services/dependencyService';

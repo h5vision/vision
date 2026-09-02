@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { SidebarMessage } from "../../types/sidebarMessage";
-import { BriefPromptBuilder } from "../../chat/promptBuilder";
+import { BriefPromptBuilder } from "../../utils/promptBuilder";
 import { APIService } from "../../services/APIService";
 import { WorkspaceService } from "../../services/workspaceService";
 
@@ -36,7 +36,6 @@ export class ProjectBriefHandler {
         const briefName = message.data === "locale" ? "brief.md" : `brief-${projectId}.md`;
 
         if ((await vscode.workspace.fs.readDirectory(vscode.Uri.file(workspace.path))).some(([name]) => name === briefName)) {
-            vscode.window.showInformationMessage(`프로젝트 브리핑 파일이 이미 존재합니다. ${briefName} 파일을 엽니다.`);
             const briefUri = vscode.Uri.joinPath(vscode.Uri.file(workspace.path), briefName);
             await vscode.commands.executeCommand("markdown.showPreview", briefUri);
             return;

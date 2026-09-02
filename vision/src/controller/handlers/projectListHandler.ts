@@ -47,9 +47,5 @@ export class ProjectListHandler {
             data: [...indexedProjectsList]
         });
         }
-
-        
-
     }
-
 }
