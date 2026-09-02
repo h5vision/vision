@@ -60,8 +60,10 @@ export class DependencyGraphManager {
         if (this.initialized) { return; }
 
         await this.gitService.initialize();
-        const gitCommit = await waitUntil(()=>this.gitService.getCurrentCommit(), 10000, 100);
-        if (!gitCommit) { throw new Error('Failed to get current git commit'); }
+        let gitCommit = await waitUntil(()=>this.gitService.getCurrentCommit(), 10000, 100);
+        if (!gitCommit) { 
+            gitCommit = 'None';
+        }
 
         this.initialized = true;
         this.setProgress('building [Node]', '프로젝트 구조 분석 중...');
@@ -94,10 +96,24 @@ export class DependencyGraphManager {
             * Git HEAD 동일
             */
             if ( saved.gitCommit === gitCommit) {
-                console.log('[DependencyGraph] Graph is up to date.');
-                this.graph = saved;
-                this.setProgress('ready', '프로젝트 구조 분석 최신 상태');
-                return;
+                if (gitCommit === 'None') {
+                    vscode.window.showWarningMessage(
+                        `Generated At: ${saved.generatedAt} \n\n\n 그래프를 새로 생성할까요?`, 
+                        '네', '아니오'
+                    ).then((value) => {
+                        if (value !== '네') {
+                            console.log('[DependencyGraph] Graph is up to date.');
+                            this.graph = saved;
+                            this.setProgress('ready', '프로젝트 구조 분석 최신 상태');
+                            return;
+                        }
+                    });
+                } else {
+                    console.log('[DependencyGraph] Graph is up to date.');
+                    this.graph = saved;
+                    this.setProgress('ready', '프로젝트 구조 분석 최신 상태');
+                    return;
+                }
             }
 
             /*

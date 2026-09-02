@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "gitCommit": "7c9703cc6ee8a3631071a1a0f4bf459adba5da4e",
-  "generatedAt": "2026-08-31T08:21:33.004Z",
+  "gitCommit": "d3be36a9dd92ca2443d058831be4d0e4502810af",
+  "generatedAt": "2026-09-01T00:43:43.232Z",
   "nodes": [
     {
       "id": "webview_graph/vite.config.ts",
@@ -14,48 +14,6 @@
       "path": "webview_graph/vite.config.js",
       "label": "vite.config.js",
       "language": "javascript"
-    },
-    {
-      "id": "webview_graph/eslint.config.js",
-      "path": "webview_graph/eslint.config.js",
-      "label": "eslint.config.js",
-      "language": "javascript"
-    },
-    {
-      "id": "webview_graph/src/types/vscode.d.ts",
-      "path": "webview_graph/src/types/vscode.d.ts",
-      "label": "vscode.d.ts",
-      "language": "typescript"
-    },
-    {
-      "id": "webview_graph/src/main.tsx",
-      "path": "webview_graph/src/main.tsx",
-      "label": "main.tsx",
-      "language": "typescript"
-    },
-    {
-      "id": "webview_graph/src/main.js",
-      "path": "webview_graph/src/main.js",
-      "label": "main.js",
-      "language": "javascript"
-    },
-    {
-      "id": "webview/script.js",
-      "path": "webview/script.js",
-      "label": "script.js",
-      "language": "javascript"
-    },
-    {
-      "id": "webview_graph/src/components/graphLayout.ts",
-      "path": "webview_graph/src/components/graphLayout.ts",
-      "label": "graphLayout.ts",
-      "language": "typescript"
-    },
-    {
-      "id": "webview_graph/src/components/DependencyGraph.tsx",
-      "path": "webview_graph/src/components/DependencyGraph.tsx",
-      "label": "DependencyGraph.tsx",
-      "language": "typescript"
     },
     {
       "id": "src/utils/wait.ts",
@@ -76,16 +34,46 @@
       "language": "typescript"
     },
     {
+      "id": "webview_graph/src/types/vscode.d.ts",
+      "path": "webview_graph/src/types/vscode.d.ts",
+      "label": "vscode.d.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "webview_graph/src/main.tsx",
+      "path": "webview_graph/src/main.tsx",
+      "label": "main.tsx",
+      "language": "typescript"
+    },
+    {
+      "id": "webview/script.js",
+      "path": "webview/script.js",
+      "label": "script.js",
+      "language": "javascript"
+    },
+    {
+      "id": "webview_graph/src/components/graphLayout.ts",
+      "path": "webview_graph/src/components/graphLayout.ts",
+      "label": "graphLayout.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "webview_graph/src/components/DependencyGraph.tsx",
+      "path": "webview_graph/src/components/DependencyGraph.tsx",
+      "label": "DependencyGraph.tsx",
+      "language": "typescript"
+    },
+    {
+      "id": "webview_graph/eslint.config.js",
+      "path": "webview_graph/eslint.config.js",
+      "label": "eslint.config.js",
+      "language": "javascript"
+    },
+    {
       "id": "webview_graph/src/App.tsx",
       "path": "webview_graph/src/App.tsx",
       "label": "App.tsx",
       "language": "typescript"
-    },
-    {
-      "id": "webview_graph/src/App.js",
-      "path": "webview_graph/src/App.js",
-      "label": "App.js",
-      "language": "javascript"
     },
     {
       "id": "src/types/sidebarMessage.ts",
@@ -124,69 +112,33 @@
       "language": "typescript"
     },
     {
-      "id": "src/controller/sidebarController.ts",
-      "path": "src/controller/sidebarController.ts",
-      "label": "sidebarController.ts",
+      "id": "scripts/copy-assets.js",
+      "path": "scripts/copy-assets.js",
+      "label": "copy-assets.js",
+      "language": "javascript"
+    },
+    {
+      "id": "src/chat/responseRenderer.ts",
+      "path": "src/chat/responseRenderer.ts",
+      "label": "responseRenderer.ts",
       "language": "typescript"
     },
     {
-      "id": "src/extension.ts",
-      "path": "src/extension.ts",
-      "label": "extension.ts",
+      "id": "src/chat/promptBuilder.ts",
+      "path": "src/chat/promptBuilder.ts",
+      "label": "promptBuilder.ts",
       "language": "typescript"
     },
     {
-      "id": "src/controller/handlers/RAGTESTHandler.ts",
-      "path": "src/controller/handlers/RAGTESTHandler.ts",
-      "label": "RAGTESTHandler.ts",
+      "id": "src/chat/contextCollector.ts",
+      "path": "src/chat/contextCollector.ts",
+      "label": "contextCollector.ts",
       "language": "typescript"
     },
     {
-      "id": "src/controller/handlers/projectListHandler.ts",
-      "path": "src/controller/handlers/projectListHandler.ts",
-      "label": "projectListHandler.ts",
-      "language": "typescript"
-    },
-    {
-      "id": "src/controller/handlers/projectInfoHandler.ts",
-      "path": "src/controller/handlers/projectInfoHandler.ts",
-      "label": "projectInfoHandler.ts",
-      "language": "typescript"
-    },
-    {
-      "id": "src/controller/handlers/projectBriefHandler.ts",
-      "path": "src/controller/handlers/projectBriefHandler.ts",
-      "label": "projectBriefHandler.ts",
-      "language": "typescript"
-    },
-    {
-      "id": "src/controller/handlers/modelInfoHandler.ts",
-      "path": "src/controller/handlers/modelInfoHandler.ts",
-      "label": "modelInfoHandler.ts",
-      "language": "typescript"
-    },
-    {
-      "id": "src/controller/handlers/indexingHandler.ts",
-      "path": "src/controller/handlers/indexingHandler.ts",
-      "label": "indexingHandler.ts",
-      "language": "typescript"
-    },
-    {
-      "id": "src/controller/handlers/historyHandler.ts",
-      "path": "src/controller/handlers/historyHandler.ts",
-      "label": "historyHandler.ts",
-      "language": "typescript"
-    },
-    {
-      "id": "src/controller/handlers/checkHealthHandler.ts",
-      "path": "src/controller/handlers/checkHealthHandler.ts",
-      "label": "checkHealthHandler.ts",
-      "language": "typescript"
-    },
-    {
-      "id": "src/services/workspaceService.ts",
-      "path": "src/services/workspaceService.ts",
-      "label": "workspaceService.ts",
+      "id": "src/chat/chatHandler_SSE.ts",
+      "path": "src/chat/chatHandler_SSE.ts",
+      "label": "chatHandler_SSE.ts",
       "language": "typescript"
     },
     {
@@ -205,6 +157,18 @@
       "id": "src/chat/chatHandler.ts",
       "path": "src/chat/chatHandler.ts",
       "label": "chatHandler.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "src/extension.ts",
+      "path": "src/extension.ts",
+      "label": "extension.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "src/controller/sidebarController.ts",
+      "path": "src/controller/sidebarController.ts",
+      "label": "sidebarController.ts",
       "language": "typescript"
     },
     {
@@ -244,39 +208,51 @@
       "language": "typescript"
     },
     {
-      "id": "src/chat/responseRenderer.ts",
-      "path": "src/chat/responseRenderer.ts",
-      "label": "responseRenderer.ts",
+      "id": "src/controller/handlers/modelInfoHandler.ts",
+      "path": "src/controller/handlers/modelInfoHandler.ts",
+      "label": "modelInfoHandler.ts",
       "language": "typescript"
     },
     {
-      "id": "src/chat/promptBuilder.ts",
-      "path": "src/chat/promptBuilder.ts",
-      "label": "promptBuilder.ts",
+      "id": "src/controller/handlers/indexingHandler.ts",
+      "path": "src/controller/handlers/indexingHandler.ts",
+      "label": "indexingHandler.ts",
       "language": "typescript"
     },
     {
-      "id": "src/services/dependencyGraphService.ts",
-      "path": "src/services/dependencyGraphService.ts",
-      "label": "dependencyGraphService.ts",
+      "id": "src/controller/handlers/historyHandler.ts",
+      "path": "src/controller/handlers/historyHandler.ts",
+      "label": "historyHandler.ts",
       "language": "typescript"
     },
     {
-      "id": "src/chat/contextCollector.ts",
-      "path": "src/chat/contextCollector.ts",
-      "label": "contextCollector.ts",
+      "id": "src/controller/handlers/checkHealthHandler.ts",
+      "path": "src/controller/handlers/checkHealthHandler.ts",
+      "label": "checkHealthHandler.ts",
       "language": "typescript"
     },
     {
-      "id": "src/chat/chatHandler_SSE.ts",
-      "path": "src/chat/chatHandler_SSE.ts",
-      "label": "chatHandler_SSE.ts",
+      "id": "src/controller/handlers/projectInfoHandler.ts",
+      "path": "src/controller/handlers/projectInfoHandler.ts",
+      "label": "projectInfoHandler.ts",
       "language": "typescript"
     },
     {
-      "id": "src/services/dependencyGraphManager.ts",
-      "path": "src/services/dependencyGraphManager.ts",
-      "label": "dependencyGraphManager.ts",
+      "id": "src/controller/handlers/projectBriefHandler.ts",
+      "path": "src/controller/handlers/projectBriefHandler.ts",
+      "label": "projectBriefHandler.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "src/controller/handlers/projectListHandler.ts",
+      "path": "src/controller/handlers/projectListHandler.ts",
+      "label": "projectListHandler.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "src/controller/handlers/RAGTESTHandler.ts",
+      "path": "src/controller/handlers/RAGTESTHandler.ts",
+      "label": "RAGTESTHandler.ts",
       "language": "typescript"
     },
     {
@@ -292,15 +268,33 @@
       "language": "typescript"
     },
     {
-      "id": "src/services/chatServices.ts",
-      "path": "src/services/chatServices.ts",
-      "label": "chatServices.ts",
+      "id": "src/services/dependencyImportPatterns.ts",
+      "path": "src/services/dependencyImportPatterns.ts",
+      "label": "dependencyImportPatterns.ts",
       "language": "typescript"
     },
     {
-      "id": "src/services/APIService.ts",
-      "path": "src/services/APIService.ts",
-      "label": "APIService.ts",
+      "id": "src/services/dependencyGraphService.ts",
+      "path": "src/services/dependencyGraphService.ts",
+      "label": "dependencyGraphService.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "src/services/dependencyGraphManager.ts",
+      "path": "src/services/dependencyGraphManager.ts",
+      "label": "dependencyGraphManager.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "src/services/dependencyService.ts",
+      "path": "src/services/dependencyService.ts",
+      "label": "dependencyService.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "src/services/gitService.ts",
+      "path": "src/services/gitService.ts",
+      "label": "gitService.ts",
       "language": "typescript"
     },
     {
@@ -310,9 +304,21 @@
       "language": "typescript"
     },
     {
-      "id": "src/services/indexing/languageService.ts",
-      "path": "src/services/indexing/languageService.ts",
-      "label": "languageService.ts",
+      "id": "src/services/APIService.ts",
+      "path": "src/services/APIService.ts",
+      "label": "APIService.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "src/services/chatServices.ts",
+      "path": "src/services/chatServices.ts",
+      "label": "chatServices.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "src/services/workspaceService.ts",
+      "path": "src/services/workspaceService.ts",
+      "label": "workspaceService.ts",
       "language": "typescript"
     },
     {
@@ -328,27 +334,15 @@
       "language": "typescript"
     },
     {
-      "id": "src/services/gitService.ts",
-      "path": "src/services/gitService.ts",
-      "label": "gitService.ts",
-      "language": "typescript"
-    },
-    {
       "id": "src/services/indexing/projectIndexingService.ts",
       "path": "src/services/indexing/projectIndexingService.ts",
       "label": "projectIndexingService.ts",
       "language": "typescript"
     },
     {
-      "id": "src/services/dependencyService.ts",
-      "path": "src/services/dependencyService.ts",
-      "label": "dependencyService.ts",
-      "language": "typescript"
-    },
-    {
-      "id": "src/services/dependencyImportPatterns.ts",
-      "path": "src/services/dependencyImportPatterns.ts",
-      "label": "dependencyImportPatterns.ts",
+      "id": "src/services/indexing/languageService.ts",
+      "path": "src/services/indexing/languageService.ts",
+      "label": "languageService.ts",
       "language": "typescript"
     },
     {
@@ -356,24 +350,12 @@
       "path": "src/services/indexing/projectMetadataService.ts",
       "label": "projectMetadataService.ts",
       "language": "typescript"
-    },
-    {
-      "id": "scripts/copy-assets.js",
-      "path": "scripts/copy-assets.js",
-      "label": "copy-assets.js",
-      "language": "javascript"
     }
   ],
   "edges": [
     {
       "id": "webview_graph/src/main.tsx->webview_graph/src/App.tsx:import",
       "source": "webview_graph/src/main.tsx",
-      "target": "webview_graph/src/App.tsx",
-      "type": "import"
-    },
-    {
-      "id": "webview_graph/src/main.js->webview_graph/src/App.tsx:import",
-      "source": "webview_graph/src/main.js",
       "target": "webview_graph/src/App.tsx",
       "type": "import"
     },
@@ -390,285 +372,39 @@
       "type": "import"
     },
     {
-      "id": "webview_graph/src/App.js->webview_graph/src/components/DependencyGraph.tsx:import",
-      "source": "webview_graph/src/App.js",
-      "target": "webview_graph/src/components/DependencyGraph.tsx",
+      "id": "src/chat/chatHandler_SSE.ts->src/services/chatServices_SSE.ts:import",
+      "source": "src/chat/chatHandler_SSE.ts",
+      "target": "src/services/chatServices_SSE.ts",
       "type": "import"
     },
     {
-      "id": "src/controller/sidebarController.ts->src/types/sidebarMessage.ts:import",
-      "source": "src/controller/sidebarController.ts",
-      "target": "src/types/sidebarMessage.ts",
+      "id": "src/chat/chatHandler_SSE.ts->src/services/APIService.ts:import",
+      "source": "src/chat/chatHandler_SSE.ts",
+      "target": "src/services/APIService.ts",
       "type": "import"
     },
     {
-      "id": "src/controller/sidebarController.ts->src/controller/handlers/checkHealthHandler.ts:import",
-      "source": "src/controller/sidebarController.ts",
-      "target": "src/controller/handlers/checkHealthHandler.ts",
+      "id": "src/chat/chatHandler_SSE.ts->src/utils/session.ts:import",
+      "source": "src/chat/chatHandler_SSE.ts",
+      "target": "src/utils/session.ts",
       "type": "import"
     },
     {
-      "id": "src/controller/sidebarController.ts->src/controller/handlers/historyHandler.ts:import",
-      "source": "src/controller/sidebarController.ts",
-      "target": "src/controller/handlers/historyHandler.ts",
+      "id": "src/chat/chatHandler_SSE.ts->src/chat/promptBuilder.ts:import",
+      "source": "src/chat/chatHandler_SSE.ts",
+      "target": "src/chat/promptBuilder.ts",
       "type": "import"
     },
     {
-      "id": "src/controller/sidebarController.ts->src/controller/handlers/indexingHandler.ts:import",
-      "source": "src/controller/sidebarController.ts",
-      "target": "src/controller/handlers/indexingHandler.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/sidebarController.ts->src/controller/handlers/modelInfoHandler.ts:import",
-      "source": "src/controller/sidebarController.ts",
-      "target": "src/controller/handlers/modelInfoHandler.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/sidebarController.ts->src/controller/handlers/projectInfoHandler.ts:import",
-      "source": "src/controller/sidebarController.ts",
-      "target": "src/controller/handlers/projectInfoHandler.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/sidebarController.ts->src/controller/handlers/projectListHandler.ts:import",
-      "source": "src/controller/sidebarController.ts",
-      "target": "src/controller/handlers/projectListHandler.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/sidebarController.ts->src/controller/handlers/projectBriefHandler.ts:import",
-      "source": "src/controller/sidebarController.ts",
-      "target": "src/controller/handlers/projectBriefHandler.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/sidebarController.ts->src/controller/handlers/RAGTESTHandler.ts:import",
-      "source": "src/controller/sidebarController.ts",
-      "target": "src/controller/handlers/RAGTESTHandler.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/sidebarController.ts->src/services/gitService.ts:import",
-      "source": "src/controller/sidebarController.ts",
-      "target": "src/services/gitService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/extension.ts->src/providers/sidebarProvider.ts:import",
-      "source": "src/extension.ts",
-      "target": "src/providers/sidebarProvider.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/extension.ts->src/providers/guideProvider.ts:import",
-      "source": "src/extension.ts",
-      "target": "src/providers/guideProvider.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/extension.ts->src/providers/dependencyGraphProvider.ts:import",
-      "source": "src/extension.ts",
-      "target": "src/providers/dependencyGraphProvider.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/extension.ts->src/chat/chatHandler_RAG_server.ts:import",
-      "source": "src/extension.ts",
-      "target": "src/chat/chatHandler_RAG_server.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/extension.ts->src/providers/dependencyProvider.ts:import",
-      "source": "src/extension.ts",
-      "target": "src/providers/dependencyProvider.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/extension.ts->src/services/historyService.ts:import",
-      "source": "src/extension.ts",
+      "id": "src/chat/chatHandler_SSE.ts->src/services/historyService.ts:import",
+      "source": "src/chat/chatHandler_SSE.ts",
       "target": "src/services/historyService.ts",
       "type": "import"
     },
     {
-      "id": "src/extension.ts->src/services/dependencyService.ts:import",
-      "source": "src/extension.ts",
-      "target": "src/services/dependencyService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/extension.ts->src/services/gitService.ts:import",
-      "source": "src/extension.ts",
-      "target": "src/services/gitService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/extension.ts->src/services/commitDiffService.ts:import",
-      "source": "src/extension.ts",
-      "target": "src/services/commitDiffService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/extension.ts->src/services/dependencyGraphService.ts:import",
-      "source": "src/extension.ts",
-      "target": "src/services/dependencyGraphService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/extension.ts->src/services/dependencyGraphManager.ts:import",
-      "source": "src/extension.ts",
-      "target": "src/services/dependencyGraphManager.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/RAGTESTHandler.ts->src/types/sidebarMessage.ts:import",
-      "source": "src/controller/handlers/RAGTESTHandler.ts",
-      "target": "src/types/sidebarMessage.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/RAGTESTHandler.ts->src/chat/promptBuilder.ts:import",
-      "source": "src/controller/handlers/RAGTESTHandler.ts",
-      "target": "src/chat/promptBuilder.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/RAGTESTHandler.ts->src/services/APIService.ts:import",
-      "source": "src/controller/handlers/RAGTESTHandler.ts",
-      "target": "src/services/APIService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/RAGTESTHandler.ts->src/services/gitService.ts:import",
-      "source": "src/controller/handlers/RAGTESTHandler.ts",
-      "target": "src/services/gitService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/projectListHandler.ts->src/types/sidebarMessage.ts:import",
-      "source": "src/controller/handlers/projectListHandler.ts",
-      "target": "src/types/sidebarMessage.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/projectListHandler.ts->src/services/gitService.ts:import",
-      "source": "src/controller/handlers/projectListHandler.ts",
-      "target": "src/services/gitService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/projectListHandler.ts->src/services/workspaceService.ts:import",
-      "source": "src/controller/handlers/projectListHandler.ts",
-      "target": "src/services/workspaceService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/projectListHandler.ts->src/services/APIService.ts:import",
-      "source": "src/controller/handlers/projectListHandler.ts",
-      "target": "src/services/APIService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/projectInfoHandler.ts->src/services/workspaceService.ts:import",
-      "source": "src/controller/handlers/projectInfoHandler.ts",
-      "target": "src/services/workspaceService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/projectInfoHandler.ts->src/types/sidebarMessage.ts:import",
-      "source": "src/controller/handlers/projectInfoHandler.ts",
-      "target": "src/types/sidebarMessage.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/projectInfoHandler.ts->src/services/gitService.ts:import",
-      "source": "src/controller/handlers/projectInfoHandler.ts",
-      "target": "src/services/gitService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/projectBriefHandler.ts->src/types/sidebarMessage.ts:import",
-      "source": "src/controller/handlers/projectBriefHandler.ts",
-      "target": "src/types/sidebarMessage.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/projectBriefHandler.ts->src/chat/promptBuilder.ts:import",
-      "source": "src/controller/handlers/projectBriefHandler.ts",
-      "target": "src/chat/promptBuilder.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/projectBriefHandler.ts->src/services/APIService.ts:import",
-      "source": "src/controller/handlers/projectBriefHandler.ts",
-      "target": "src/services/APIService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/projectBriefHandler.ts->src/services/workspaceService.ts:import",
-      "source": "src/controller/handlers/projectBriefHandler.ts",
-      "target": "src/services/workspaceService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/modelInfoHandler.ts->src/types/sidebarMessage.ts:import",
-      "source": "src/controller/handlers/modelInfoHandler.ts",
-      "target": "src/types/sidebarMessage.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/modelInfoHandler.ts->src/services/APIService.ts:import",
-      "source": "src/controller/handlers/modelInfoHandler.ts",
-      "target": "src/services/APIService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/indexingHandler.ts->src/types/sidebarMessage.ts:import",
-      "source": "src/controller/handlers/indexingHandler.ts",
-      "target": "src/types/sidebarMessage.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/indexingHandler.ts->src/services/indexing/projectMetadataService.ts:import",
-      "source": "src/controller/handlers/indexingHandler.ts",
-      "target": "src/services/indexing/projectMetadataService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/indexingHandler.ts->src/services/indexing/projectIndexingService.ts:import",
-      "source": "src/controller/handlers/indexingHandler.ts",
-      "target": "src/services/indexing/projectIndexingService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/indexingHandler.ts->src/services/APIService.ts:import",
-      "source": "src/controller/handlers/indexingHandler.ts",
-      "target": "src/services/APIService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/historyHandler.ts->src/types/sidebarMessage.ts:import",
-      "source": "src/controller/handlers/historyHandler.ts",
-      "target": "src/types/sidebarMessage.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/checkHealthHandler.ts->src/types/sidebarMessage.ts:import",
-      "source": "src/controller/handlers/checkHealthHandler.ts",
-      "target": "src/types/sidebarMessage.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/controller/handlers/checkHealthHandler.ts->src/services/APIService.ts:import",
-      "source": "src/controller/handlers/checkHealthHandler.ts",
-      "target": "src/services/APIService.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/services/workspaceService.ts->src/types:import",
-      "source": "src/services/workspaceService.ts",
-      "target": "src/types",
+      "id": "src/chat/chatHandler_SSE.ts->src/types/chat.ts:import",
+      "source": "src/chat/chatHandler_SSE.ts",
+      "target": "src/types/chat.ts",
       "type": "import"
     },
     {
@@ -738,6 +474,132 @@
       "type": "import"
     },
     {
+      "id": "src/extension.ts->src/providers/sidebarProvider.ts:import",
+      "source": "src/extension.ts",
+      "target": "src/providers/sidebarProvider.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/extension.ts->src/providers/guideProvider.ts:import",
+      "source": "src/extension.ts",
+      "target": "src/providers/guideProvider.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/extension.ts->src/providers/dependencyGraphProvider.ts:import",
+      "source": "src/extension.ts",
+      "target": "src/providers/dependencyGraphProvider.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/extension.ts->src/chat/chatHandler_RAG_server.ts:import",
+      "source": "src/extension.ts",
+      "target": "src/chat/chatHandler_RAG_server.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/extension.ts->src/providers/dependencyProvider.ts:import",
+      "source": "src/extension.ts",
+      "target": "src/providers/dependencyProvider.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/extension.ts->src/services/historyService.ts:import",
+      "source": "src/extension.ts",
+      "target": "src/services/historyService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/extension.ts->src/services/dependencyService.ts:import",
+      "source": "src/extension.ts",
+      "target": "src/services/dependencyService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/extension.ts->src/services/gitService.ts:import",
+      "source": "src/extension.ts",
+      "target": "src/services/gitService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/extension.ts->src/services/commitDiffService.ts:import",
+      "source": "src/extension.ts",
+      "target": "src/services/commitDiffService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/extension.ts->src/services/dependencyGraphService.ts:import",
+      "source": "src/extension.ts",
+      "target": "src/services/dependencyGraphService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/extension.ts->src/services/dependencyGraphManager.ts:import",
+      "source": "src/extension.ts",
+      "target": "src/services/dependencyGraphManager.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/sidebarController.ts->src/types/sidebarMessage.ts:import",
+      "source": "src/controller/sidebarController.ts",
+      "target": "src/types/sidebarMessage.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/sidebarController.ts->src/controller/handlers/checkHealthHandler.ts:import",
+      "source": "src/controller/sidebarController.ts",
+      "target": "src/controller/handlers/checkHealthHandler.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/sidebarController.ts->src/controller/handlers/historyHandler.ts:import",
+      "source": "src/controller/sidebarController.ts",
+      "target": "src/controller/handlers/historyHandler.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/sidebarController.ts->src/controller/handlers/indexingHandler.ts:import",
+      "source": "src/controller/sidebarController.ts",
+      "target": "src/controller/handlers/indexingHandler.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/sidebarController.ts->src/controller/handlers/modelInfoHandler.ts:import",
+      "source": "src/controller/sidebarController.ts",
+      "target": "src/controller/handlers/modelInfoHandler.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/sidebarController.ts->src/controller/handlers/projectInfoHandler.ts:import",
+      "source": "src/controller/sidebarController.ts",
+      "target": "src/controller/handlers/projectInfoHandler.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/sidebarController.ts->src/controller/handlers/projectListHandler.ts:import",
+      "source": "src/controller/sidebarController.ts",
+      "target": "src/controller/handlers/projectListHandler.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/sidebarController.ts->src/controller/handlers/projectBriefHandler.ts:import",
+      "source": "src/controller/sidebarController.ts",
+      "target": "src/controller/handlers/projectBriefHandler.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/sidebarController.ts->src/controller/handlers/RAGTESTHandler.ts:import",
+      "source": "src/controller/sidebarController.ts",
+      "target": "src/controller/handlers/RAGTESTHandler.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/sidebarController.ts->src/services/gitService.ts:import",
+      "source": "src/controller/sidebarController.ts",
+      "target": "src/services/gitService.ts",
+      "type": "import"
+    },
+    {
       "id": "src/providers/sidebarProvider.ts->src/services/dependencyGraphManager.ts:import",
       "source": "src/providers/sidebarProvider.ts",
       "target": "src/services/dependencyGraphManager.ts",
@@ -792,75 +654,147 @@
       "type": "import"
     },
     {
-      "id": "src/services/dependencyGraphService.ts->src/types/dependencyGraph.ts:import",
-      "source": "src/services/dependencyGraphService.ts",
-      "target": "src/types/dependencyGraph.ts",
+      "id": "src/controller/handlers/modelInfoHandler.ts->src/types/sidebarMessage.ts:import",
+      "source": "src/controller/handlers/modelInfoHandler.ts",
+      "target": "src/types/sidebarMessage.ts",
       "type": "import"
     },
     {
-      "id": "src/services/dependencyGraphService.ts->src/services/dependencyImportPatterns.ts:import",
-      "source": "src/services/dependencyGraphService.ts",
-      "target": "src/services/dependencyImportPatterns.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/chat/chatHandler_SSE.ts->src/services/chatServices_SSE.ts:import",
-      "source": "src/chat/chatHandler_SSE.ts",
-      "target": "src/services/chatServices_SSE.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/chat/chatHandler_SSE.ts->src/services/APIService.ts:import",
-      "source": "src/chat/chatHandler_SSE.ts",
+      "id": "src/controller/handlers/modelInfoHandler.ts->src/services/APIService.ts:import",
+      "source": "src/controller/handlers/modelInfoHandler.ts",
       "target": "src/services/APIService.ts",
       "type": "import"
     },
     {
-      "id": "src/chat/chatHandler_SSE.ts->src/utils/session.ts:import",
-      "source": "src/chat/chatHandler_SSE.ts",
-      "target": "src/utils/session.ts",
+      "id": "src/controller/handlers/indexingHandler.ts->src/types/sidebarMessage.ts:import",
+      "source": "src/controller/handlers/indexingHandler.ts",
+      "target": "src/types/sidebarMessage.ts",
       "type": "import"
     },
     {
-      "id": "src/chat/chatHandler_SSE.ts->src/chat/promptBuilder.ts:import",
-      "source": "src/chat/chatHandler_SSE.ts",
-      "target": "src/chat/promptBuilder.ts",
+      "id": "src/controller/handlers/indexingHandler.ts->src/services/indexing/projectMetadataService.ts:import",
+      "source": "src/controller/handlers/indexingHandler.ts",
+      "target": "src/services/indexing/projectMetadataService.ts",
       "type": "import"
     },
     {
-      "id": "src/chat/chatHandler_SSE.ts->src/services/historyService.ts:import",
-      "source": "src/chat/chatHandler_SSE.ts",
-      "target": "src/services/historyService.ts",
+      "id": "src/controller/handlers/indexingHandler.ts->src/services/indexing/projectIndexingService.ts:import",
+      "source": "src/controller/handlers/indexingHandler.ts",
+      "target": "src/services/indexing/projectIndexingService.ts",
       "type": "import"
     },
     {
-      "id": "src/chat/chatHandler_SSE.ts->src/types/chat.ts:import",
-      "source": "src/chat/chatHandler_SSE.ts",
-      "target": "src/types/chat.ts",
+      "id": "src/controller/handlers/indexingHandler.ts->src/services/APIService.ts:import",
+      "source": "src/controller/handlers/indexingHandler.ts",
+      "target": "src/services/APIService.ts",
       "type": "import"
     },
     {
-      "id": "src/services/dependencyGraphManager.ts->src/types/dependencyGraph.ts:import",
-      "source": "src/services/dependencyGraphManager.ts",
-      "target": "src/types/dependencyGraph.ts",
+      "id": "src/controller/handlers/historyHandler.ts->src/types/sidebarMessage.ts:import",
+      "source": "src/controller/handlers/historyHandler.ts",
+      "target": "src/types/sidebarMessage.ts",
       "type": "import"
     },
     {
-      "id": "src/services/dependencyGraphManager.ts->src/services/dependencyGraphService.ts:import",
-      "source": "src/services/dependencyGraphManager.ts",
-      "target": "src/services/dependencyGraphService.ts",
+      "id": "src/controller/handlers/checkHealthHandler.ts->src/types/sidebarMessage.ts:import",
+      "source": "src/controller/handlers/checkHealthHandler.ts",
+      "target": "src/types/sidebarMessage.ts",
       "type": "import"
     },
     {
-      "id": "src/services/dependencyGraphManager.ts->src/services/gitService.ts:import",
-      "source": "src/services/dependencyGraphManager.ts",
+      "id": "src/controller/handlers/checkHealthHandler.ts->src/services/APIService.ts:import",
+      "source": "src/controller/handlers/checkHealthHandler.ts",
+      "target": "src/services/APIService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/projectInfoHandler.ts->src/services/workspaceService.ts:import",
+      "source": "src/controller/handlers/projectInfoHandler.ts",
+      "target": "src/services/workspaceService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/projectInfoHandler.ts->src/types/sidebarMessage.ts:import",
+      "source": "src/controller/handlers/projectInfoHandler.ts",
+      "target": "src/types/sidebarMessage.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/projectInfoHandler.ts->src/services/gitService.ts:import",
+      "source": "src/controller/handlers/projectInfoHandler.ts",
       "target": "src/services/gitService.ts",
       "type": "import"
     },
     {
-      "id": "src/services/dependencyGraphManager.ts->src/utils/wait.ts:import",
-      "source": "src/services/dependencyGraphManager.ts",
-      "target": "src/utils/wait.ts",
+      "id": "src/controller/handlers/projectBriefHandler.ts->src/types/sidebarMessage.ts:import",
+      "source": "src/controller/handlers/projectBriefHandler.ts",
+      "target": "src/types/sidebarMessage.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/projectBriefHandler.ts->src/chat/promptBuilder.ts:import",
+      "source": "src/controller/handlers/projectBriefHandler.ts",
+      "target": "src/chat/promptBuilder.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/projectBriefHandler.ts->src/services/APIService.ts:import",
+      "source": "src/controller/handlers/projectBriefHandler.ts",
+      "target": "src/services/APIService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/projectBriefHandler.ts->src/services/workspaceService.ts:import",
+      "source": "src/controller/handlers/projectBriefHandler.ts",
+      "target": "src/services/workspaceService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/projectListHandler.ts->src/types/sidebarMessage.ts:import",
+      "source": "src/controller/handlers/projectListHandler.ts",
+      "target": "src/types/sidebarMessage.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/projectListHandler.ts->src/services/gitService.ts:import",
+      "source": "src/controller/handlers/projectListHandler.ts",
+      "target": "src/services/gitService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/projectListHandler.ts->src/services/workspaceService.ts:import",
+      "source": "src/controller/handlers/projectListHandler.ts",
+      "target": "src/services/workspaceService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/projectListHandler.ts->src/services/APIService.ts:import",
+      "source": "src/controller/handlers/projectListHandler.ts",
+      "target": "src/services/APIService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/RAGTESTHandler.ts->src/types/sidebarMessage.ts:import",
+      "source": "src/controller/handlers/RAGTESTHandler.ts",
+      "target": "src/types/sidebarMessage.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/RAGTESTHandler.ts->src/chat/promptBuilder.ts:import",
+      "source": "src/controller/handlers/RAGTESTHandler.ts",
+      "target": "src/chat/promptBuilder.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/RAGTESTHandler.ts->src/services/APIService.ts:import",
+      "source": "src/controller/handlers/RAGTESTHandler.ts",
+      "target": "src/services/APIService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/controller/handlers/RAGTESTHandler.ts->src/services/gitService.ts:import",
+      "source": "src/controller/handlers/RAGTESTHandler.ts",
+      "target": "src/services/gitService.ts",
       "type": "import"
     },
     {
@@ -888,6 +822,72 @@
       "type": "import"
     },
     {
+      "id": "src/services/dependencyGraphService.ts->src/types/dependencyGraph.ts:import",
+      "source": "src/services/dependencyGraphService.ts",
+      "target": "src/types/dependencyGraph.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/services/dependencyGraphService.ts->src/services/dependencyImportPatterns.ts:import",
+      "source": "src/services/dependencyGraphService.ts",
+      "target": "src/services/dependencyImportPatterns.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/services/dependencyGraphManager.ts->src/types/dependencyGraph.ts:import",
+      "source": "src/services/dependencyGraphManager.ts",
+      "target": "src/types/dependencyGraph.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/services/dependencyGraphManager.ts->src/services/dependencyGraphService.ts:import",
+      "source": "src/services/dependencyGraphManager.ts",
+      "target": "src/services/dependencyGraphService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/services/dependencyGraphManager.ts->src/services/gitService.ts:import",
+      "source": "src/services/dependencyGraphManager.ts",
+      "target": "src/services/gitService.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/services/dependencyGraphManager.ts->src/utils/wait.ts:import",
+      "source": "src/services/dependencyGraphManager.ts",
+      "target": "src/utils/wait.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/services/dependencyService.ts->src/types/dependency.ts:import",
+      "source": "src/services/dependencyService.ts",
+      "target": "src/types/dependency.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/services/dependencyService.ts->src/providers/dependencyProvider.ts:import",
+      "source": "src/services/dependencyService.ts",
+      "target": "src/providers/dependencyProvider.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/services/dependencyService.ts->src/services/dependencyImportPatterns.ts:import",
+      "source": "src/services/dependencyService.ts",
+      "target": "src/services/dependencyImportPatterns.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/services/gitService.ts->src/utils/wait.ts:import",
+      "source": "src/services/gitService.ts",
+      "target": "src/utils/wait.ts",
+      "type": "import"
+    },
+    {
+      "id": "src/services/gitService.ts->src/types/git.ts:import",
+      "source": "src/services/gitService.ts",
+      "target": "src/types/git.ts",
+      "type": "import"
+    },
+    {
       "id": "src/services/chatServices.ts->src/services/APIService.ts:import",
       "source": "src/services/chatServices.ts",
       "target": "src/services/APIService.ts",
@@ -900,8 +900,8 @@
       "type": "import"
     },
     {
-      "id": "src/services/indexing/languageService.ts->src/types:import",
-      "source": "src/services/indexing/languageService.ts",
+      "id": "src/services/workspaceService.ts->src/types:import",
+      "source": "src/services/workspaceService.ts",
       "target": "src/types",
       "type": "import"
     },
@@ -915,18 +915,6 @@
       "id": "src/services/indexing/configFileService.ts->src/types:import",
       "source": "src/services/indexing/configFileService.ts",
       "target": "src/types",
-      "type": "import"
-    },
-    {
-      "id": "src/services/gitService.ts->src/utils/wait.ts:import",
-      "source": "src/services/gitService.ts",
-      "target": "src/utils/wait.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/services/gitService.ts->src/types/git.ts:import",
-      "source": "src/services/gitService.ts",
-      "target": "src/types/git.ts",
       "type": "import"
     },
     {
@@ -954,21 +942,9 @@
       "type": "import"
     },
     {
-      "id": "src/services/dependencyService.ts->src/types/dependency.ts:import",
-      "source": "src/services/dependencyService.ts",
-      "target": "src/types/dependency.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/services/dependencyService.ts->src/providers/dependencyProvider.ts:import",
-      "source": "src/services/dependencyService.ts",
-      "target": "src/providers/dependencyProvider.ts",
-      "type": "import"
-    },
-    {
-      "id": "src/services/dependencyService.ts->src/services/dependencyImportPatterns.ts:import",
-      "source": "src/services/dependencyService.ts",
-      "target": "src/services/dependencyImportPatterns.ts",
+      "id": "src/services/indexing/languageService.ts->src/types:import",
+      "source": "src/services/indexing/languageService.ts",
+      "target": "src/types",
       "type": "import"
     },
     {

@@ -48,12 +48,37 @@ export class DependencyGraphProvider {
         const graph = this.manager.getGraph();
 
         panel.webview.onDidReceiveMessage(async (message) => {
-            if (message.type === 'ready') {
-                if (graph) {
-                    this.sendGraph(panel, graph);
+            switch (message.type) {
+                case 'ready':{
+                    if (graph) {
+                        this.sendGraph(panel, graph);
+                    }
+                    break;
+                }
+                case 'openFile':{
+                    await this.openFile(message.path);
+                    break;
                 }
             }
         });
+    }
+
+    private async openFile(relativePath: string) {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+
+        if (!workspaceFolder) {
+            return;
+        }
+
+        const fileUri = vscode.Uri.joinPath(
+            workspaceFolder.uri,
+            relativePath
+        );
+
+        const document =
+            await vscode.workspace.openTextDocument(fileUri);
+
+        await vscode.window.showTextDocument(document);
     }
 
     // 챗 응답의 근거 문서 경로를 그래프 웹뷰로 전달해 노드를 강조 표시
@@ -84,7 +109,7 @@ export class DependencyGraphProvider {
                     'webview_graph',
                     'dist',
                     'assets',
-                    'index-CGJ8Ok-C.js'
+                    'index-D_LIBhkT.js'
                 )
             );
 

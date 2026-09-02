@@ -62,7 +62,8 @@ export class ChatHandler {
             project_id: project_id,
             message: request.prompt,
             rag: rag, 
-            stream: true
+            stream: true,
+            model_id: "gpt-oss:20b"
         };
         this.historyServcie.save(
             project_id,

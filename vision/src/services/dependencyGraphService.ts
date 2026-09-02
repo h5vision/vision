@@ -77,7 +77,7 @@ export class DependencyGraphService {
         return {
             version: 1,
             gitCommit,
-            generatedAt: new Date().toISOString(),
+            generatedAt: new Date().toLocaleString(),
             nodes,
             edges: this.removeDuplicateEdges(edges)
         };

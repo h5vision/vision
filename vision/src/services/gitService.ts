@@ -56,7 +56,7 @@ export class GitService implements vscode.Disposable {
             }
 
             return ext;
-        });
+        }, 30000, 1000);
 
         if (!extension) {
             vscode.window.showErrorMessage("Git extension is not available or not active.");

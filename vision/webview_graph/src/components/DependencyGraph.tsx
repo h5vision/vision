@@ -164,6 +164,12 @@ function DependencyGraph({
             nodes={layout.nodes}
             edges={layout.edges}
             attributionPosition="top-left"
+            onNodeClick={(_, node) => {
+                vscode.postMessage({
+                    type: 'openFile',
+                    path: node.data.path,
+                });
+            }}
         >
             <Background />
             <Controls />

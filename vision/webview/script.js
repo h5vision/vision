@@ -155,7 +155,7 @@ function renderProjectList(projects) {
         iconEl.className = 'codicon codicon-chevron-right';
 
         const textEl = document.createElement('span');
-        textEl.textContent = `${proj.name}`;
+        textEl.textContent = `${proj.id}`;
 
         const locationEl = document.createElement('span');
         locationEl.className = 'badge';
@@ -184,7 +184,7 @@ function renderProjectList(projects) {
                         command: "updateCommitId", 
                         data: { 
                             project_id: proj.id, 
-                            name: proj.name || 'unknown',
+                            name: proj.id || 'unknown',
                             commit: SHA, 
                             path: proj.location,
                             branch: '임시'
