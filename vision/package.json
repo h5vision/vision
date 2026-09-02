@@ -27,7 +27,7 @@
         },
         "vision.modelId": {
           "type": "string",
-          "default": "backandai-default",
+          "default": "gpt-oss:20b",
           "description": "vision backendAI modelId"
         },
         "vision.projectId": {

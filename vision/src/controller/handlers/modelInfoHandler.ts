@@ -17,45 +17,19 @@ export class ModelInfoHandler {
 
         const current_model_id = vscode.workspace.getConfiguration("vision").get<string>("modelId");
 
-        let modelsInfo: {model_id: string, model_name: string}[] = [];
-
         try {
-            const response = await this.APIService.get("/models", 2500);
+            const response:any = await this.APIService.get("/v1/models", 2500);
 
-            if ((response as responseModel).models) {
-                modelsInfo = (response as responseModel).models.map((model) => {
-                    return {
-                        model_id: model.model_id,
-                        model_name: model.display_name
-                    };
+            if (response.models) {
+                this.view.webview.postMessage({
+                    command: "showModelsInfo",
+                    data: {models: response.models, current_model_id: current_model_id}
                 });
             }
         } catch (error) {
             console.log("Failed to load models info:", error);
         }
 
-        this.view.webview.postMessage({
-            command: "showModelsInfo",
-            data: {models: modelsInfo, current_model_id: current_model_id}
-        });
+        
     }
-}
-
-interface responseModel {
-    schema_version: string;
-    default_model_id: string;
-    checked_at: string;
-    models: {
-        model_id: string;
-        model_name: string;
-        display_name: string;
-        provider: string;
-        location: string;
-        deployment_type: string;
-        endpoint: string;
-        enabled: boolean;
-        available: boolean;
-        is_default: boolean;
-        streaming: boolean;
-    }[];
 }

@@ -40,6 +40,13 @@ document.addEventListener("DOMContentLoaded", () => {
         endpoint.click();
     });
 
+    // 모델 선택 드롭다운 (지금은 모델 선택 불가)
+    // const scrollContainer = document.getElementById("model-list-scroll");
+    // scrollContainer.addEventListener('change', (event) => {
+    //     const selectedModelId = event.target.value;
+    //     vscode.postMessage({ command: "updateModelId", data: selectedModelId });
+    // });  
+
     // 스트리밍 토글 버튼 이벤트
     const toggleStreamingBtn = document.getElementById("toggle-streaming-btn");
     toggleStreamingBtn.addEventListener("click", () => {
@@ -64,7 +71,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // 프로젝트 브리핑 열기
     const prjBriefBtn = document.getElementById("project-brief-btn");
     prjBriefBtn.addEventListener("click", () => {
-        vscode.postMessage({ command: "getProjectBrief" });
+        vscode.postMessage({ 
+            command: "getProjectBrief",
+            data: "locale"
+        });
+    });
+    // 질문할 프로젝트 브리핑 열기
+    const askProjectBriefBtn = document.getElementById("ask-project-brief-btn");
+    askProjectBriefBtn.addEventListener("click", () => {
+        vscode.postMessage({ command: "getProjectBrief"});
     });
 
     // 의존성 그래프 열기 버튼 이벤트
@@ -129,7 +144,31 @@ function updateBackendStatus(status) {
         el.textContent = "🔴 " + status.message;
         el3.classList.replace('codicon-vm-active', 'codicon-vm');
     }
+}
 
+function updateModelsInfo(command_data) {
+    const models = command_data.models;
+    const current_model_id = command_data.current_model_id;
+    const scrollContainer = document.getElementById("model-list-scroll");
+    if (!scrollContainer) {return;}
+
+    if (!models || models.length === 0) {
+        scrollContainer.textContent = '• 등록된 모델이 없습니다.';
+        return;
+    }
+
+    scrollContainer.innerHTML = '';
+    models.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = model;
+        scrollContainer.appendChild(option);
+        if (model === current_model_id) {
+            option.selected = true;
+        } else {
+            option.disabled = true;     // 지금은 모델 선택 불가
+        }
+    });
 }
 
 function renderProjectList(projects) {
@@ -271,6 +310,10 @@ vscode.postMessage({ command: "getStreamingStatus" });
 setTimeout(() => {
     vscode.postMessage({ command: "checkBackend" });
 }, 100);
+    
+setTimeout(() => {
+    vscode.postMessage({ command: "getModelsInfo" });
+}, 250);
 
 setTimeout(() => {
     vscode.postMessage({ command: "getProjectGitInfo" });
@@ -288,6 +331,11 @@ window.addEventListener("message", event => {
     const message = event.data;
 
     switch (message.command) {
+        case "showModelsInfo": {
+            updateModelsInfo(message.data);
+            break;
+        }
+
         case "streamingStatus": {
             const toggleStreamingBtn = document.getElementById("toggle-streaming-btn");
             if (message.data) {

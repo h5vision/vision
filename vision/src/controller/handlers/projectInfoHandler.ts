@@ -17,7 +17,11 @@ export class ProjectInfoHandler {
         console.log(message.command);
         const workspace:any = this.workspaceService.getWorkspace();
         const response = {name: workspace.name, path: workspace.path};
-
+        await vscode.workspace.getConfiguration('vision').update(
+                "projectId",
+                workspace.name,
+                vscode.ConfigurationTarget.Global
+            );
         this.view.webview.postMessage({
             command: "showProjectInfo",
             data: response
