@@ -17,13 +17,6 @@ import { DependencyGraphManager } from './services/dependencyGraphManager';
 // 이 메서드는 확장 프로그램이 활성화될 때 호출됩니다. 확장 프로그램이 처음으로 명령을 실행할 때 활성화됩니다.
 export async function activate(context: vscode.ExtensionContext) {
 
-	vscode.workspace.getConfiguration('vision').update(
-		"modelId", "gpt-oss:20b", vscode.ConfigurationTarget.Global
-	);
-	vscode.workspace.getConfiguration('vision').update(
-		"endpoint", "http://44.208.79.122:8200", 
-		vscode.ConfigurationTarget.Global
-	);
 	// 진단 정보를 출력하거나 오류를 출력하려면 콘솔을 사용하세요. 이 코드 줄은 확장 프로그램이 활성화될 때 한 번만 실행됩니다.
 	console.log('Congratulations, your extension "vision" is now active!');
 
@@ -174,11 +167,12 @@ export async function activate(context: vscode.ExtensionContext) {
         const selection = activeEditor.selection;
         const selectedText = activeEditor.document.getText(selection).trim();
         const fileName = path.basename(activeEditor.document.uri.fsPath);
+		const dirName = path.dirname(activeEditor.document.uri.fsPath);
 
         if (!selectedText || selectedText.length === 0) {
             await vscode.commands.executeCommand('workbench.action.chat.open', {
 				path: '',
-            	query: `@vision ${fileName}에 대해 설명해줘.`,
+            	query: `@vision ${dirName}에 있는 ${fileName}에 대해 설명해줘.`,
 				isPartialQuery: false
         	});
 			return;
@@ -187,7 +181,8 @@ export async function activate(context: vscode.ExtensionContext) {
         // VS Code 챗 창을 열면서 @vision chat view 입력창에 드래그한 코드 자동 입력
         await vscode.commands.executeCommand('workbench.action.chat.open', {
 			path: '', 
-            query: `@vision ${fileName}에 있는 다음 코드에 대해 설명해줘. \n\`\`\`\n${selectedText}\n\`\`\``, 
+            query: `@vision ${dirName}/${fileName}에 있는 다음 코드에 대해 설명해줘. 
+				\n\`\`\`\n${selectedText}\n\`\`\``, 
 			isPartialQuery: true
         });
     });

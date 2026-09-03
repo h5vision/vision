@@ -7,6 +7,7 @@ export type GraphStatus =
     | 'idle'
     | 'building [Node]'
     | 'building [Edge]'
+    | 'update'
     | 'ready'
     | 'error';
 

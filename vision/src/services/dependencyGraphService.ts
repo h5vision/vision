@@ -91,7 +91,7 @@ export class DependencyGraphService {
         changedFiles: string[],
         gitCommit: string,
         onProgress: (
-            phase: 'building [Node]' | 'building [Edge]',
+            phase: 'update',
             current: number,
             total: number
         ) => void
@@ -110,7 +110,7 @@ export class DependencyGraphService {
 
             const file = changedFiles[i];
             onProgress?.(
-                'building [Node]',
+                'update',
                 i + 1,
                 changedFiles.length
             );

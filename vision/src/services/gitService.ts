@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import { createHash } from "crypto";
 import * as path from "path";
 import { waitUntil } from "../utils/wait";
 import {GitAPI, GitChangedFile, GitCommit, GitCommitFile, GitCommitPayload, GitExtension, GitRepositoryInfo, Repository} from "../types/git";

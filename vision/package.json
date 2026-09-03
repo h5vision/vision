@@ -119,6 +119,10 @@
             "description": "RAG 기능을 사용하지 않습니다."
           },
           {
+            "name": "ragonly",
+            "description": "RAG 기능만 사용해서 그래프에 출력합니다."
+          },
+          {
             "name": "indexing",
             "description": "Server DB에 인덱싱을 수행합니다."
           }
