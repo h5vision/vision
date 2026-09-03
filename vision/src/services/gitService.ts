@@ -143,8 +143,51 @@ export class GitService implements vscode.Disposable {
 
             stagedCount: repo.state.indexChanges.length,
 
-            mergeCount: repo.state.mergeChanges.length
+            mergeCount: repo.state.mergeChanges.length,
+
+            remote: this.getGitHubRemoteUrl(repo.state.remotes)
         };
+    }
+
+    //---------------------------------------
+    // GitHub Remote URL
+    //---------------------------------------
+
+    private getGitHubRemoteUrl(remotes: readonly { fetchUrl?: string; pushUrl?: string }[]): string {
+        for (const remote of remotes) {
+            for (const remoteUrl of [remote.fetchUrl, remote.pushUrl]) {
+                if (!remoteUrl) {
+                    continue;
+                }
+
+                const githubUrl = this.toGitHubUrl(remoteUrl);
+
+                if (githubUrl) {
+                    return githubUrl;
+                }
+            }
+        }
+
+        return "";
+    }
+
+    private toGitHubUrl(remoteUrl: string): string | undefined {
+        const normalizedUrl = remoteUrl.replace(/\.git$/, "");
+        const sshMatch = normalizedUrl.match(/^(?:ssh:\/\/)?git@github\.com[:/]([^/]+\/.+)$/i);
+
+        if (sshMatch) {
+            return `https://github.com/${sshMatch[1]}`;
+        }
+
+        try {
+            const url = new URL(normalizedUrl);
+
+            return url.hostname.toLowerCase() === "github.com"
+                ? `https://github.com${url.pathname}`
+                : undefined;
+        } catch {
+            return undefined;
+        }
     }
 
     //---------------------------------------

@@ -9,6 +9,7 @@ export interface GitRepositoryInfo {
     workingTreeCount: number;
     stagedCount: number;
     mergeCount: number;
+    remote: string;
 }
 
 export interface GitChangedFile {
@@ -78,12 +79,18 @@ export interface Repository {
 export interface RepositoryState {
 
     HEAD?: Branch;
+    remotes: readonly Remote[];
 
     workingTreeChanges: readonly Change[];
     indexChanges: readonly Change[];
     mergeChanges: readonly Change[];
 
     onDidChange: vscode.Event<void>;
+}
+
+export interface Remote {
+    fetchUrl?: string;
+    pushUrl?: string;
 }
 
 export interface Change {

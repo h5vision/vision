@@ -6,6 +6,7 @@ export interface SourceDocument {
     citations: number[];
     line_start: number;
     lines: number[];
+    line: number;
 }
 
 /**

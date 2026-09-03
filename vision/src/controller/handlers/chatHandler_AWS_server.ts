@@ -32,11 +32,14 @@ export class ChatHandler {
         });
         const isStream = vscode.workspace.getConfiguration("vision").get<boolean>("streaming", false);
         const model_id = vscode.workspace.getConfiguration("vision").get<string>("modelId");
+        if (request.command === 'ragonly') {
+            vscode.commands.executeCommand('vision.showDependencyGraph');
+        }
 
         let finalAnswer = "";
         let collectedDelta = "";
         let lastEvent = "";
-        const dummyLabels: Record<ChatStreamEventName, string> = {
+        const eventLabels: Record<ChatStreamEventName, string> = {
             meta: "RAG 검색 완료",
             stage: `${model_id?.split(':')[0]} 답변 생성 중`,
             delta: "답변 전송 중",
@@ -63,6 +66,7 @@ export class ChatHandler {
         if (request.command === 'no-rag') {
             rag = false;
         }
+        const highlightedPaths: string[] = [];
 
         const payload = {
             project_id: project_id,
@@ -86,16 +90,21 @@ export class ChatHandler {
                 (event: ChatStreamEventName, data) => {
                     if (event !== lastEvent) {
                         if (rag || event !== "meta") {
-                            stream.progress(dummyLabels[event]);
+                            stream.progress(eventLabels[event]);
                         }
                         lastEvent = event;
                     }
                     if (event === "meta") {
                         console.log("[meta]", data);
-                        return;
-                    }
-                    if (event === "stage") {
-                        console.log("[stage]", data);
+                        if (request.command === "ragonly") {
+                            if (!data.reference_files) {
+                                stream.markdown("참조 파일이 없습니다.");
+                            } else {
+                                const referenceFiles : Array<ReferenceFile> = data.reference_files;
+                                this.referenceFilesHandle(referenceFiles, highlightedPaths, stream);
+                            }
+                            controller.abort("RAG only mode");
+                        }
                         return;
                     }
                     if (event === "delta") {
@@ -120,44 +129,7 @@ export class ChatHandler {
             );
         
             console.log(response);
-            const highlightedPaths: string[] = [];
-            for (const source of response.reference_files) {
-                const sourceUri = this.getWorkspaceFileUri(source.path);
-
-                if (!sourceUri) {
-                    stream.markdown(`\n- \`${source.path}\``);
-                    continue;
-                }
-
-                const relativePath = this.getWorkspaceRelativePath(sourceUri);
-                if (relativePath) {
-                    highlightedPaths.push(relativePath);
-                }
-
-                const lineStart = Number(source.line);
-                const openArguments =
-                    Number.isInteger(lineStart) && lineStart > 0
-                        ? [
-                            sourceUri,
-                            {
-                                selection: new vscode.Range(
-                                    lineStart - 1,
-                                    0,
-                                    lineStart - 1,
-                                    0
-                                )
-                            }
-                        ]
-                        : [sourceUri];
-                stream.button({
-                    command: "vscode.open",
-                    title: `${path.basename(source.path)} ${source.line_start ? `:${source.line_start}-${source.lines[1]}` : ''}`,
-                    arguments: openArguments
-                });
-            }
-            if (highlightedPaths.length) {
-                this.dependencyGraphProvider?.highlightSources(highlightedPaths);
-            }
+            this.referenceFilesHandle(response.reference_files, highlightedPaths, stream);
             this.historyServcie.save(project_id, session_id, 'assistant', response.answer);
         }
         catch (err) {
@@ -165,11 +137,55 @@ export class ChatHandler {
                 stream.progress("요청 취소됨");
                 return;
             }
-            stream.markdown("❌ " + err?.toString());
+            stream.markdown("  " + err?.toString());
         } finally {
             cancellation.dispose();
         }
     };
+
+    private referenceFilesHandle (
+        reference_files: Array<ReferenceFile>,
+        highlightedPaths: string[],
+        stream: any
+    ): void {
+        for (const source of reference_files) {
+            const sourceUri = this.getWorkspaceFileUri(source.path);
+
+            if (!sourceUri) {
+                console.log(`\n- \`${source.path}\``);
+                continue;
+            }
+
+            const relativePath = this.getWorkspaceRelativePath(sourceUri);
+            if (relativePath) {
+                highlightedPaths.push(relativePath);
+            }
+
+            const lineStart = Number(source.line);
+            const openArguments =
+                Number.isInteger(lineStart) && lineStart > 0
+                    ? [
+                        sourceUri,
+                        {
+                            selection: new vscode.Range(
+                                lineStart - 1,
+                                0,
+                                lineStart - 1,
+                                0
+                            )
+                        }
+                    ]
+                    : [sourceUri];
+            stream.button({
+                command: "vscode.open",
+                title: `${path.basename(source.path)}`,
+                arguments: openArguments
+            });
+        }
+        if (highlightedPaths.length) {
+            this.dependencyGraphProvider?.highlightSources(highlightedPaths);
+        }
+    }
 
     private getWorkspaceFileUri(sourcePath: string): vscode.Uri | undefined {
         if (!this.workspace) {
@@ -191,12 +207,15 @@ export class ChatHandler {
 
     // 그래프 노드의 path(워크스페이스 상대 posix 경로)와 매칭시키기 위한 변환
     private getWorkspaceRelativePath(fileUri: vscode.Uri): string | undefined {
-        if (!this.workspace) {
-            return undefined;
-        }
-
+        if (!this.workspace) {return undefined;}
         const relativePath = path.relative(this.workspace.path, fileUri.fsPath);
         return relativePath.split(path.sep).join('/');
     }
 
 }
+
+interface ReferenceFile {
+        path: string;
+        line: number;
+        line_start?: number;
+    }

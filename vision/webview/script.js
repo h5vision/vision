@@ -370,6 +370,8 @@ window.addEventListener("message", event => {
             elgit.textContent = "";
             const data = message.data;
             if (data.git) {
+                document.getElementById('current-git-remote').classList.remove('hidden');
+                document.getElementById('current-git-remote-url').textContent = data.repository.remote.split('.com/')[1].replace('/', ' / ');
                 elgit.textContent = data.repository.branch;
                 elgit.innerHTML = `<i class="codicon codicon-git-branch"></i> ${data.repository.commit.slice(0,7)} &nbsp; <b><i class="codicon codicon-target"></i>${data.repository.branch}</b>`;
             } else {
