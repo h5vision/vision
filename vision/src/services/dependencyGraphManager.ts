@@ -123,31 +123,11 @@ export class DependencyGraphManager {
             const changedFiles = await this.getChangedFiles();
 
             /*
-            * 실제 source file 변경이 있는지 확인
-            */
-            const sourceFiles = changedFiles.filter(
-                    file => this.isSourceFile(file)
-                );
-
-            /*
-            * source file 변경이 없다면
-            * Graph 자체는 그대로 사용
-            */
-            if (sourceFiles.length === 0) {
-                saved.gitCommit = gitCommit;
-                this.graph = saved;
-                await this.graphService.save(saved);
-                this.setProgress('ready', '프로젝트 구조 분석 최신 상태');
-                console.log('[DependencyGraph] No source changes.');
-                return;
-            }
-
-            /*
             * 변경된 파일만 갱신
             */
             this.graph = await this.graphService.updateFiles(
                 saved,
-                sourceFiles,
+                changedFiles,
                 gitCommit, 
                 (status, current, total) => {
                     this.setProgress(
@@ -189,22 +169,6 @@ export class DependencyGraphManager {
                     change.uri,
                     false
                 )
-        );
-    }
-
-    private isSourceFile(
-        file: string
-    ): boolean {
-
-        const extensions = [
-            '.ts','.tsx','.js','.jsx','.py','.java','.c','.cpp','.h','.hpp','.rs','.go'
-        ];
-
-        return extensions.some(
-            ext =>
-                file
-                    .toLowerCase()
-                    .endsWith(ext)
         );
     }
 }
