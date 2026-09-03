@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 
 import {
     ReactFlow,
+    ReactFlowProvider,
     Background,
     Controls,
     MiniMap,
+    useReactFlow,
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
@@ -49,9 +51,11 @@ function getVSCodeTheme(): 'light' | 'dark' {
         : 'dark';
 }
 
-function DependencyGraph({
+function DependencyGraphInner({
     vscode,
 }: DependencyGraphProps) {
+
+    const { fitView } = useReactFlow();
 
     const [graphData, setGraphData] =
         useState<GraphData | null>(null);
@@ -158,6 +162,26 @@ function DependencyGraph({
         );
     }, [graphData, highlightedPaths]);
 
+    useEffect(() => {
+        if (!highlightedPaths.size || !layout.nodes.length) {
+            return;
+        }
+
+        const highlightedNodeIds = layout.nodes
+            .filter((node) => highlightedPaths.has(node.data.path))
+            .map((node) => ({ id: node.id }));
+
+        if (!highlightedNodeIds.length) {
+            return;
+        }
+
+        fitView({
+            nodes: highlightedNodeIds,
+            duration: 500,
+            padding: 0.3,
+        });
+    }, [layout.nodes, highlightedPaths, fitView]);
+
     return (
         <ReactFlow
             colorMode={theme}
@@ -175,6 +199,14 @@ function DependencyGraph({
             <Controls />
             <MiniMap />
         </ReactFlow>
+    );
+}
+
+function DependencyGraph(props: DependencyGraphProps) {
+    return (
+        <ReactFlowProvider>
+            <DependencyGraphInner {...props} />
+        </ReactFlowProvider>
     );
 }
 

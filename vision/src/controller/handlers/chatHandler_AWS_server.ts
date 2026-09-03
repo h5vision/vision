@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { APIService } from "../../services/APIService";
 import * as session from "../../utils/session";
-import { ChatStreamEventName } from "../../types/chat";
+import { ChatStreamEventName, ChatStreamData, SourceDocument, ReferenceDocument } from "../../types/chat";
 import { HistoryService } from "../../services/historyService";
 import { ChatService } from "../../services/chatServices_SSE";
 import { WorkspaceService } from "../../services/workspaceService";
@@ -87,7 +87,7 @@ export class ChatHandler {
         try {
             await chatService.sendMessage(
                 payload,
-                (event: ChatStreamEventName, data) => {
+                (event: ChatStreamEventName, data : ChatStreamData) => {
                     if (event !== lastEvent) {
                         if (rag || event !== "meta") {
                             stream.progress(eventLabels[event]);
@@ -97,10 +97,10 @@ export class ChatHandler {
                     if (event === "meta") {
                         console.log("[meta]", data);
                         if (request.command === "ragonly") {
-                            if (!data.reference_files) {
+                            if (!data.references || data.references.length === 0) {
                                 stream.markdown("참조 파일이 없습니다.");
                             } else {
-                                const referenceFiles : Array<ReferenceFile> = data.reference_files;
+                                const referenceFiles : Array<ReferenceDocument> = data.references;
                                 this.referenceFilesHandle(referenceFiles, highlightedPaths, stream);
                             }
                             controller.abort("RAG only mode");
@@ -116,11 +116,12 @@ export class ChatHandler {
                         finalAnswer = data.answer ?? collectedDelta;
                         if (!isStream) {stream.markdown(finalAnswer);}
                         response = data;
+                        this.referenceFilesHandle(response.references, highlightedPaths, stream);
                         return;
                     }
                     if (event === "error") {
                         throw new Error(
-                            data.error ??
+                            data.message ??
                             "답변 생성에 실패했습니다."
                         );
                     }
@@ -129,7 +130,7 @@ export class ChatHandler {
             );
         
             console.log(response);
-            this.referenceFilesHandle(response.reference_files, highlightedPaths, stream);
+            
             this.historyServcie.save(project_id, session_id, 'assistant', response.answer);
         }
         catch (err) {
@@ -144,11 +145,15 @@ export class ChatHandler {
     };
 
     private referenceFilesHandle (
-        reference_files: Array<ReferenceFile>,
+        references: Array<ReferenceDocument>,
         highlightedPaths: string[],
         stream: any
     ): void {
-        for (const source of reference_files) {
+        if (references.length > 0) {
+            stream.markdown("Reference Files:\n");
+        } else {return;}
+        
+        for (const source of references) {
             const sourceUri = this.getWorkspaceFileUri(source.path);
 
             if (!sourceUri) {
@@ -161,26 +166,19 @@ export class ChatHandler {
                 highlightedPaths.push(relativePath);
             }
 
-            const lineStart = Number(source.line);
-            const openArguments =
+            const lineStart = source.line_start;
+            const lineEnd = source.line_end;
+            const anchorTarget =
                 Number.isInteger(lineStart) && lineStart > 0
-                    ? [
+                    ? new vscode.Location(
                         sourceUri,
-                        {
-                            selection: new vscode.Range(
-                                lineStart - 1,
-                                0,
-                                lineStart - 1,
-                                0
-                            )
-                        }
-                    ]
-                    : [sourceUri];
-            stream.button({
-                command: "vscode.open",
-                title: `${path.basename(source.path)}`,
-                arguments: openArguments
-            });
+                        new vscode.Range(lineStart - 1, 0, lineStart - 1, 0)
+                    )
+                    : sourceUri;
+            stream.anchor(
+                anchorTarget,
+                `[${source.n}] ${path.basename(source.path)}:${lineStart === lineEnd ? lineStart : lineStart + '-' + lineEnd}`
+            );
         }
         if (highlightedPaths.length) {
             this.dependencyGraphProvider?.highlightSources(highlightedPaths);
@@ -213,9 +211,3 @@ export class ChatHandler {
     }
 
 }
-
-interface ReferenceFile {
-        path: string;
-        line: number;
-        line_start?: number;
-    }

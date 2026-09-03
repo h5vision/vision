@@ -16,12 +16,14 @@ export class ProjectListHandler {
         
         console.log(message.command);
         const apiService = new APIService();
-        const indexedProjects: any = await apiService.get('/projects');
-        const indexedProjectsList = (await indexedProjects.projects).map((project:any) => ({
-            id: project.project_id,
+        const indexedProjects: any = await apiService.get('/projects?view=repos');
+        const indexedProjectsList = (await indexedProjects.repos).map((project:any) => ({
+            id: project.index_id,
             location: "DB",
             name: project.name,
-            commits: project.commit ? [[project.commit, '']] : []
+            commits: project.commits.length > 0 
+                ? project.commits.map((c:any) => [c, '']) 
+                : [[project.indexed_commit, '']]
         }));
         console.log(indexedProjectsList);
         
@@ -37,15 +39,24 @@ export class ProjectListHandler {
                 name: response.name, 
                 commits: gitCommits,
             };
+            const matchingProject = indexedProjectsList.find(
+                (project: any) => project.name === localPrj.name
+            );
+            const otherProjects = indexedProjectsList
+                .filter((project: any) => project !== matchingProject)
+                .sort((a: any, b: any) => a.name.localeCompare(b.name));
+            
             this.view.webview.postMessage({
                 command: 'showProjectList',
-                data: [localPrj, ...indexedProjectsList]
+                data: matchingProject
+                    ? [localPrj, matchingProject, ...otherProjects]
+                    : [localPrj, ...otherProjects]
             });
         } else {
             this.view.webview.postMessage({
-            command: 'showProjectList',
-            data: [...indexedProjectsList]
-        });
+                command: 'showProjectList',
+                data: [...indexedProjectsList]
+            });
         }
     }
 }

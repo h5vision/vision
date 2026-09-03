@@ -45,10 +45,22 @@ export interface ChatStreamData {
 
     answer?: string;
     source?: SourceDocument[];
+    references?: ReferenceDocument[];
     reference_files?: SourceDocument[];
     metadata?: Record<string, unknown>;
 
     status_code?: number;
     error?: string;
     partial?: string;
+    message?: string;
+}
+
+export interface ReferenceDocument {
+    n: number;
+    path: string;
+    type: string;
+    cited: boolean;
+    score: number;
+    line_start: number;
+    line_end: number;
 }

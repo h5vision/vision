@@ -109,7 +109,7 @@ export class DependencyGraphProvider {
                     'webview_graph',
                     'dist',
                     'assets',
-                    'index-D_LIBhkT.js'
+                    'index-DkliLVtQ.js'
                 )
             );
 
