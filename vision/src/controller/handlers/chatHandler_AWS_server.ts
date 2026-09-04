@@ -89,7 +89,8 @@ export class ChatHandler {
                 payload,
                 (event: ChatStreamEventName, data : ChatStreamData) => {
                     if (event !== lastEvent) {
-                        if (rag || event !== "meta") {
+                        // done은 answer가 바로 뒤따르므로 progress를 띄우지 않아 토글로 접히는 것을 방지
+                        if ((rag || event !== "meta") && event !== "done") {
                             stream.progress(eventLabels[event]);
                         }
                         lastEvent = event;
@@ -131,7 +132,7 @@ export class ChatHandler {
         
             console.log(response);
             
-            this.historyServcie.save(project_id, session_id, 'assistant', response.answer);
+            this.historyServcie.save(project_id, session_id, 'assistant', finalAnswer);
         }
         catch (err) {
             if (token.isCancellationRequested) {
@@ -150,10 +151,12 @@ export class ChatHandler {
         stream: any
     ): void {
         if (references.length > 0) {
-            stream.markdown("Reference Files:\n");
+            stream.markdown("\n\n");
+            stream.markdown("< Reference Files >");
         } else {return;}
         
         for (const source of references) {
+            stream.markdown("\n");
             const sourceUri = this.getWorkspaceFileUri(source.path);
 
             if (!sourceUri) {

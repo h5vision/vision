@@ -15,11 +15,13 @@ export class ModelInfoHandler {
         
         console.log(message.command);
 
-        const current_model_id = vscode.workspace.getConfiguration("vision").get<string>("modelId");
+        let current_model_id = vscode.workspace.getConfiguration("vision").get<string>("modelId");
 
         try {
             const response:any = await this.APIService.get("/v1/models", 2500);
-
+            current_model_id = response.models[0];
+            vscode.workspace.getConfiguration("vision")
+                .update("modelId", current_model_id, vscode.ConfigurationTarget.Global);
             if (response.models) {
                 this.view.webview.postMessage({
                     command: "showModelsInfo",
@@ -29,7 +31,5 @@ export class ModelInfoHandler {
         } catch (error) {
             console.log("Failed to load models info:", error);
         }
-
-        
     }
 }
