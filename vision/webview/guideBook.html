@@ -490,6 +490,7 @@
                 </div>
             </div>
 
+         
             <!-- 6. Vision Chat 상세 가이드 -->
             <div id="chatguide" class="tab-content">
                 <div class="header-banner">
@@ -516,33 +517,13 @@
                             <li><strong>응답 전송:</strong> 백엔드 SSE 기반의 점진적 스트리밍 응답 제공 (<code>chatHandler_SSE.ts</code>)</li>
                         </ul>
                     </div>
-                </div>
-            </div>
 
-            <!-- 6. Vision Chat 상세 가이드 -->
-            <div id="chatguide" class="tab-content">
-                <div class="header-banner">
-                    <h1>Vision Chat 상세 가이드</h1>
-                    <p>VSCode Chat API 기반의 Vision Assistant 참가자 동작 및 활용 안내입니다.</p>
-                </div>
-
-                <div class="grid-cards">
-                    <div class="card" onclick="sendAction('chat-overview-click')">
-                        <h3>🤖 Vision Assistant 개요</h3>
-                        <p>VSCode 내장 Chat UI에서 <code>@vision</code> 참가자를 선택하여 프로젝트 기반 질문을 진행합니다.</p>
+                    <div class="card" onclick="sendAction('chat-commands-click')">
+                        <h3>🛠️ 챗 참가자 명령어 (Chat Commands)</h3>
+                        <p>채팅창에서 <code>@vision</code> 뒤에 입력하여 RAG(검색 증강 생성) 동작 방식을 제어할 수 있는 전용 명령어입니다.</p>
                         <ul>
-                            <li><strong>등록 ID:</strong> <code>vision.chat</code></li>
-                            <li><strong>참가자 이름:</strong> <code>@vision</code> (Vision Assistant)</li>
-                        </ul>
-                    </div>
-
-                    <div class="card" onclick="sendAction('chat-process-click')">
-                        <h3>⚡ 핵심 채팅 처리 프로세스</h3>
-                        <p>사용자 질문 입력 시 컨텍스트와 대화 이력을 결합하여 SSE 스트리밍 응답을 출력합니다.</p>
-                        <ul>
-                            <li><strong>프롬프트 구성:</strong> 질문 정리 및 대화 이력(<code>context.history</code>) 병합</li>
-                            <li><strong>컨텍스트 포함:</strong> 현재 활성 편집기 파일 전체 텍스트 자동 첨부</li>
-                            <li><strong>응답 전송:</strong> 백엔드 SSE 기반의 점진적 스트리밍 응답 제공 (<code>chatHandler_SSE.ts</code>)</li>
+                            <li><code>/no-rag</code>: <strong>"RAG 기능을 사용하지 않습니다."</strong> - 일반 LLM 단독 모드로 답변을 생성합니다.</li>
+                            <li><code>/ragonly</code>: <strong>"RAG 기능만 사용해서 그래프에 출력합니다."</strong> - RAG 검색 결과만을 활용하여 분석 내용을 구성합니다.</li>
                         </ul>
                     </div>
 
