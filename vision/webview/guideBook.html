@@ -199,12 +199,6 @@
         box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     }
 
-    .checkbox-container .guide-img {
-        width: 20px;
-        height: 20px;
-        object-fit: contain;
-    }
-
     .checkbox-container input[type="checkbox"] {
         width: 16px;
         height: 16px;
@@ -336,8 +330,10 @@
             <li class="menu-item active" onclick="switchTab('overview', this)">📊 1. Extension Overview</li>
             <li class="menu-item" onclick="switchTab('assistant', this)">💬 2. FILE DEPENDENCY 탐색기</li>
             <li class="menu-item" onclick="switchTab('quickask', this)">⚡ 3. 코드 빠른 질문 (Quick Ask)</li>
-            <li class="menu-item" onclick="switchTab('chatguide', this)">🤖 4. Vision Chat 상세 가이드</li>
-            <li class="menu-item" onclick="switchTab('details', this)">📋 5. 상세 기능 명세서</li>
+            <li class="menu-item" onclick="switchTab('dependencygraph', this)">📈 4. 의존성 그래프 시각화</li>
+            <li class="menu-item" onclick="switchTab('briefing', this)">📜 5. 프로젝트 브리핑 (Briefing)</li>
+            <li class="menu-item" onclick="switchTab('chatguide', this)">🤖 6. Vision Chat 상세 가이드</li>
+            <li class="menu-item" onclick="switchTab('details', this)">📋 7. 상세 기능 명세서</li>
         </ul>
     </sidebar>
 
@@ -354,11 +350,11 @@
                 <div class="grid-cards">
                     <div class="card" onclick="sendAction('server-status')">
                         <h3>🟢 서버 상태 및 연결 정보</h3>
-                        <p>Extension과 백엔드 서버의 연결 상태 및 응답 속도, 서버 URL, sLLM 연결 상태와 모델명 정보를 확인합니다.</p>
+                        <p>Extension과 백엔드 서버의 연결 상태 및 응답 속도, 서버 URL, sLLM 연결 상태와 모델명 정보를 확인하며, sLLM 답변 스트리밍ON OFF를 선택할 수 있습니다.</p>
                     </div>
                     <div class="card" onclick="sendAction('project-info')">
                         <h3>📂 현재 프로젝트 정보</h3>
-                        <p>선택된 프로젝트의 이름과 경로 정보, 그리고 Git 연동 정보를 직관적으로 표시합니다.</p>
+                        <p>선택된 프로젝트의 이름과 경로 정보, 그리고 Git 연동 정보를 직관적으로 표시하며, 프로젝트 구조 분석의 최신 상태를 관리하고 의존성 그래프와 프로젝트 브리핑을 통해 코드 구조를 입체적으로 파악할 수 있습니다.</p>
                     </div>
                     <div class="card" onclick="sendAction('project-list')">
                         <h3>🔄 프로젝트 목록</h3>
@@ -366,7 +362,7 @@
                     </div>
                     <div class="card" onclick="sendAction('guide-toggle')">
                         <h3>📖 Vision Guide</h3>
-                        <p>가이드북을 접었다 폈다 할 수 있습니다.</p>
+                        <p> Chat history.db 열기 및 가이드북 자동 표시 여부를 설정할 수 있습니다.</p>
                     </div>
                 </div>
             </div>
@@ -422,7 +418,108 @@
                 </div>
             </div>
 
-            <!-- 4. Vision Chat 상세 가이드 (추려진 채팅 가이드) -->
+            <!-- 4. 의존성 그래프 시각화 (화면 4) -->
+    <div id="dependencygraph" class="tab-content">
+        <div class="header-banner">
+            <h1>의존성 그래프 시각화 (Dependency Graph)</h1>
+            <p>프로젝트 내부 파일 간의 호출 및 참조 관계를 시각적으로 분석하는 기능 구성입니다.</p>
+        </div>
+
+        <div class="grid-cards">
+            <div class="card" onclick="sendAction('dependency-graph-click')">
+                <h3>📈 인터랙티브 그래프 맵</h3>
+                <p>프로젝트 전체 소스 코드의 결합도와 모듈 간 의존 구조를 노드와 링크 형태로 시각화하여 복잡한 아키텍처를 쉽게 파악할 수 있도록 돕습니다.</p>
+
+                <div style="margin-top: 14px; text-align: center;">
+                    <!-- 👇 여기가 핵심! 가지고 계신 image.png와 자동 매칭되도록 {{imageUrl}}로 적어줍니다 -->
+                    <img src="{{imUrl}}" alt="의존성 그래프 예시" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border-color);">
+                </div>
+
+                <ul style="margin-top: 14px;">
+                    <li><strong>구조 파악:</strong> 특정 모듈 변경 시 영향받는 연관 파일을 직관적으로 추적</li>
+                    <img src="{{cssUrl}}" alt="의존성 그래프 예시" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <li><strong>노드 상호작용:</strong> 개별 노드 선택 시 상세 파일 경로 및 연결 정보 조회 가능</li>
+                </ul>
+            </div>
+
+            <div class="card" onclick="sendAction('dependency-analysis-click')">
+                <h3>🔍 심층 의존성 분석 요약</h3>
+                <p>그래프 데이터를 기반으로 순환 참조나 결합도가 높은 핵심 컴포넌트를 탐지하여 코드 리팩토링 가이드를 제공합니다.</p>
+                <ul>
+                    <li><strong>핵심 모듈 식별:</strong> 프로젝트 내에서 가장 많이 참조되는 중심 파일 파악</li>
+                    <li><strong>유지보수 최적화:</strong> 불필요한 의존성 제거 및 구조 개선 포인트 제안</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 프로젝트 브리핑 (화면 5 - 새로 추가된 탭) -->
+            <div id="briefing" class="tab-content">
+                <div class="header-banner">
+                    <h1>프로젝트 브리핑 (Preview brief.md)</h1>
+                    <p>현재 선택된 프로젝트의 전체 구조, 문서 요약, 주요 진입점(Entry Points) 및 함수 목록을 마크다운 미리보기 형태로 제공하여 코드베이스 이해를 돕습니다.</p>
+                </div>
+
+                <div class="grid-cards">
+                    <div class="card" onclick="sendAction('briefing-overview-click')">
+                        <h3>📄 프로젝트 개요 및 요약 (Document Summary)</h3>
+                        <p>프로젝트가 어떤 목적을 가진 시스템인지(예: HTTPie CLI 툴 등) 대요를 설명하고, 주요 핵심 문서(README, 패키지 가이드 등)들의 구조를 깔끔하게 요약하여 보여줍니다.</p>
+                        
+                        <!-- 👇 5번 탭 첫 번째 카드에 들어가는 사진 자리 -->
+                        <div style="margin-top: 14px; text-align: center;">
+                            <img src="{{briefUrl}}" alt="프로젝트 브리핑 예시" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border-color);">
+                        </div>
+
+                        <ul>
+                            <li><strong>프로젝트 정의:</strong> 프로젝트의 핵심 역할 및 목표 직관적 제공</li>
+                            <li><strong>문서 인덱스:</strong> 주요 문서 경로 및 구조 빠르게 파악</li>
+                        </ul>
+                    </div>
+
+                    <div class="card" onclick="sendAction('briefing-entry-click')">
+                        <h3>🚀 진입점(Entry Points) 및 함수 분석</h3>
+                        <p>프로젝트가 시작되는 핵심 실행 파일들과 판정 근거, 그리고 각 진입점별 주요 함수 목록을 체계적으로 정리하여 코드 분석의 출발점을 제시합니다.</p>
+                        <ul>
+                            <li><strong>진입점 관리:</strong> <code>__main__.py</code>, <code>cli.py</code>, <code>run.py</code> 등 핵심 실행 파일 위치 및 판정 근거 명시</li>
+                                <div style="margin-top: 14px; text-align: center;">
+                            <img src="{{imaUrl}}" alt="프로젝트 브리핑 예시" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border-color);">
+                        </div>
+                            <li><strong>함수 리스트:</strong> 주요 진입점 내부의 핵심 함수(<code>def main()</code> 등) 구조 요약</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Vision Chat 상세 가이드 -->
+            <div id="chatguide" class="tab-content">
+                <div class="header-banner">
+                    <h1>Vision Chat 상세 가이드</h1>
+                    <p>VSCode Chat API 기반의 Vision Assistant 참가자 동작 및 활용 안내입니다.</p>
+                </div>
+
+                <div class="grid-cards">
+                    <div class="card" onclick="sendAction('chat-overview-click')">
+                        <h3>🤖 Vision Assistant 개요</h3>
+                        <p>VSCode 내장 Chat UI에서 <code>@vision</code> 참가자를 선택하여 프로젝트 기반 질문을 진행합니다.</p>
+                        <ul>
+                            <li><strong>등록 ID:</strong> <code>vision.chat</code></li>
+                            <li><strong>참가자 이름:</strong> <code>@vision</code> (Vision Assistant)</li>
+                        </ul>
+                    </div>
+
+                    <div class="card" onclick="sendAction('chat-process-click')">
+                        <h3>⚡ 핵심 채팅 처리 프로세스</h3>
+                        <p>사용자 질문 입력 시 컨텍스트와 대화 이력을 결합하여 SSE 스트리밍 응답을 출력합니다.</p>
+                        <ul>
+                            <li><strong>프롬프트 구성:</strong> 질문 정리 및 대화 이력(<code>context.history</code>) 병합</li>
+                            <li><strong>컨텍스트 포함:</strong> 현재 활성 편집기 파일 전체 텍스트 자동 첨부</li>
+                            <li><strong>응답 전송:</strong> 백엔드 SSE 기반의 점진적 스트리밍 응답 제공 (<code>chatHandler_SSE.ts</code>)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Vision Chat 상세 가이드 -->
             <div id="chatguide" class="tab-content">
                 <div class="header-banner">
                     <h1>Vision Chat 상세 가이드</h1>
@@ -471,7 +568,7 @@
                 </div>
             </div>
 
-            <!-- 5. 상세 기능 명세서 (기존 4번) -->
+            <!-- 7. 상세 기능 명세서 -->
             <div id="details" class="tab-content">
                 <h2>📋 화면 구성도 기반 기능 명세</h2>
                 <div class="table-responsive">
@@ -508,6 +605,18 @@
                                 <td>코드 우클릭 빠른 질문</td>
                                 <td>드래그한 코드와 파일명을 <code style="color:#60a5fa">@vision</code> 형태로 채팅창에 자동 첨부</td>
                                 <td>우클릭 컨텍스트 메뉴</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Dependency Graph</strong></td>
+                                <td>의존성 그래프 시각화</td>
+                                <td>프로젝트 내 파일/모듈 연결 관계를 그래프로 시각화하여 구조 파악 지원</td>
+                                <td>4번 의존성 그래프 탭</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Project Briefing</strong></td>
+                                <td>프로젝트 브리핑 (Brief.md)</td>
+                                <td>프로젝트 개요, 문서 요약, 진입점(Entry Points) 및 함수 리스트 안내</td>
+                                <td>5번 프로젝트 브리핑 탭</td>
                             </tr>
                         </tbody>
                     </table>

@@ -1,13 +1,14 @@
 {
   "name": "vision",
   "displayName": "vision",
-  "publisher": "Team-vision",
+  "publisher": "HancomAIAcademy_5th-vision",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/h5vision/vision.git"
   },
   "description": "On-premise sLLM Coding Assistance and Intelligence",
-  "version": "0.1.7",
+  "version": "0.2.2",
   "engines": {
     "vscode": "^1.125.0"
   },
