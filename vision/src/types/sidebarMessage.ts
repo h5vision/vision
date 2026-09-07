@@ -22,6 +22,8 @@ export enum SidebarCommand {
 
     GetProjectBrief = "getProjectBrief",
 
+    IsBriefReady = "isBriefReady",
+
     GenerateRAGTEST = "generateRAGTEST",
 
     RemoveRAGTEST = "removeRAGTEST",
@@ -40,7 +42,9 @@ export enum SidebarCommand {
 
     ShowDependencyGraph = "showDependencyGraph",
 
-    InitializeDependencyGraph = "initializeDependencyGraph"
+    InitializeDependencyGraph = "initializeDependencyGraph",
+
+    IndexProject = "indexProject"
 }
 
 export interface SidebarMessage {

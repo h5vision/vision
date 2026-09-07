@@ -75,6 +75,18 @@ export class ProjectBriefHandler {
             vscode.window.showErrorMessage(`프로젝트 브리핑 저장에 실패했습니다: ${detail}`);
         }
     }
+
+    public async isBriefReady(): Promise<Boolean | undefined> {
+        const projectName = this.workspaceService.getWorkspace()?.name;
+        try {
+            const response:any = await this.APIService.get(
+                `/briefing?project_id=${projectName}`
+            );
+            return response.ok && response.briefing !== "";
+        } catch (error) {
+            throw new Error("브리핑 확인 중 오류가 발생했습니다.");
+        }
+    }
 }
 
 interface briefing {

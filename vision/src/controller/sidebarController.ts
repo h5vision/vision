@@ -7,6 +7,7 @@ import { ModelInfoHandler } from "./handlers/modelInfoHandler";
 import { ProjectInfoHandler } from "./handlers/projectInfoHandler";
 import { ProjectListHandler } from "./handlers/projectListHandler";
 import { ProjectBriefHandler } from "./handlers/projectBriefHandler";
+import { ProjectIndexingHandler } from "./handlers/projectIndexingHandler";
 import { GitService } from "../services/gitService";
 
 export class SidebarController {
@@ -16,6 +17,7 @@ export class SidebarController {
     private readonly projectInfoHandler: ProjectInfoHandler;
     private readonly projectListHandler: ProjectListHandler;
     private readonly projectBriefHandler: ProjectBriefHandler;
+    private readonly projectIndexingHandler: ProjectIndexingHandler;
     private readonly gitService = new GitService();
 
     constructor(
@@ -26,6 +28,7 @@ export class SidebarController {
         this.projectInfoHandler = new ProjectInfoHandler(view, this.gitService);
         this.projectListHandler = new ProjectListHandler(view, this.gitService);
         this.projectBriefHandler = new ProjectBriefHandler();
+        this.projectIndexingHandler = new ProjectIndexingHandler(view);
     }
 
     public async handle(message: SidebarMessage) {
@@ -52,6 +55,9 @@ export class SidebarController {
 
             case SidebarCommand.GenerateBriefByCopilot:
                 return this.projectBriefHandler.CopilotGenBrief(message);
+            
+            case SidebarCommand.IndexProject:
+                return this.projectIndexingHandler.handle(message);
 
 
             case SidebarCommand.UpdateEndpoint:
@@ -131,7 +137,14 @@ export class SidebarController {
                     data: guideStatus
                 });
                 return;
-            
+
+            case SidebarCommand.IsBriefReady:
+                const briefStatus = await this.projectBriefHandler.isBriefReady();
+                this.view.webview.postMessage({
+                    command: "briefStatus",
+                    data: briefStatus
+                });
+                return;
 
             case SidebarCommand.OpenDBExternal:
                 await vscode.commands.executeCommand('vision.openDBExternal');

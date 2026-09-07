@@ -107,6 +107,11 @@ body {
 .icon-btn:hover {
     color: var(--vscode-focusBorder);
 }
+.icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
 
 .project-info-box div {
     margin: 8px 4px;

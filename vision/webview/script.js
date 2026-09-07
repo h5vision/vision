@@ -77,6 +77,8 @@ document.addEventListener("DOMContentLoaded", () => {
             data: "locale"
         });
     });
+    prjBriefBtn.style.display = 'none';
+
     // 질문할 프로젝트 브리핑 열기
     const askProjectBriefBtn = document.getElementById("ask-project-brief-btn");
     askProjectBriefBtn.addEventListener("click", () => {
@@ -92,6 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const indexProjectBtn = document.getElementById("index-project-btn");
     indexProjectBtn.addEventListener("click", () => {
+        indexProjectBtn.disabled = true;
         vscode.postMessage({ command: "indexProject" });
     });
     indexProjectBtn.style.display = 'none';
@@ -326,6 +329,7 @@ vscode.postMessage({ command: "getStreamingStatus" });
 setTimeout(() => {
     vscode.postMessage({ command: "checkBackend" });
     vscode.postMessage({ command: "getModelsInfo" });
+    vscode.postMessage({ command: "isBriefReady" });
 }, 100);
     
 setTimeout(() => {
@@ -396,8 +400,23 @@ window.addEventListener("message", event => {
             break;
         }
 
+        case "briefStatus": {
+            const prjBriefBtn = document.getElementById("project-brief-btn");
+            if (message.data) {
+                prjBriefBtn.style.display = 'block';
+            } else {
+                prjBriefBtn.style.display = 'none';
+            }
+            break;
+        }
+
         case "dependencyGraphStatus": {
             updateDependencyGraphStatus(message.data);
+            break;
+        }
+
+        case "indexingError": {
+            document.getElementById('index-project-btn').disabled = false;
             break;
         }
 
