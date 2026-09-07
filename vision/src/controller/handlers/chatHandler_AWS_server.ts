@@ -152,7 +152,7 @@ export class ChatHandler {
     ): void {
         if (references.length > 0) {
             stream.markdown("\n\n");
-            stream.markdown("< Reference Files >");
+            stream.markdown("=== Reference Files ===");
         } else {return;}
         
         for (const source of references) {

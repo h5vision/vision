@@ -90,6 +90,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     openGraphBtn.style.display = 'none';
 
+    const indexProjectBtn = document.getElementById("index-project-btn");
+    indexProjectBtn.addEventListener("click", () => {
+        vscode.postMessage({ command: "indexProject" });
+    });
+    indexProjectBtn.style.display = 'none';
+
     // Project List 새로고침
     const refreshProjectBtn = document.getElementById("refresh-projects-btn");
     refreshProjectBtn.addEventListener("click", () => {
@@ -199,12 +205,26 @@ function renderProjectList(projects) {
 
         const locationEl = document.createElement('span');
         locationEl.className = 'badge';
+        locationEl.textContent = `${proj.location}`;
         if (proj.location === 'Local') {
             locationEl.style.color = '#32b1ff';
+            if (proj.need_indexing) {
+                document.getElementById('index-project-btn').style.display = 'block';
+                locationEl.className = 'badge';
+                locationEl.style.color = '#ff3232';
+                locationEl.textContent += ' ⚡';
+                locationEl.title = '⚡ 서버 DB에 인덱싱 필요';
+            } 
         } else if (proj.location === 'DB') {
-            locationEl.style.color = 'var(--vscode-terminal-ansiGreen';
+            locationEl.style.color = 'var(--vscode-terminal-ansiGreen)';
+            if (proj.need_update) {
+                locationEl.className = 'badge';
+                locationEl.style.color = '#ffb132';
+                locationEl.textContent += ' ⚠️';
+                locationEl.title = '⚠️ 서버 DB 업데이트 필요';
+            }
         }
-        locationEl.textContent = `${proj.location}`;
+        
 
         titleEl.appendChild(iconEl);
         titleEl.appendChild(textEl);
@@ -269,12 +289,25 @@ function updateDependencyGraphStatus(progress) {
             return;
         case 'building [Node]':
             graphStatus.textContent = '프로젝트 구조 분석 중 [Node]';
+            if (progress.total > 0) {
+                const percent = Math.round((progress.current / progress.total) * 20);
+                progressFill.style.width = `${percent}%`;
+                graphStatus.textContent += ` (${progress.current} / ${progress.total})`;
+            }
             break;
         case 'building [Edge]':
             graphStatus.textContent = '프로젝트 구조 분석 중 [Edge]';
+            if (progress.total > 0) {
+                const percent = Math.round((progress.current / progress.total) * 80);
+                progressFill.style.width = `${percent}%`;
+                graphStatus.textContent += ` (${progress.current} / ${progress.total})`;
+            }
             break;
         case 'ready':
             gIcon.className = 'codicon codicon-verified';
+            progressFill.style.width = '100%';
+            progressFill.style.backgroundColor = 'var(--vscode-terminal-ansiGreen)';
+            document.getElementById('open-graph-btn').style.display = 'block';
             break;
         case 'error':
             gIcon.className = 'codicon codicon-error';
@@ -283,24 +316,7 @@ function updateDependencyGraphStatus(progress) {
             gIcon.className = 'codicon codicon-unverified';
             graphStatus.textContent = '알 수 없는 상태';
             return;
-    }
-    if (progress.status === 'building [Node]' && progress.total > 0) {
-        const percent = Math.round((progress.current / progress.total) * 20);
-        progressFill.style.width = `${percent}%`;
-        graphStatus.textContent += ` (${progress.current} / ${progress.total})`;
-    }
-    if (progress.status === 'building [Edge]' && progress.total > 0) {
-        const percent = 20 + Math.round((progress.current / progress.total) * 80);
-        progressFill.style.width = `${percent}%`;
-        graphStatus.textContent += ` (${progress.current} / ${progress.total})`;
-    }
-
-    if (progress.status === 'ready') {
-        progressFill.style.width = '100%';
-        progressFill.style.backgroundColor = 'var(--vscode-terminal-ansiGreen)';
-        document.getElementById('open-graph-btn').style.display = 'block';
-    }
-    
+    }    
 }
 
 vscode.postMessage({ command: "getProjectInfo" });
@@ -320,7 +336,7 @@ setTimeout(() => {
 setTimeout(() => {
     vscode.postMessage({ command: "getProjectGitInfo" });
     vscode.postMessage({ command: "getProjectList" });
-}, 1000);
+}, 500);
 
 setInterval(() => {
     vscode.postMessage({ command: "checkBackend" });

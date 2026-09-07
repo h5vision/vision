@@ -13,10 +13,11 @@ export class ProjectListHandler {
     ) {}
 
     public async handle(message: SidebarMessage) {
-        
+        await this.gitService.initialize();
         console.log(message.command);
         const apiService = new APIService();
         const indexedProjects: any = await apiService.get('/projects?view=repos');
+        console.log(indexedProjects);
         const indexedProjectsList = (await indexedProjects.repos).map((project:any) => ({
             id: project.index_id,
             location: "DB",
@@ -25,11 +26,10 @@ export class ProjectListHandler {
                 ? project.commits.map((c:any) => [c, '']) 
                 : [[project.indexed_commit, '']]
         }));
-        console.log(indexedProjectsList);
         
         const workspace:any = this.workspaceService.getWorkspace();
         const response = {name: workspace.name, path: workspace.path};
-        await this.gitService.initialize();
+        
         if (this.gitService.exists()) {
             const gitCommits = (await this.gitService.getRecentCommits()).map(m=>
                 [m.hash, m.message]);
@@ -38,10 +38,19 @@ export class ProjectListHandler {
                 location: "Local",
                 name: response.name, 
                 commits: gitCommits,
+                need_indexing: true
             };
             const matchingProject = indexedProjectsList.find(
                 (project: any) => project.name === localPrj.name
             );
+            if (matchingProject) {
+                localPrj.need_indexing = false;
+                const latestCommit = matchingProject.commits[0];
+                const latestLocalCommit = localPrj.commits[0];
+                if (latestCommit[0] !== latestLocalCommit[0]) {
+                    matchingProject.need_update = true;
+                }
+            }
             const otherProjects = indexedProjectsList
                 .filter((project: any) => project !== matchingProject)
                 .sort((a: any, b: any) => a.name.localeCompare(b.name));
@@ -52,6 +61,7 @@ export class ProjectListHandler {
                     ? [localPrj, matchingProject, ...otherProjects]
                     : [localPrj, ...otherProjects]
             });
+            console.log(localPrj, matchingProject, otherProjects);
         } else {
             this.view.webview.postMessage({
                 command: 'showProjectList',
