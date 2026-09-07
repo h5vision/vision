@@ -110,11 +110,11 @@ document.addEventListener("DOMContentLoaded", () => {
         vscode.postMessage({ command: "toggleGuide" });
     });
 
-    // // 프로젝트 브리핑 생성 by Copilot
-    // const copilotBriefGenBtn = document.getElementById("copilot-gen-brief-btn");
-    // copilotBriefGenBtn.addEventListener("click", () => {
-    //     vscode.postMessage({ command: "generateBriefByCopilot" });
-    // });
+    // 프로젝트 브리핑 생성 by Copilot
+    const copilotBriefGenBtn = document.getElementById("copilot-gen-brief-btn");
+    copilotBriefGenBtn.addEventListener("click", () => {
+        vscode.postMessage({ command: "generateBriefByCopilot" });
+    });
 
     // const genRAGTBtn = document.getElementById("gen-RAGTEST-btn");
     // genRAGTBtn.addEventListener("click", () => {
@@ -212,7 +212,7 @@ function renderProjectList(projects) {
                 document.getElementById('index-project-btn').style.display = 'block';
                 locationEl.className = 'badge';
                 locationEl.style.color = '#ff3232';
-                locationEl.textContent += ' ⚡';
+                locationEl.textContent += '⚡';
                 locationEl.title = '⚡ 서버 DB에 인덱싱 필요';
             } 
         } else if (proj.location === 'DB') {
@@ -220,7 +220,7 @@ function renderProjectList(projects) {
             if (proj.need_update) {
                 locationEl.className = 'badge';
                 locationEl.style.color = '#ffb132';
-                locationEl.textContent += ' ⚠️';
+                locationEl.textContent += '⚠️';
                 locationEl.title = '⚠️ 서버 DB 업데이트 필요';
             }
         }

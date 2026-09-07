@@ -49,7 +49,17 @@ export class ProjectBriefHandler {
             const brief = (response as briefing).briefing;
 
             if (!(response as briefing).ok) {
-                throw new Error("브리핑 응답에 Markdown 내용이 없습니다.");
+                const reason = (response as briefing).reason;
+                switch (reason) {
+                    case "not_generated":
+                        throw new Error("브리핑이 생성되지 않았습니다.");
+                    case "model_not_loaded":
+                        throw new Error("AWS ollama 모델이 로드되지 않았습니다.");
+                    case "no_material":
+                        throw new Error("브리핑에 필요한 자료가 없습니다.");
+                    default:
+                        throw new Error("브리핑이 존재하지 않습니다.");
+                }
             }
             const outputUri = vscode.Uri.joinPath(
                 vscode.Uri.file(workspace.path),
@@ -72,4 +82,5 @@ interface briefing {
     project_id: string;
     indexed_id: string;
     briefing: string;
+    reason?: string;
 }
