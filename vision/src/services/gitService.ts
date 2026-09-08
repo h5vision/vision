@@ -172,7 +172,7 @@ export class GitService implements vscode.Disposable {
     }
 
     private toGitHubUrl(remoteUrl: string): string | undefined {
-        const normalizedUrl = remoteUrl.replace(/\.git$/, "");
+        const normalizedUrl = remoteUrl;
         const sshMatch = normalizedUrl.match(/^(?:ssh:\/\/)?git@github\.com[:/]([^/]+\/.+)$/i);
 
         if (sshMatch) {

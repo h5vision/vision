@@ -142,6 +142,9 @@ body {
     overflow: hidden;
     margin-top: 4px;
 }
+#indexing-progress-bar {
+    margin-bottom: 6px;
+}
 
 .progress-fill {
     margin:0;
@@ -193,6 +196,9 @@ body {
 .codicon {
     vertical-align: sub;
     margin-right: 4px;
+}
+.codicon-error {
+    color: #ff3232;
 }
 
 .ellipsis {

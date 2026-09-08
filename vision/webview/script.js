@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
         indexProjectBtn.disabled = true;
         vscode.postMessage({ command: "indexProject" });
     });
-    indexProjectBtn.style.display = 'none';
+    // indexProjectBtn.style.display = 'none';
 
     // Project List 새로고침
     const refreshProjectBtn = document.getElementById("refresh-projects-btn");
@@ -213,6 +213,7 @@ function renderProjectList(projects) {
             locationEl.style.color = '#32b1ff';
             if (proj.need_indexing) {
                 document.getElementById('index-project-btn').style.display = 'block';
+                document.getElementById('indexing-progress-bar').classList.remove('hidden');
                 locationEl.className = 'badge';
                 locationEl.style.color = '#ff3232';
                 locationEl.textContent += '⚡';
@@ -323,17 +324,12 @@ function updateDependencyGraphStatus(progress) {
 }
 
 function updateIndexingStatus(rate) {
-    const indexingBar = document.getElementById('indexing-progress-bar');
     const progressFill = document.getElementById('indexing-progress-fill');
-    indexingBar.classList.remove('hidden');
-    progressFill.style.color = 'var(--vscode-foreground)';
+    progressFill.style.backgroundColor = 'var(--vscode-foreground)';
     const percent = Math.round(rate * 100);
     progressFill.style.width = `${percent}%`;
     if (percent === 100) {
-        progressFill.style.color = 'var(--vscode-terminal-ansiGreen)';
-        setTimeout(() => {
-            indexingBar.classList.add('hidden');
-        }, 1000);
+        progressFill.style.backgroundColor = 'var(--vscode-terminal-ansiGreen)';
     }
 }
 
@@ -435,9 +431,16 @@ window.addEventListener("message", event => {
             break;
         }
 
+        case "indexingRunning": {
+            document.getElementById('index-project-btn').disabled = true;
+            break;
+        }
+
         case "indexingError": {
             document.getElementById('index-project-btn').disabled = false;
-            document.getElementById('indexing-progress-bar').classList.add('hidden');
+            document.getElementById('indexing-progress-fill').style.backgroundColor = '#ff3232';
+            document.getElementById('index-error').classList.remove('hidden');
+            document.getElementById('index-error-msg').textContent = message.data;
             break;
         }
 

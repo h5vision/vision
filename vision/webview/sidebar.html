@@ -67,18 +67,12 @@
         <div class="progress-bar">
             <div id="graph-progress-fill" class="progress-fill"></div>
         </div>
-        <button id="open-graph-btn" class="icon-btn block-btn" title="의존성 그래프 열기">
+        <button id="open-graph-btn" class="icon-btn block-btn" title="vscode 자체 기능으로 생성한 의존성 그래프를 표시합니다.">
             <i class="codicon codicon-type-hierarchy-sub"></i> Vision ─ 의존성 그래프
         </button>
-        <button id="project-brief-btn" class="icon-btn block-btn" title="프로젝트 브리핑 생성">
+        <button id="project-brief-btn" class="icon-btn block-btn" title="서버에서 프로젝트를 인덱싱할 때 생성된 프로젝트 브리핑을 가져옵니다.">
             <i class="codicon codicon-comment-unresolved"></i> Vision ─ 프로젝트 브리핑
         </button>
-        <button id="index-project-btn" class="icon-btn block-btn" title="프로젝트 인덱싱">
-            <i class="codicon codicon-database"></i> Vision ─ 프로젝트 인덱싱 ⚡
-        </button>
-        <div id="indexing-progress-bar" class="progress-bar hidden">
-            <div id="indexing-progress-fill" class="progress-fill"></div>
-        </div>
     </div>
 
     <!-- 3. 프로젝트 목록 카드 -->
@@ -96,6 +90,16 @@
                 <i class="codicon codicon-comment-unresolved"></i> Vision ─ 프로젝트 브리핑
             </div>
             <hr>
+        </div>
+        <button id="index-project-btn" class="icon-btn block-btn" title="Github repository 기준으로 서버에 프로젝트를 인덱싱합니다.">
+            <i class="codicon codicon-database"></i> Vision ─ 프로젝트 인덱싱 ⚡
+        </button>
+        <div id="index-error" class="hidden">
+            <i class="codicon codicon-error"></i> 
+            <span id="index-error-msg"></span>
+        </div>
+        <div id="indexing-progress-bar" class="progress-bar hidden">
+            <div id="indexing-progress-fill" class="progress-fill"></div>
         </div>
         <div class="card-header">
             <span><i class="codicon codicon-list-unordered"></i> 프로젝트 목록</span>
