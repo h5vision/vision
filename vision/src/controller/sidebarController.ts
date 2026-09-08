@@ -42,10 +42,7 @@ export class SidebarController {
                 return this.modelInfoHandler.handle(message);
 
             case SidebarCommand.GetProjectInfo:
-                if (!this.gitService.exists()) {
-                    return this.projectInfoHandler.handle(message);
-                }
-                return;
+                return this.projectInfoHandler.handle(message);
 
             case SidebarCommand.GetProjectGitInfo:
                 this.gitService.onDidRepositoryReady(() => {

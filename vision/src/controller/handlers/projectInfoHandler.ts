@@ -30,7 +30,6 @@ export class ProjectInfoHandler {
 
     public async handleGitInfo(message: SidebarMessage) {
         console.log(message.command);
-        this.handle(message);
         this.gitService.initialize();
         const repo = await this.gitService.getRepositoryInfo();
         const response = {git: this.gitService.exists(), repository: repo};
