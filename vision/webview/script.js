@@ -79,12 +79,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     prjBriefBtn.style.display = 'none';
 
-    // 질문할 프로젝트 브리핑 열기
-    const askProjectBriefBtn = document.getElementById("ask-project-brief-btn");
-    askProjectBriefBtn.addEventListener("click", () => {
-        vscode.postMessage({ command: "getProjectBrief"});
-    });
-
     // 의존성 그래프 열기 버튼 이벤트
     const openGraphBtn = document.getElementById("open-graph-btn");
     openGraphBtn.addEventListener("click", () => {
@@ -193,6 +187,14 @@ function renderProjectList(projects) {
     container.innerHTML = '';
     projects.sort((a, b) => a.id - b.id);
     projects.forEach(proj => {
+        let displayName = proj.name;
+        let branch = '임시';
+        if (proj.name.includes('@')) {
+            const parts = proj.name.split('@');
+            displayName = parts[0];
+            branch = parts[1];
+        }
+
         const projectItem = document.createElement('div');
         projectItem.className = 'project-item';
 
@@ -204,7 +206,7 @@ function renderProjectList(projects) {
         iconEl.className = 'codicon codicon-chevron-right';
 
         const textEl = document.createElement('span');
-        textEl.textContent = `${proj.name}`;
+        textEl.textContent = `${displayName}`;
 
         const locationEl = document.createElement('span');
         locationEl.className = 'badge';
@@ -232,7 +234,6 @@ function renderProjectList(projects) {
             }
         }
         
-
         titleEl.appendChild(iconEl);
         titleEl.appendChild(textEl);
         titleEl.appendChild(locationEl);
@@ -251,10 +252,10 @@ function renderProjectList(projects) {
                         command: "updateCommitId", 
                         data: { 
                             project_id: proj.id, 
-                            name: proj.name || 'unknown',
+                            name: displayName || 'unknown',
                             commit: SHA, 
                             path: proj.location,
-                            branch: '임시'
+                            branch: branch
                         } 
                     });
                 });
@@ -405,7 +406,7 @@ window.addEventListener("message", event => {
             const data = message.data;
             if (data.git) {
                 document.getElementById('current-git-remote').classList.remove('hidden');
-                document.getElementById('current-git-remote-url').textContent = data.repository.remote.split('.com/')[1].replace('/', ' / ');
+                document.getElementById('current-git-remote-url').textContent = data.repository.remote.split('.com/')[1].split('.git')[0].replace('/', ' / ');
                 elgit.textContent = data.repository.branch;
                 elgit.innerHTML = `<i class="codicon codicon-git-branch"></i> ${data.repository.commit.slice(0,7)} &nbsp; <b><i class="codicon codicon-target"></i>${data.repository.branch}</b>`;
             } else {

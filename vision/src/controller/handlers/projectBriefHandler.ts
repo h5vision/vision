@@ -3,11 +3,13 @@ import { SidebarMessage } from "../../types/sidebarMessage";
 import { BriefPromptBuilder } from "../../utils/promptBuilder";
 import { APIService } from "../../services/APIService";
 import { WorkspaceService } from "../../services/workspaceService";
+import { GitService } from "../../services/gitService";
 
 export class ProjectBriefHandler {
 
     private readonly APIService = new APIService();
     private readonly workspaceService = new WorkspaceService();
+    private readonly gitService = new GitService();
 
     public async CopilotGenBrief(message: SidebarMessage) {
         console.log(message.command);
@@ -29,11 +31,9 @@ export class ProjectBriefHandler {
             vscode.window.showErrorMessage("열려 있는 워크스페이스가 없습니다.");
             return;
         }
-        let projectId = vscode.workspace.getConfiguration("vision").get<string>("projectId") || vscode.workspace.name;
-        if (message.data === "locale") {
-            projectId = vscode.workspace.name;
-        }
-        const briefName = message.data === "locale" ? "brief.md" : `brief-${projectId}.md`;
+        let projectId = vscode.workspace.getConfiguration("vision").get<string>("projectId");
+        const briefName = message.data === "locale" ? `brief.md` : `brief-${projectId}.md`;
+        
 
         if ((await vscode.workspace.fs.readDirectory(vscode.Uri.file(workspace.path))).some(([name]) => name === briefName)) {
             const briefUri = vscode.Uri.joinPath(vscode.Uri.file(workspace.path), briefName);
@@ -77,7 +77,7 @@ export class ProjectBriefHandler {
     }
 
     public async isBriefReady(): Promise<Boolean | undefined> {
-        const projectName = this.workspaceService.getWorkspace()?.name;
+        const projectName = vscode.workspace.getConfiguration("vision").get<string>("projectId");
         try {
             const response:any = await this.APIService.get(
                 `/briefing?project_id=${projectName}`

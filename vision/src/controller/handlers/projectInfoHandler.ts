@@ -40,7 +40,7 @@ export class ProjectInfoHandler {
         if (this.gitService.exists()) {
             await vscode.workspace.getConfiguration('vision').update(
                 "projectId",
-                repo?.rootPath.split('\\').pop() + '@' + repo?.branch,
+                repo?.rootPath.split('\\').pop()?.trim() + '@' + repo?.branch,
                 vscode.ConfigurationTarget.Global
             );
             await vscode.workspace.getConfiguration('vision').update(

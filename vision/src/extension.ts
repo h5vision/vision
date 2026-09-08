@@ -9,7 +9,6 @@ import { FileDependencyProvider } from "./providers/dependencyProvider";
 import { HistoryService } from './services/historyService';
 import { DependencyService } from './services/dependencyService';
 import { GitService } from './services/gitService';
-import { CommitDiffService } from './services/commitDiffService';
 import { DependencyGraphService } from './services/dependencyGraphService';
 import { DependencyGraphManager } from './services/dependencyGraphManager';
 
@@ -24,30 +23,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.window.showInformationMessage('Hello World from vision!');
 	});
 	context.subscriptions.push(disposable);
-
-
-	// 커밋이 발생하면 diff를 backend 서버로 전송하는 기능을 초기화합니다.
-	const gitService = new GitService();
-	const commitDiffService = new CommitDiffService(gitService);
-	context.subscriptions.push(gitService, commitDiffService);
-	let commitId;
-	gitService.initialize().then(() => {
-		commitId = gitService.getCurrentCommit();
-		vscode.workspace.getConfiguration('vision').update(
-			"projectId",
-			vscode.workspace.name || 'none',
-			vscode.ConfigurationTarget.Global
-		);
-		vscode.workspace.getConfiguration('vision').update(
-			"commitId",
-			commitId,
-			vscode.ConfigurationTarget.Global
-		);
-		commitDiffService.start();
-	});
-
 	
 	const dependencyGraphService = new DependencyGraphService();
+    const gitService = new GitService();
     const dependencyGraphManager = new DependencyGraphManager(dependencyGraphService, gitService);
 
 	// Dependency Graph Provider 초기화 (chat handler에서 근거 문서 강조에 사용)

@@ -47,7 +47,7 @@ export class ChatHandler {
             error: "답변 실패"
         };
 
-        const project_id = vscode.workspace.getConfiguration("vision").get<string>("projectId") || this.workspace?.name || 'none';
+        const project_id = vscode.workspace.getConfiguration("vision").get<string>("projectId", ' ');
 
         // get all the previous participant messages
         const previousMessages = context.history.filter(
