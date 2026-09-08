@@ -86,6 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     openGraphBtn.style.display = 'none';
 
+    // 프로젝트 인덱싱 버튼 이벤트
     const indexProjectBtn = document.getElementById("index-project-btn");
     indexProjectBtn.addEventListener("click", () => {
         indexProjectBtn.disabled = true;
@@ -252,7 +253,7 @@ function renderProjectList(projects) {
                         command: "updateCommitId", 
                         data: { 
                             project_id: proj.id, 
-                            name: displayName || 'unknown',
+                            name: displayName || proj.name,
                             commit: SHA, 
                             path: proj.location,
                             branch: branch
@@ -350,12 +351,12 @@ setTimeout(() => {
 setTimeout(() => {
     vscode.postMessage({ command: "initializeDependencyGraph" });
     vscode.postMessage({ command: "getDependencyGraphStatus" });
-}, 250);
+}, 200);
 
 setTimeout(() => {
     vscode.postMessage({ command: "getProjectGitInfo" });
     vscode.postMessage({ command: "getProjectList" });
-}, 500);
+}, 300);
 
 setInterval(() => {
     vscode.postMessage({ command: "checkBackend" });

@@ -27,7 +27,7 @@ export class SidebarController {
         this.modelInfoHandler = new ModelInfoHandler(view);
         this.projectInfoHandler = new ProjectInfoHandler(view, this.gitService);
         this.projectListHandler = new ProjectListHandler(view, this.gitService);
-        this.projectBriefHandler = new ProjectBriefHandler();
+        this.projectBriefHandler = new ProjectBriefHandler(this.gitService);
         this.projectIndexingHandler = new ProjectIndexingHandler(view);
     }
 
@@ -42,9 +42,15 @@ export class SidebarController {
                 return this.modelInfoHandler.handle(message);
 
             case SidebarCommand.GetProjectInfo:
-                return this.projectInfoHandler.handle(message);
+                if (!this.gitService.exists()) {
+                    return this.projectInfoHandler.handle(message);
+                }
+                return;
 
             case SidebarCommand.GetProjectGitInfo:
+                this.gitService.onDidRepositoryReady(() => {
+                    return this.projectInfoHandler.handleGitInfo(message);
+                });
                 return this.projectInfoHandler.handleGitInfo(message);
 
             case SidebarCommand.GetProjectList: 
@@ -99,6 +105,12 @@ export class SidebarController {
                     );
                 await vscode.workspace.getConfiguration('vision')
                     .update(
+                        "branch",
+                        message.data.branch,
+                        vscode.ConfigurationTarget.Global
+                    );
+                await vscode.workspace.getConfiguration('vision')
+                    .update(
                         "commitId",
                         message.data.commit,
                         vscode.ConfigurationTarget.Global
@@ -139,11 +151,18 @@ export class SidebarController {
                 return;
 
             case SidebarCommand.IsBriefReady:
-                const briefStatus = await this.projectBriefHandler.isBriefReady();
-                this.view.webview.postMessage({
-                    command: "briefStatus",
-                    data: briefStatus
+                this.gitService.onDidRepositoryReady(async () => {
+                    const briefStatus = await this.projectBriefHandler.isBriefReady();
+                    this.view.webview.postMessage({
+                        command: "briefStatus",
+                        data: briefStatus
+                    });
                 });
+                const briefStatus = await this.projectBriefHandler.isBriefReady();
+                    this.view.webview.postMessage({
+                        command: "briefStatus",
+                        data: briefStatus
+                    });
                 return;
 
             case SidebarCommand.OpenDBExternal:

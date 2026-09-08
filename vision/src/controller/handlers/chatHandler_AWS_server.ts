@@ -48,6 +48,8 @@ export class ChatHandler {
         };
 
         const project_id = vscode.workspace.getConfiguration("vision").get<string>("projectId", ' ');
+        const branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
+        // const commitId = vscode.workspace.getConfiguration("vision").get<string>("commitId", ' ');
 
         // get all the previous participant messages
         const previousMessages = context.history.filter(
@@ -58,9 +60,6 @@ export class ChatHandler {
         if (!previousMessages) {
             session_id = session.resetSessionId();
         } 
-        
-        // // 추후 snapshot 기능을 위해 commitId를 가져옵니다. 
-        // const commitId = vscode.workspace.getConfiguration("vision").get<string>("commitId");
 
         let rag = true;
         if (request.command === 'no-rag') {
@@ -69,7 +68,7 @@ export class ChatHandler {
         const highlightedPaths: string[] = [];
 
         const payload = {
-            project_id: project_id,
+            project_id: branch === 'None' ? project_id : project_id + '@' + branch,
             message: request.prompt,
             rag: rag, 
             stream: true,

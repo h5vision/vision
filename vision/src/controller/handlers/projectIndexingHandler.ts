@@ -1,14 +1,12 @@
 import * as vscode from "vscode";
 import { SidebarMessage } from "../../types/sidebarMessage";
 import { APIService } from "../../services/APIService";
-import { WorkspaceService } from "../../services/workspaceService";
 import { GitService } from "../../services/gitService";
 import { waitUntil } from "../../utils/wait";
 
 export class ProjectIndexingHandler {
 
     private readonly apiService = new APIService();
-    private readonly workspaceService = new WorkspaceService();
     private readonly gitService = new GitService();
 
     constructor(
@@ -19,13 +17,10 @@ export class ProjectIndexingHandler {
         await this.gitService.initialize();
         console.log(message.command);
 
-        const projectId = vscode.workspace.getConfiguration("vision").get<string>("projectId") 
-            || this.workspaceService.getWorkspace()?.name 
-            || "None";
-        
-            const repo = await this.gitService.getRepositoryInfo();
+        let projectId = vscode.workspace.getConfiguration("vision").get<string>("projectId", "");
+        const branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
+        const repo = await this.gitService.getRepositoryInfo();
         const remote = repo?.remote; 
-        const branch = repo?.branch;
 
         const body = {
             remote: remote,
@@ -57,49 +52,52 @@ export class ProjectIndexingHandler {
                     command: "indexingRunning"
                 });
                 vscode.window.showInformationMessage("프로젝트 인덱싱이 진행 중입니다.");
-                waitUntil(async () => await this.isIndexed(this.view, projectId), 10 * 60 * 1000, 100)
-                    .then(async (indexed) => {
-                        if (!indexed) {
-                            const rsp: any = await this.apiService.get(`/index/status?project_id=${projectId}`);
-                            const error = rsp.error;
-                            vscode.window.showErrorMessage("프로젝트 인덱싱이 실패했습니다: " + (error?.message || error || 'Unknown error'));
-                            this.view.webview.postMessage({
-                                command: "indexingError",
-                                data: error?.message || error || "Server Error"
-                            });
-                            return;
-                        }
-                        vscode.window.showInformationMessage("프로젝트 인덱싱이 완료되었습니다.");
+                waitUntil(
+                    async () => await this.isIndexed(this.view, projectId, branch), 
+                    10 * 60 * 1000, 100
+                ).then(async (indexed) => {
+                    if (!indexed) {
+                        const rsp: any = await this.apiService.get(`/index/status?project_id=${projectId}`);
+                        const error = rsp.error;
+                        vscode.window.showErrorMessage("프로젝트 인덱싱이 실패했습니다: " + (error || rsp?.message || 'Unknown error'));
                         this.view.webview.postMessage({
-                            command: "indexingDone"
+                            command: "indexingError",
+                            data: error || rsp?.message || "Server Error"
                         });
-                    })
-                    .catch(() => {
-                        throw new Error("프로젝트 인덱싱 중 오류가 발생했습니다.");
+                        return;
+                    }
+                    vscode.window.showInformationMessage("프로젝트 인덱싱이 완료되었습니다.");
+                    this.view.webview.postMessage({
+                        command: "indexingDone"
                     });
-                waitUntil(async () => await this.isBriefReady(projectId), 10 * 60 * 1000, 30 * 1000)
-                    .then((briefReady) => {
-                        if (!briefReady) {
-                            vscode.window.showErrorMessage("프로젝트 브리핑이 시간 내에 준비되지 않았습니다.");
-                            this.view.webview.postMessage({
-                                command: "briefStatus",
-                                data: false
-                            });
-                            return;
-                        }
-                        vscode.window.showInformationMessage("프로젝트 브리핑이 준비되었습니다.");
-                        this.view.webview.postMessage({
-                            command: "briefStatus",
-                            data: true
-                        });
-                    })
-                    .catch(() => {
-                        vscode.window.showErrorMessage("프로젝트 브리핑 상태 확인 중 오류가 발생했습니다.");
+                }).catch(() => {
+                    throw new Error("프로젝트 인덱싱 중 오류가 발생했습니다.");
+                });
+
+                waitUntil(
+                    async () => await this.isBriefReady(projectId, branch), 
+                    10 * 60 * 1000, 30 * 1000
+                ).then((briefReady) => {
+                    if (!briefReady) {
+                        vscode.window.showErrorMessage("프로젝트 브리핑이 시간 내에 준비되지 않았습니다.");
                         this.view.webview.postMessage({
                             command: "briefStatus",
                             data: false
                         });
+                        return;
+                    }
+                    vscode.window.showInformationMessage("프로젝트 브리핑이 준비되었습니다.");
+                    this.view.webview.postMessage({
+                        command: "briefStatus",
+                        data: true
                     });
+                }).catch(() => {
+                    vscode.window.showErrorMessage("프로젝트 브리핑 상태 확인 중 오류가 발생했습니다.");
+                    this.view.webview.postMessage({
+                        command: "briefStatus",
+                        data: false
+                    });
+                });
             } else {
                 throw new Error(response.error || "Unknown error occurred during project indexing.");
             }
@@ -115,9 +113,13 @@ export class ProjectIndexingHandler {
 
     private async isIndexed(
         view: vscode.WebviewView, 
-        projectId: string | undefined
+        projectId: string,
+        branch: string,
     ): Promise<Boolean | undefined> {
         try {
+            if (branch !== 'None') {
+                projectId = projectId + '@' + branch;
+            }
             const response: any = await this.apiService.get(
                 `/index/status?project_id=${projectId}`
             );
@@ -142,10 +144,14 @@ export class ProjectIndexingHandler {
             return undefined;
         }
     }
-
     
-    private async isBriefReady(projectId: string | undefined): Promise<Boolean | undefined> {
+    private async isBriefReady(
+        projectId: string, branch: string
+    ): Promise<Boolean | undefined> {
         try {
+            if (branch !== 'None') {
+                projectId = projectId + '@' + branch;
+            }
             const response:any = await this.apiService.get(
                 `/briefing?project_id=${projectId}`
             );

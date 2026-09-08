@@ -116,7 +116,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const dependencyProvider = new FileDependencyProvider();
 	vscode.window.registerTreeDataProvider("visionFileView", dependencyProvider);
 
-	const dependencyService = new DependencyService(dependencyProvider);
+	const dependencyService = new DependencyService(dependencyProvider);	
 
 	setTimeout(() => void dependencyService.refresh(), 500);
 

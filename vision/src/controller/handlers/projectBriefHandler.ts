@@ -9,8 +9,10 @@ export class ProjectBriefHandler {
 
     private readonly APIService = new APIService();
     private readonly workspaceService = new WorkspaceService();
-    private readonly gitService = new GitService();
 
+    constructor(
+        private readonly gitService: GitService = new GitService()
+    ) {}
     public async CopilotGenBrief(message: SidebarMessage) {
         console.log(message.command);
         const query = BriefPromptBuilder.build();
@@ -26,14 +28,20 @@ export class ProjectBriefHandler {
 
     public async handle(message: SidebarMessage) {
         console.log(message.command);
+        this.gitService.initialize();
         const workspace = this.workspaceService.getWorkspace();
         if (!workspace) {
             vscode.window.showErrorMessage("열려 있는 워크스페이스가 없습니다.");
             return;
         }
         let projectId = vscode.workspace.getConfiguration("vision").get<string>("projectId");
+        let branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
+        if (message.data === "locale" && this.gitService.exists()) {
+            const repo = await this.gitService.getRepositoryInfo();
+            projectId = repo?.rootPath.split('\\')?.pop() || '';
+            branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
+        }
         const briefName = message.data === "locale" ? `brief.md` : `brief-${projectId}.md`;
-        
 
         if ((await vscode.workspace.fs.readDirectory(vscode.Uri.file(workspace.path))).some(([name]) => name === briefName)) {
             const briefUri = vscode.Uri.joinPath(vscode.Uri.file(workspace.path), briefName);
@@ -42,14 +50,14 @@ export class ProjectBriefHandler {
         }
 
         try {
-            
-            const response = await this.APIService.get(
+            if (branch !== 'None') {
+                projectId = projectId + '@' + branch;
+            }
+            const response:any = await this.APIService.get(
                 `/briefing?project_id=${projectId}`
             );
-            const brief = (response as briefing).briefing;
-
-            if (!(response as briefing).ok) {
-                const reason = (response as briefing).reason;
+            if (!response.ok) {
+                const reason = response.reason;
                 switch (reason) {
                     case "not_generated":
                         throw new Error("브리핑이 생성되지 않았습니다.");
@@ -57,10 +65,9 @@ export class ProjectBriefHandler {
                         throw new Error("AWS ollama 모델이 로드되지 않았습니다.");
                     case "no_material":
                         throw new Error("브리핑에 필요한 자료가 없습니다.");
-                    default:
-                        throw new Error("브리핑이 존재하지 않습니다.");
                 }
             }
+            const brief = response.briefing;
             const outputUri = vscode.Uri.joinPath(
                 vscode.Uri.file(workspace.path),
                 briefName
@@ -77,22 +84,18 @@ export class ProjectBriefHandler {
     }
 
     public async isBriefReady(): Promise<Boolean | undefined> {
-        const projectName = vscode.workspace.getConfiguration("vision").get<string>("projectId");
+        let projectId = vscode.workspace.getConfiguration("vision").get<string>("projectId", "");
+        const branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
+        if (branch !== 'None') {
+            projectId = projectId + '@' + branch;
+        }
         try {
             const response:any = await this.APIService.get(
-                `/briefing?project_id=${projectName}`
+                `/briefing?project_id=${projectId}`
             );
-            return response.ok && response.briefing !== "";
+            return response.ok;
         } catch (error) {
-            throw new Error("브리핑 확인 중 오류가 발생했습니다.");
+            return undefined;
         }
     }
-}
-
-interface briefing {
-    ok: boolean;
-    project_id: string;
-    indexed_id: string;
-    briefing: string;
-    reason?: string;
 }

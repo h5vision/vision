@@ -35,14 +35,15 @@ export class ProjectListHandler {
             const gitCommits = (await this.gitService.getRecentCommits()).map(m=>
                 [m.hash, m.message]);
             const localPrj = {
-                id: response.name + '@' + branch, 
+                id: response.name,
+                branch: branch,
                 location: "Local",
-                name: response.name + '@' + branch, 
+                name: response.name, 
                 commits: gitCommits,
                 need_indexing: true
             };
             const matchingProject = indexedProjectsList.find(
-                (project: any) => project.name === localPrj.name
+                (project: any) => project.id === localPrj.name + '@' + branch
             );
             if (matchingProject) {
                 localPrj.need_indexing = false;

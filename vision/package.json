@@ -41,6 +41,11 @@
           "default": "None",
           "description": "vision commitId for selected project"
         },
+        "vision.branch": {
+          "type": "string",
+          "default": "None",
+          "description": "vision branch for selected project"
+        },
         "vision.showGuideBook": {
           "type": "boolean",
           "default": false,
@@ -155,7 +160,6 @@
     "serialize-javascript": "^7.0.6"
   },
   "dependencies": {
-    "@vscode/codicons": "^0.0.46-24",
-    "update": "^0.4.2"
+    "@vscode/codicons": "^0.0.46-24"
   }
 }

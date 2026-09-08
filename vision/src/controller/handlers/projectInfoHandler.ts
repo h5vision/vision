@@ -40,7 +40,12 @@ export class ProjectInfoHandler {
         if (this.gitService.exists()) {
             await vscode.workspace.getConfiguration('vision').update(
                 "projectId",
-                repo?.rootPath.split('\\').pop()?.trim() + '@' + repo?.branch,
+                repo?.rootPath.split('\\').pop()?.trim(),
+                vscode.ConfigurationTarget.Global
+            );
+            await vscode.workspace.getConfiguration('vision').update(
+                "branch",
+                repo?.branch,
                 vscode.ConfigurationTarget.Global
             );
             await vscode.workspace.getConfiguration('vision').update(
@@ -51,25 +56,5 @@ export class ProjectInfoHandler {
         }
         
         console.log("Git info sent to webview:", response);
-        
-        this.gitService.onDidRepositoryReady(async () =>  {
-            const repo = await this.gitService.getRepositoryInfo();
-            const updatedResponse = {git: this.gitService.exists(), repository: repo};
-            console.log("Repository is ready. Updated response:", updatedResponse);
-            this.view.webview.postMessage({
-                command: "showProjectGitInfo",
-                data: updatedResponse
-            });
-            await vscode.workspace.getConfiguration('vision').update(
-                "projectId",
-                repo?.rootPath.split('\\').pop()?.trim() + '@' + repo?.branch,
-                vscode.ConfigurationTarget.Global
-            );
-            await vscode.workspace.getConfiguration('vision').update(
-                "commitId",
-                repo?.commit,
-                vscode.ConfigurationTarget.Global
-            );
-        });
     }
 }

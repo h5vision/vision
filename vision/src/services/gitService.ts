@@ -36,7 +36,6 @@ export class GitService implements vscode.Disposable {
         if (!this.initializePromise) {
             this.initializePromise = this.doInitialize();
         }
-
         return this.initializePromise;
     }
 
@@ -55,7 +54,7 @@ export class GitService implements vscode.Disposable {
             }
 
             return ext;
-        }, 30000, 1000);
+        }, 60 * 1000, 1000);
 
         if (!extension) {
             vscode.window.showErrorMessage("Git extension is not available or not active.");
@@ -71,7 +70,7 @@ export class GitService implements vscode.Disposable {
         if (!this.git) { return; }
 
         this.repository = await waitUntil(
-            () => this.git?.repositories[0]
+            () => this.git?.repositories[0], 20 * 1000, 100
         );
         
         const head = await waitUntil(
