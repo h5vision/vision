@@ -31,12 +31,13 @@ export class ProjectListHandler {
         const response = {name: workspace.name, path: workspace.path};
         
         if (this.gitService.exists()) {
+            const branch = this.gitService.getCurrentBranch();
             const gitCommits = (await this.gitService.getRecentCommits()).map(m=>
                 [m.hash, m.message]);
             const localPrj = {
-                id: response.name, 
+                id: response.name + '@' + branch, 
                 location: "Local",
-                name: response.name, 
+                name: response.name + '@' + branch, 
                 commits: gitCommits,
                 need_indexing: true
             };

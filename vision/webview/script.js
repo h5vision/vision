@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
         indexProjectBtn.disabled = true;
         vscode.postMessage({ command: "indexProject" });
     });
-    // indexProjectBtn.style.display = 'none';
+    indexProjectBtn.style.display = 'none';
 
     // Project List 새로고침
     const refreshProjectBtn = document.getElementById("refresh-projects-btn");
@@ -226,6 +226,9 @@ function renderProjectList(projects) {
                 locationEl.style.color = '#ffb132';
                 locationEl.textContent += '⚠️';
                 locationEl.title = '⚠️ 서버 DB 업데이트 필요';
+                // Server의 증분 인덱싱 기능이 구현되기 전까지는 전체 인덱싱 수행
+                document.getElementById('index-project-btn').style.display = 'block';
+                document.getElementById('indexing-progress-bar').classList.remove('hidden');
             }
         }
         
