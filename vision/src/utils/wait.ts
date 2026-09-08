@@ -8,13 +8,13 @@ export function sleep(ms: number): Promise<void> {
 /**
  * getter가 undefined가 아닌 값을 반환할 때까지 대기합니다.
  *
- * @param getter 반환값을 확인할 함수
+ * @param getter 반환값을 확인할 함수 (비동기 함수도 가능)
  * @param timeout 최대 대기 시간(ms)
  * @param interval 검사 주기(ms)
  * @returns getter가 반환한 값 또는 timeout 시 undefined
  */
 export async function waitUntil<T>(
-    getter: () => T | undefined,
+    getter: () => T | undefined | Promise<T | undefined>,
     timeout: number = 5000,
     interval: number = 100
 ): Promise<T | undefined> {
@@ -23,7 +23,7 @@ export async function waitUntil<T>(
 
     while (Date.now() - start < timeout) {
 
-        const value = getter();
+        const value = await getter();
 
         if (value !== undefined) {
             return value;

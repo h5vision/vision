@@ -45,31 +45,46 @@ export class ProjectIndexingHandler {
                 });
             } else if (state === "running") {
                 vscode.window.showInformationMessage("프로젝트 인덱싱이 진행 중입니다.");
-                waitUntil(async () => await this.isIndexed(projectName), 30 * 1000, 10 * 60 * 1000)
-                    .then(() => {
+                waitUntil(async () => await this.isIndexed(projectName), 10 * 60 * 1000, 30 * 1000)
+                    .then((indexed) => {
+                        if (!indexed) {
+                            vscode.window.showErrorMessage("프로젝트 인덱싱이 시간 내에 완료되지 않았습니다.");
+                            this.view.webview.postMessage({
+                                command: "indexingError"
+                            });
+                            return;
+                        }
                         vscode.window.showInformationMessage("프로젝트 인덱싱이 완료되었습니다.");
                         this.view.webview.postMessage({
                             command: "indexingDone"
                         });
                     })
                     .catch(() => {
-                        vscode.window.showErrorMessage("프로젝트 인덱싱이 시간 내에 완료되지 않았습니다.");
+                        vscode.window.showErrorMessage("프로젝트 인덱싱 상태 확인 중 오류가 발생했습니다.");
                         this.view.webview.postMessage({
                             command: "indexingError"
                         });
                     });
-                waitUntil(async () => await this.isBriefReady(projectName), 30 * 1000, 10 * 60 * 1000)
-                    .then(() => {
+                waitUntil(async () => await this.isBriefReady(projectName), 10 * 60 * 1000, 30 * 1000)
+                    .then((briefReady) => {
+                        if (!briefReady) {
+                            vscode.window.showErrorMessage("프로젝트 브리핑이 시간 내에 준비되지 않았습니다.");
+                            this.view.webview.postMessage({
+                                command: "briefStatus",
+                                data: false
+                            });
+                            return;
+                        }
                         vscode.window.showInformationMessage("프로젝트 브리핑이 준비되었습니다.");
                         this.view.webview.postMessage({
-                            command: "briefStatus", 
+                            command: "briefStatus",
                             data: true
                         });
                     })
                     .catch(() => {
-                        vscode.window.showErrorMessage("프로젝트 브리핑이 시간 내에 준비되지 않았습니다.");
+                        vscode.window.showErrorMessage("프로젝트 브리핑 상태 확인 중 오류가 발생했습니다.");
                         this.view.webview.postMessage({
-                            command: "briefStatus", 
+                            command: "briefStatus",
                             data: false
                         });
                     });
