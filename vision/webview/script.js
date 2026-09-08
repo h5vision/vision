@@ -440,7 +440,7 @@ window.addEventListener("message", event => {
             const progressBar = document.getElementById('indexing-progress-bar');
             progressBar.style.backgroundColor = 'var(--vscode-terminal-ansiGreen)';
             setTimeout(() => {
-                document.getElementById('index-project-btn').classList.add('hidden');
+                document.getElementById('index-project-btn').style.display = 'none';
                 progressBar.classList.add('hidden');
             }, 3000);
             break;
