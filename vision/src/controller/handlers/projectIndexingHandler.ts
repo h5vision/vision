@@ -153,10 +153,15 @@ export class ProjectIndexingHandler {
                 projectId = projectId + '@' + branch;
             }
             const response:any = await this.apiService.get(
-                `/briefing?project_id=${projectId}`
+                `/index/status?project_id=${projectId}`
             );
-            const returnValue = response.ok && response.briefing !== "";
-            return returnValue ? true : undefined;
+            const isBriefReady = response.briefing;
+            switch (isBriefReady) {
+                case "ready":
+                    return true;
+                default:
+                    return undefined;
+            }
         } catch (error) {
             return undefined;
         }

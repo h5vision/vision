@@ -436,8 +436,21 @@ window.addEventListener("message", event => {
             break;
         }
 
+        case "indexingDone": {
+            const progressBar = document.getElementById('indexing-progress-bar');
+            progressBar.style.backgroundColor = 'var(--vscode-terminal-ansiGreen)';
+            setTimeout(() => {
+                document.getElementById('index-project-btn').classList.add('hidden');
+                progressBar.classList.add('hidden');
+            }, 3000);
+            break;
+        }
+
         case "indexingRunning": {
             document.getElementById('index-project-btn').disabled = true;
+            if (!document.getElementById('index-error').classList.contains('hidden')) {
+                document.getElementById('index-error').classList.add('hidden');
+            }
             break;
         }
 
@@ -458,7 +471,7 @@ window.addEventListener("message", event => {
             if (data.path === 'Local') {
                 document.getElementById('ask-project-path').style.color = '#32b1ff';
             } else if (data.path === 'DB') {
-                document.getElementById('ask-project-path').style.color = '#4CAF50';
+                document.getElementById('ask-project-path').style.color = 'var(--vscode-terminal-ansiGreen)';
             }
             document.getElementById('ask-git-info').innerHTML = `<i class="codicon codicon-git-commit"></i> ${data.commit.slice(0,7)} &nbsp; <b><i class="codicon codicon-target"></i>${data.branch}</b>`;
             break;
