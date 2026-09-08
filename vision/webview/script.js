@@ -322,6 +322,21 @@ function updateDependencyGraphStatus(progress) {
     }    
 }
 
+function updateIndexingStatus(rate) {
+    const indexingBar = document.getElementById('indexing-progress-bar');
+    const progressFill = document.getElementById('indexing-progress-fill');
+    indexingBar.classList.remove('hidden');
+    progressFill.style.color = 'var(--vscode-foreground)';
+    const percent = Math.round(rate * 100);
+    progressFill.style.width = `${percent}%`;
+    if (percent === 100) {
+        progressFill.style.color = 'var(--vscode-terminal-ansiGreen)';
+        setTimeout(() => {
+            indexingBar.classList.add('hidden');
+        }, 1000);
+    }
+}
+
 vscode.postMessage({ command: "getProjectInfo" });
 vscode.postMessage({ command: "getGuideStatus" });
 vscode.postMessage({ command: "getStreamingStatus" });
@@ -415,8 +430,14 @@ window.addEventListener("message", event => {
             break;
         }
 
+        case "indexingStatus": {
+            updateIndexingStatus(message.data);
+            break;
+        }
+
         case "indexingError": {
             document.getElementById('index-project-btn').disabled = false;
+            document.getElementById('indexing-progress-bar').classList.add('hidden');
             break;
         }
 

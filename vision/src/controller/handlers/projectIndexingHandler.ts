@@ -22,7 +22,6 @@ export class ProjectIndexingHandler {
         const repo = await this.gitService.getRepositoryInfo();
         const remote = repo?.remote; 
 
-        vscode.window.showInformationMessage("서버에 인덱싱 요청을 보냈습니다.");
         const body = {
             remote: remote,
             project_id: projectName,
@@ -37,6 +36,9 @@ export class ProjectIndexingHandler {
         };
         try {
             const response: any = await this.apiService.post("/index", body, 60 * 1000);
+            if (!response) {
+                throw new Error("서버가 응답하지 않습니다.");
+            }
             const state = await response.state;
             if (state === "done") {
                 vscode.window.showInformationMessage("프로젝트 인덱싱이 완료되었습니다.");
@@ -45,10 +47,12 @@ export class ProjectIndexingHandler {
                 });
             } else if (state === "running") {
                 vscode.window.showInformationMessage("프로젝트 인덱싱이 진행 중입니다.");
-                waitUntil(async () => await this.isIndexed(projectName), 10 * 60 * 1000, 30 * 1000)
-                    .then((indexed) => {
+                waitUntil(async () => await this.isIndexed(this.view, projectName), 10 * 60 * 1000, 100)
+                    .then(async (indexed) => {
                         if (!indexed) {
-                            vscode.window.showErrorMessage("프로젝트 인덱싱이 시간 내에 완료되지 않았습니다.");
+                            const rsp: any = await this.apiService.get(`/index/status?project_id=${projectName}`);
+                            const error = rsp.error;
+                            vscode.window.showErrorMessage("프로젝트 인덱싱이 실패했습니다: " + (error || 'Unknown error'));
                             this.view.webview.postMessage({
                                 command: "indexingError"
                             });
@@ -60,10 +64,7 @@ export class ProjectIndexingHandler {
                         });
                     })
                     .catch(() => {
-                        vscode.window.showErrorMessage("프로젝트 인덱싱 상태 확인 중 오류가 발생했습니다.");
-                        this.view.webview.postMessage({
-                            command: "indexingError"
-                        });
+                        throw new Error("프로젝트 인덱싱 중 오류가 발생했습니다.");
                     });
                 waitUntil(async () => await this.isBriefReady(projectName), 10 * 60 * 1000, 30 * 1000)
                     .then((briefReady) => {
@@ -100,11 +101,30 @@ export class ProjectIndexingHandler {
         }        
     }
 
-    private async isIndexed(projectName: string | undefined): Promise<Boolean | undefined> {
+    private async isIndexed(
+        view: vscode.WebviewView, 
+        projectName: string | undefined
+    ): Promise<Boolean | undefined> {
         try {
-            const response: any = await this.apiService.get(`/index/exists?project_id=${projectName}`);
-            const returnValue = response.exists ? true : undefined;
-            return returnValue;
+            const response: any = await this.apiService.get(
+                `/index/status?project_id=${projectName}`
+            );
+            const state = response.state;
+            switch (state) {
+                case "running":
+                    const rate = response.total > 0 ? response.processed / response.total : 0;
+                    view.webview.postMessage({
+                        command: "indexingStatus",
+                        data: rate
+                    });
+                    return undefined;
+                case "done":
+                    return true;
+                case "failed":
+                    return false;
+                default:
+                    return undefined;
+            }
         } catch (error) {
             return undefined;
         }
