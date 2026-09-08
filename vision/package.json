@@ -8,7 +8,7 @@
     "url": "https://github.com/h5vision/vision.git"
   },
   "description": "On-premise sLLM Coding Assistance and Intelligence",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "engines": {
     "vscode": "^1.125.0"
   },
