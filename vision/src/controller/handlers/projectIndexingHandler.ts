@@ -21,6 +21,10 @@ export class ProjectIndexingHandler {
         const branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
         const repo = await this.gitService.getRepositoryInfo();
         const remote = repo?.remote; 
+        this.view.webview.postMessage({
+            command: "briefStatus",
+            data: false
+        });
 
         const body = {
             remote: remote,
@@ -70,34 +74,33 @@ export class ProjectIndexingHandler {
                     this.view.webview.postMessage({
                         command: "indexingDone"
                     });
-                }).catch(() => {
-                    throw new Error("프로젝트 인덱싱 중 오류가 발생했습니다.");
-                });
-
-                waitUntil(
-                    async () => await this.isBriefReady(projectId, branch), 
-                    10 * 60 * 1000, 30 * 1000
-                ).then((briefReady) => {
-                    if (!briefReady) {
-                        vscode.window.showErrorMessage("프로젝트 브리핑이 시간 내에 준비되지 않았습니다.");
+                    waitUntil(
+                        async () => await this.isBriefReady(projectId, branch), 
+                        10 * 60 * 1000, 30 * 1000
+                    ).then((briefReady) => {
+                        if (!briefReady) {
+                            vscode.window.showErrorMessage("프로젝트 브리핑이 시간 내에 준비되지 않았습니다.");
+                            this.view.webview.postMessage({
+                                command: "briefStatus",
+                                data: false
+                            });
+                            return;
+                        }
+                        vscode.window.showInformationMessage("프로젝트 브리핑이 준비되었습니다.");
+                        this.view.webview.postMessage({
+                            command: "briefStatus",
+                            data: true
+                        });
+                    }).catch(() => {
+                        vscode.window.showErrorMessage("프로젝트 브리핑 상태 확인 중 오류가 발생했습니다.");
                         this.view.webview.postMessage({
                             command: "briefStatus",
                             data: false
                         });
-                        return;
-                    }
-                    vscode.window.showInformationMessage("프로젝트 브리핑이 준비되었습니다.");
-                    this.view.webview.postMessage({
-                        command: "briefStatus",
-                        data: true
                     });
                 }).catch(() => {
-                    vscode.window.showErrorMessage("프로젝트 브리핑 상태 확인 중 오류가 발생했습니다.");
-                    this.view.webview.postMessage({
-                        command: "briefStatus",
-                        data: false
-                    });
-                });
+                    throw new Error("프로젝트 인덱싱 중 오류가 발생했습니다.");
+                });                
             } else {
                 throw new Error(response.error || "Unknown error occurred during project indexing.");
             }
