@@ -95,6 +95,30 @@ VS Code 설정(`settings.json`) 또는 명령 팔레트의 `Preferences: Open Us
 
 `projectId`와 `commitId`는 워크스페이스 및 Git 정보 조회 시 확장이 자동으로 갱신할 수 있습니다.
 
+## 프로젝트 인덱싱
+
+프로젝트 인덱싱은 Sidebar의 프로젝트 목록에서 실행합니다.
+
+1. Git 저장소가 있는 워크스페이스를 엽니다.
+2. **Vision Assistant** Sidebar에서 로컬 프로젝트를 확인합니다. 서버에 해당 프로젝트가 없으면 `인덱싱 필요`, 서버에 저장된 최신 커밋과 현재 브랜치의 커밋이 다르면 `업데이트 필요` 상태가 표시됩니다.
+3. **프로젝트 인덱싱** 버튼을 실행합니다. 확장은 현재 프로젝트의 Git remote, `vision.projectId`, `vision.branch`, 선택 모델을 사용해 백엔드의 `POST /index`를 호출합니다.
+
+인덱싱 요청에는 다음 프로필이 사용됩니다.
+
+```json
+{
+  "chunker": "ast-v3",
+  "context_header": true,
+  "use_bm25": true
+}
+```
+
+요청 본문에는 인덱싱과 함께 프로젝트 브리핑을 생성하도록 `briefing: true` 옵션도 포함됩니다.
+
+백엔드가 즉시 `done`을 반환하면 완료로 처리합니다. `running`을 반환하면 확장은 최대 10분 동안 `GET /index/status?project_id=...`를 주기적으로 확인하고 Sidebar에 진행률을 표시합니다. 인덱싱이 완료되면 같은 요청에서 생성하도록 지정한 프로젝트 브리핑도 `GET /briefing?project_id=...`로 별도 확인합니다. 인덱싱 또는 브리핑이 제한 시간 안에 완료되지 않거나 실패하면 Sidebar와 VS Code 알림에 오류가 표시됩니다.
+
+현재 프로젝트 목록 비교는 프로젝트 ID와 브랜치를 결합한 값(`projectId@branch`)을 기준으로 합니다. 따라서 인덱싱 전에는 올바른 Git remote, 프로젝트 ID, branch가 설정되어 있는지 확인해야 합니다. 프로젝트 목록은 `GET /projects?view=repos`에서 가져옵니다.
+
 ## 백엔드 API 계약
 
 확장은 `vision.endpoint`를 기준으로 다음 API를 호출합니다.
@@ -105,6 +129,8 @@ VS Code 설정(`settings.json`) 또는 명령 팔레트의 `Preferences: Open Us
 | `GET /v1/models` | 모델 목록 조회 |
 | `POST /v1/chat` | Chat 요청 및 SSE 응답 |
 | `GET /projects?view=repos` | 인덱싱된 프로젝트 목록 조회 |
+| `POST /index` | Git 프로젝트 인덱싱 시작 또는 실행 |
+| `GET /index/status?project_id=...` | 인덱싱 상태 및 진행률 조회 |
 | `GET /briefing?project_id=...` | 프로젝트 브리핑 조회 |
 | `POST /workspace-overlays` | Git 커밋 diff 전송 |
 

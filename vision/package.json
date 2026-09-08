@@ -160,6 +160,12 @@
     "serialize-javascript": "^7.0.6"
   },
   "dependencies": {
-    "@vscode/codicons": "^0.0.46-24"
+    "@vscode/codicons": "^0.0.46-24",
+    "@vscode/vsce": "^3.9.2",
+    "vsce": "^1.25.1"
+  },
+  "allowScripts": {
+    "@vscode/vsce-sign@2.1.0": true,
+    "keytar@7.9.0": true
   }
 }
