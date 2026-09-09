@@ -255,7 +255,7 @@ function renderProjectList(projects) {
                             project_id: proj.id, 
                             name: displayName || proj.name,
                             commit: SHA, 
-                            path: proj.location,
+                            location: proj.location,
                             branch: branch
                         } 
                     });

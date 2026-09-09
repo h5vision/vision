@@ -94,7 +94,7 @@ export class SidebarController {
 
 
             case SidebarCommand.UpdateCommitId:
-                if (message.data.locale) {
+                if (message.data.location === 'local') {
                     await vscode.workspace.getConfiguration('vision')
                         .update(
                             "questionProject.isExist",
