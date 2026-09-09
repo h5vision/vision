@@ -8,7 +8,7 @@
     "url": "https://github.com/h5vision/vision.git"
   },
   "description": "On-premise sLLM Coding Assistance and Intelligence",
-  "version": "0.3.5",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.125.0"
   },
@@ -47,18 +47,24 @@
           "description": "vision branch for selected project"
         },
         "vision.questionProject": {
-            "type": "object",
-            "properties": {
-              "isExist": {"type": "boolean"},
-              "pid": {"type": "string"},
-              "commit": {"type": "string"}
+          "type": "object",
+          "properties": {
+            "isExist": {
+              "type": "boolean"
             },
-            "default": {
-              "isExist": false,
-              "pid": "None",
-              "commit": "None"
+            "pid": {
+              "type": "string"
             },
-            "description": "project informations for the question feature"
+            "commit": {
+              "type": "string"
+            }
+          },
+          "default": {
+            "isExist": false,
+            "pid": "None",
+            "commit": "None"
+          },
+          "description": "project informations for the question feature"
         },
         "vision.showGuideBook": {
           "type": "boolean",
