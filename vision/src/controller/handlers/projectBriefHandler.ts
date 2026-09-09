@@ -78,7 +78,7 @@ export class ProjectBriefHandler {
         }
     }
 
-    public async isBriefReady(): Promise<Boolean | undefined> {
+    public async isBriefReady(): Promise<Boolean | string | undefined> {
         const projectId = vscode.workspace.getConfiguration("vision").get<string>("projectId", "");
         const branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
         const commitId = vscode.workspace.getConfiguration("vision").get<string>("commitId", "None");
@@ -90,13 +90,14 @@ export class ProjectBriefHandler {
                 case 'ready':
                     return true;
                 default:
-                    const error = response.briefing_error;
                     const response2:any = await this.APIService.get(
                         `/briefing?project_id=${projectId}@${branch}`
                     );
                     if (response2.ok) {
                         const briefCommitId = response2.commit;
-                        vscode.window.showInformationMessage('서버에 이전 브리핑이 존재합니다.');
+                        if (commitId !== briefCommitId) {
+                            return `${briefCommitId.slice(0,7)}`;
+                        }
                         return true;
                     }
                     return false;

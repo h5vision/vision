@@ -418,7 +418,11 @@ window.addEventListener("message", event => {
 
         case "briefStatus": {
             const prjBriefBtn = document.getElementById("project-brief-btn");
-            if (message.data) {
+            console.log(message.data);
+            if (typeof message.data === "string") {
+                prjBriefBtn.style.display = 'block';
+                document.getElementById('project-brief-status').textContent = '⚠️' + message.data;
+            } else if (message.data) {
                 prjBriefBtn.style.display = 'block';
             } else {
                 prjBriefBtn.style.display = 'none';
