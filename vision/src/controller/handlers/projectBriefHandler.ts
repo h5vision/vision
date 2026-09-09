@@ -34,14 +34,10 @@ export class ProjectBriefHandler {
             vscode.window.showErrorMessage("열려 있는 워크스페이스가 없습니다.");
             return;
         }
-        let projectId = vscode.workspace.getConfiguration("vision").get<string>("projectId");
-        let branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
-        if (message.data === "locale" && this.gitService.exists()) {
-            const repo = await this.gitService.getRepositoryInfo();
-            projectId = repo?.rootPath.split('\\')?.pop() || '';
-            branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
-        }
-        const briefName = message.data === "locale" ? `brief.md` : `brief-${projectId}.md`;
+        const projectId = vscode.workspace.getConfiguration("vision").get<string>("projectId");
+        const branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
+        const commitId = vscode.workspace.getConfiguration("vision").get<string>("commitId", 'None');
+        const briefName = `Vision_brief-${commitId.slice(0,7)}.md`;
 
         if ((await vscode.workspace.fs.readDirectory(vscode.Uri.file(workspace.path))).some(([name]) => name === briefName)) {
             const briefUri = vscode.Uri.joinPath(vscode.Uri.file(workspace.path), briefName);
@@ -50,11 +46,8 @@ export class ProjectBriefHandler {
         }
 
         try {
-            if (branch !== 'None') {
-                projectId = projectId + '@' + branch;
-            }
             const response:any = await this.APIService.get(
-                `/briefing?project_id=${projectId}`
+                `/briefing?project_id=${projectId}@${branch}`
             );
             if (!response.ok) {
                 const reason = response.reason;
@@ -84,16 +77,29 @@ export class ProjectBriefHandler {
     }
 
     public async isBriefReady(): Promise<Boolean | undefined> {
-        let projectId = vscode.workspace.getConfiguration("vision").get<string>("projectId", "");
+        const projectId = vscode.workspace.getConfiguration("vision").get<string>("projectId", "");
         const branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
-        if (branch !== 'None') {
-            projectId = projectId + '@' + branch;
-        }
         try {
             const response:any = await this.APIService.get(
-                `/briefing?project_id=${projectId}`
+                `/index/status?project_id=${projectId}@${branch}`
             );
-            return response.ok;
+            switch (response.briefing) {
+                case 'failed':
+                    const error = response.briefing_error;
+                    vscode.window.showInformationMessage(`브리핑이 생성되지 않았습니다: ${error}`);
+                    const response2:any = await this.APIService.get(
+                        `/briefing?project_id=${projectId}@${branch}`
+                    );
+                    if (response2.ok) {
+                        vscode.window.showInformationMessage('이전 브리핑이 존재합니다.');
+                        return true;
+                    }
+                    return false;
+                case 'ready':
+                    return true;
+                default:
+                    return undefined;
+            }
         } catch (error) {
             return undefined;
         }

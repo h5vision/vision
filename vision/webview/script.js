@@ -438,11 +438,18 @@ window.addEventListener("message", event => {
 
         case "indexingDone": {
             const progressBar = document.getElementById('indexing-progress-bar');
-            progressBar.style.backgroundColor = 'var(--vscode-terminal-ansiGreen)';
+            const indexBtn = document.getElementById('index-project-btn');
+            const progressFill = document.getElementById('indexing-progress-fill');
+            progressFill.style.backgroundColor = 'var(--vscode-terminal-ansiGreen)';
             setTimeout(() => {
-                document.getElementById('index-project-btn').style.display = 'none';
+                indexBtn.style.display = 'none';
+                indexBtn.disabled = false;
                 progressBar.classList.add('hidden');
+                progressBar.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                progressBar.style.width = '0%';
+                progressFill.style.backgroundColor = 'var(--vscode-progressBar-background)';
             }, 3000);
+            document.getElementById('refresh-projects-btn').click();
             break;
         }
 
