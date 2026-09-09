@@ -94,22 +94,22 @@ export class SidebarController {
 
 
             case SidebarCommand.UpdateCommitId:
+                if (message.data.locale) {
+                    await vscode.workspace.getConfiguration('vision')
+                        .update(
+                            "questionProject.isExist",
+                            false,
+                            vscode.ConfigurationTarget.Global
+                        );
+                    return;
+                }
                 await vscode.workspace.getConfiguration('vision')
-                    .update(
-                        "projectId",
-                        message.data.project_id,
-                        vscode.ConfigurationTarget.Global
-                    );
-                await vscode.workspace.getConfiguration('vision')
-                    .update(
-                        "branch",
-                        message.data.branch,
-                        vscode.ConfigurationTarget.Global
-                    );
-                await vscode.workspace.getConfiguration('vision')
-                    .update(
-                        "commitId",
-                        message.data.commit,
+                    .update("questionProject",
+                        {
+                            isExist: true,
+                            pid: message.data.project_id, 
+                            commit: message.data.commit
+                        },
                         vscode.ConfigurationTarget.Global
                     );
                 this.view.webview.postMessage({

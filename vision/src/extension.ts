@@ -69,10 +69,8 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
 	const GuideBookSetting = vscode.workspace.getConfiguration('vision').get("showGuideBook");
-	console.log("GuideBookSetting:", GuideBookSetting);
 	if (GuideBookSetting) {
 		setTimeout(() => void vscode.commands.executeCommand('vision.showGuide').then(() => {
-			console.log("Guidebook has been opened.");
 			provider.view?.webview.postMessage({
 				command: "guideStatus",
 				data: true
@@ -164,7 +162,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			isPartialQuery: true
         });
     });
-
     context.subscriptions.push(explainFileDisposable);	
 
 	dependencyGraphManager.initialize()

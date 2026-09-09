@@ -47,9 +47,16 @@ export class ChatHandler {
             error: "답변 실패"
         };
 
-        const project_id = vscode.workspace.getConfiguration("vision").get<string>("projectId", ' ');
-        const branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
+        let project_id: string;
+        let branch: string;
         // const commitId = vscode.workspace.getConfiguration("vision").get<string>("commitId", ' ');
+        if (vscode.workspace.getConfiguration("vision").get<boolean>("questionProject.isExist", false)) {
+            project_id = vscode.workspace.getConfiguration("vision").get<string>("questionProject.pid", ' ');
+            branch = 'None';
+        } else {
+            project_id = vscode.workspace.getConfiguration("vision").get<string>("projectId", ' ');
+            branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
+        }
 
         // get all the previous participant messages
         const previousMessages = context.history.filter(

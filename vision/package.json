@@ -46,6 +46,20 @@
           "default": "None",
           "description": "vision branch for selected project"
         },
+        "vision.questionProject": {
+            "type": "object",
+            "properties": {
+              "isExist": {"type": "boolean"},
+              "pid": {"type": "string"},
+              "commit": {"type": "string"}
+            },
+            "default": {
+              "isExist": false,
+              "pid": "None",
+              "commit": "None"
+            },
+            "description": "project informations for the question feature"
+        },
         "vision.showGuideBook": {
           "type": "boolean",
           "default": false,
