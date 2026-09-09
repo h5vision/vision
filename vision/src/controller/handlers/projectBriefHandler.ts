@@ -84,7 +84,9 @@ export class ProjectBriefHandler {
                 `/index/status?project_id=${projectId}@${branch}`
             );
             switch (response.briefing) {
-                case 'failed':
+                case 'ready':
+                    return true;
+                default:
                     const error = response.briefing_error;
                     vscode.window.showInformationMessage(`브리핑이 생성되지 않았습니다: ${error}`);
                     const response2:any = await this.APIService.get(
@@ -95,10 +97,6 @@ export class ProjectBriefHandler {
                         return true;
                     }
                     return false;
-                case 'ready':
-                    return true;
-                default:
-                    return undefined;
             }
         } catch (error) {
             return undefined;
