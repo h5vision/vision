@@ -155,6 +155,9 @@ body {
 }
 
 #project-brief-status {
+    font-family: monospace;
+    font-weight: 400;
+    font-size: 11px;
     color: #ffb132;
 }
 
