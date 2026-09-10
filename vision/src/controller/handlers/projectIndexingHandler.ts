@@ -86,7 +86,7 @@ export class ProjectIndexingHandler {
                                 data: false
                             });
                             return;
-                        }
+                        } 
                         vscode.window.showInformationMessage("프로젝트 브리핑이 준비되었습니다.");
                         this.view.webview.postMessage({
                             command: "briefStatus",
@@ -162,6 +162,8 @@ export class ProjectIndexingHandler {
             const isBriefReady = response.briefing;
             switch (isBriefReady) {
                 case "ready":
+                    return true;
+                case "kept":
                     return true;
                 default:
                     return undefined;
