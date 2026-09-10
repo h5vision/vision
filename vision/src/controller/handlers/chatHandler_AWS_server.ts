@@ -111,7 +111,6 @@ export class ChatHandler {
                                 const referenceFiles : Array<ReferenceDocument> = data.references;
                                 this.referenceFilesHandle(referenceFiles, highlightedPaths, stream);
                             }
-                            controller.abort("RAG only mode");
                         }
                         return;
                     }
