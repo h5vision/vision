@@ -421,7 +421,7 @@ window.addEventListener("message", event => {
             console.log(message.data);
             if (typeof message.data === "string") {
                 prjBriefBtn.style.display = 'block';
-                document.getElementById('project-brief-status').textContent = '⚠️' + message.data;
+                document.getElementById('project-brief-status').textContent = message.data;
             } else if (message.data) {
                 prjBriefBtn.style.display = 'block';
             } else {
