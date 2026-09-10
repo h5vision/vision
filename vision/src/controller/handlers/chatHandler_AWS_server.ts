@@ -56,6 +56,7 @@ export class ChatHandler {
         } else {
             project_id = vscode.workspace.getConfiguration("vision").get<string>("projectId", ' ');
             branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
+            project_id = project_id + '@' + branch;
         }
 
         // get all the previous participant messages
@@ -75,7 +76,7 @@ export class ChatHandler {
         const highlightedPaths: string[] = [];
 
         const payload = {
-            project_id: branch === 'None' ? project_id : project_id + '@' + branch,
+            project_id: project_id,
             message: request.prompt,
             rag: rag, 
             stream: true,

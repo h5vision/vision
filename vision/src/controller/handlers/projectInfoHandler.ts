@@ -53,6 +53,15 @@ export class ProjectInfoHandler {
                 repo?.commit,
                 vscode.ConfigurationTarget.Global
             );
+            await vscode.workspace.getConfiguration('vision').update(
+                "questionProject",
+                {
+                    isExist: false, 
+                    pid: repo?.rootPath.split('\\').pop()?.trim(),
+                    commit: repo?.commit,
+                },
+                vscode.ConfigurationTarget.Global
+            );
         }
         
         console.log("Git info sent to webview:", response);
