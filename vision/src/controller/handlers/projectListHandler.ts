@@ -43,7 +43,7 @@ export class ProjectListHandler {
                 need_indexing: true
             };
             const matchingProject = indexedProjectsList.find(
-                (project: any) => project.id === localPrj.name + '@' + branch
+                (project: any) => project.name === localPrj.name + '@' + branch
             );
             if (matchingProject) {
                 localPrj.need_indexing = false;
