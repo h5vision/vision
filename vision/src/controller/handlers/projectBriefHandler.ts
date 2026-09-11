@@ -39,6 +39,7 @@ export class ProjectBriefHandler {
         let commitId = vscode.workspace.getConfiguration("vision").get<string>("commitId", 'None');
         let briefName = `Vision_brief-${commitId.slice(0,7)}.md`;
 
+
         if ((await vscode.workspace.fs.readDirectory(vscode.Uri.file(workspace.path))).some(([name]) => name === briefName)) {
             const briefUri = vscode.Uri.joinPath(vscode.Uri.file(workspace.path), briefName);
             await vscode.commands.executeCommand("markdown.showPreview", briefUri);

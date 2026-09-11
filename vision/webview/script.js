@@ -321,7 +321,6 @@ vscode.postMessage({ command: "getStreamingStatus" });
 setTimeout(() => {
     vscode.postMessage({ command: "checkBackend" });
     vscode.postMessage({ command: "getModelsInfo" });
-    vscode.postMessage({ command: "isBriefReady" });
 }, 100);
     
 setTimeout(() => {
@@ -332,6 +331,7 @@ setTimeout(() => {
 setTimeout(() => {
     vscode.postMessage({ command: "getProjectGitInfo" });
     vscode.postMessage({ command: "getProjectList" });
+    vscode.postMessage({ command: "isBriefReady" });
 }, 300);
 
 setInterval(() => {

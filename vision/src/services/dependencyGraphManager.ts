@@ -118,7 +118,7 @@ export class DependencyGraphManager {
                     if (answer !== '네') {
                         console.log('[DependencyGraph] Graph is outdated.');
                         this.graph = saved;
-                        this.setProgress('ready', '프로젝트 구조 분석 최신 상태');
+                        this.setProgress('ready', `Created At: ${saved.generatedAt}`);
                         return;
                     }
 

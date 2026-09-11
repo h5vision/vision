@@ -105,9 +105,9 @@ export class SidebarController {
                 }
                 await vscode.window.showInformationMessage(
                     "Chat 질문 대상 Repository가 변경되었습니다." 
-                    + `Project_id: ${message.data.name}`
-                    + `branch: ${message.data.branch}`
-                    + `commit: ${message.data.commit}`
+                    + `Project_id: ${message.data.name} `
+                    + `branch: ${message.data.branch} `
+                    + `commit: ${message.data.commit} `
                 );
                 await vscode.workspace.getConfiguration('vision')
                     .update("questionProject",
@@ -153,6 +153,11 @@ export class SidebarController {
                 return;
 
             case SidebarCommand.IsBriefReady:
+                const briefStatus = await this.projectBriefHandler.isBriefReady();
+                    this.view.webview.postMessage({
+                        command: "briefStatus",
+                        data: briefStatus
+                    });
                 this.gitService.onDidRepositoryReady(async () => {
                     const briefStatus = await this.projectBriefHandler.isBriefReady();
                     this.view.webview.postMessage({
@@ -160,11 +165,6 @@ export class SidebarController {
                         data: briefStatus
                     });
                 });
-                const briefStatus = await this.projectBriefHandler.isBriefReady();
-                    this.view.webview.postMessage({
-                        command: "briefStatus",
-                        data: briefStatus
-                    });
                 return;
 
             case SidebarCommand.OpenDBExternal:

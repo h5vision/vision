@@ -72,9 +72,9 @@ export class GitService implements vscode.Disposable {
 
         this.repositorySearchCancelled = false;
 
-        vscode.window.showInformationMessage("Git repository 확인 중... Git repository가 없습니까?", "없음")
+        vscode.window.showInformationMessage("Git repository 확인 중... Git repository를 사용 중입니까?","예", "아니오")
             .then((selection) => {
-                if (selection === "없음") {
+                if (selection === "아니오") {
                     this.repositorySearchCancelled = true;
                 }
             });
