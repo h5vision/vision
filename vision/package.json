@@ -8,7 +8,7 @@
     "url": "https://github.com/h5vision/vision.git"
   },
   "description": "On-premise sLLM Coding Assistance and Intelligence",
-  "version": "1.1.2",
+  "version": "1.2.1",
   "engines": {
     "vscode": "^1.125.0"
   },
@@ -54,9 +54,6 @@
             },
             "pid": {
               "type": "string"
-            },
-            "commit": {
-              "type": "string"
             }
           },
           "default": {
@@ -68,7 +65,7 @@
         },
         "vision.showGuideBook": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Show guidebook when extension is activated"
         },
         "vision.streaming": {
