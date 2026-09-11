@@ -8,8 +8,23 @@ export class GitService implements vscode.Disposable {
     private readonly _onDidRepositoryReady =
         new vscode.EventEmitter<void>();
 
-    public readonly onDidRepositoryReady =
-        this._onDidRepositoryReady.event;
+    // vscode.EventEmitter only notifies listeners registered before fire(); late subscribers
+    // (e.g. after the sidebar webview is hidden/reopened) would otherwise miss the one-shot event.
+    private repositoryReady = false;
+
+    public readonly onDidRepositoryReady = (
+        listener: () => any,
+        thisArgs?: any,
+        disposables?: vscode.Disposable[]
+    ): vscode.Disposable => {
+        if (this.repositoryReady) {
+            const disposable = new vscode.Disposable(() => {});
+            Promise.resolve().then(() => listener.call(thisArgs));
+            disposables?.push(disposable);
+            return disposable;
+        }
+        return this._onDidRepositoryReady.event(listener, thisArgs, disposables);
+    };
 
     private readonly _onDidCommit =
         new vscode.EventEmitter<{ commit: string; previousCommit: string }>();
@@ -101,6 +116,7 @@ export class GitService implements vscode.Disposable {
             () => this.checkForNewCommit()
         );
 
+        this.repositoryReady = true;
         this._onDidRepositoryReady.fire();
         
     }
