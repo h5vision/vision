@@ -22,6 +22,7 @@ export class DependencyGraphManager {
     }
 
     private initialized = false;
+    private initializePromise?: Promise<void>;
 
     private readonly _onStatusChanged = new vscode.EventEmitter<GraphProgress>();
 
@@ -55,7 +56,15 @@ export class DependencyGraphManager {
     /**
      * Repository가 준비된 후 호출
      */
-    public async initialize(): Promise<void> {
+    public initialize(): Promise<void> {
+
+        if (!this.initializePromise) {
+            this.initializePromise = this.doInitialize();
+        }
+        return this.initializePromise;
+    }
+
+    private async doInitialize(): Promise<void> {
 
         if (this.initialized) { return; }
 
@@ -98,22 +107,42 @@ export class DependencyGraphManager {
             if ( saved.gitCommit === gitCommit) {
                 if (gitCommit === 'None') {
                     vscode.window.showWarningMessage(
-                        `Generated At: ${saved.generatedAt} \n\n\n 그래프를 새로 생성할까요?`, 
+                        "Git repository가 없습니다. Indexing 및 Chat 기능을 사용하기 위해서는 Git repository가 필요합니다."
+                    );
+
+                    const answer = await vscode.window.showInformationMessage(
+                        `그래프를 새로 생성할까요? 마지막 생성시간: ${saved.generatedAt}`,
                         '네', '아니오'
-                    ).then((value) => {
-                        if (value !== '네') {
-                            console.log('[DependencyGraph] Graph is up to date.');
-                            this.graph = saved;
-                            this.setProgress('ready', '프로젝트 구조 분석 최신 상태');
-                            return;
-                        }
+                    );
+
+                    if (answer !== '네') {
+                        console.log('[DependencyGraph] Graph is outdated.');
+                        this.graph = saved;
+                        this.setProgress('ready', '프로젝트 구조 분석 최신 상태');
+                        return;
+                    }
+
+                    console.log('[DependencyGraph] Recreating graph...');
+
+                    this.graph = await this.graphService.build(gitCommit, (status, current, total) => {
+                        this.setProgress(
+                            status,
+                            '프로젝트 구조 분석 중...',
+                            current,
+                            total
+                        );
                     });
-                } else {
-                    console.log('[DependencyGraph] Graph is up to date.');
-                    this.graph = saved;
-                    this.setProgress('ready', '프로젝트 구조 분석 최신 상태');
+
+                    await this.graphService.save(this.graph);
+
+                    this.setProgress('ready', '프로젝트 구조 분석 완료');
                     return;
                 }
+
+                console.log('[DependencyGraph] Graph is up to date.');
+                this.graph = saved;
+                this.setProgress('ready', '프로젝트 구조 분석 최신 상태');
+                return;
             }
 
             /*

@@ -7,10 +7,10 @@ import { waitUntil } from "../../utils/wait";
 export class ProjectIndexingHandler {
 
     private readonly apiService = new APIService();
-    private readonly gitService = new GitService();
 
     constructor(
-        private readonly view: vscode.WebviewView        
+        private readonly view: vscode.WebviewView,
+        private readonly gitService: GitService = new GitService()
     ) {}
 
     public async handle(message: SidebarMessage) {

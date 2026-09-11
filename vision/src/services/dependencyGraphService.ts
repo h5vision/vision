@@ -73,11 +73,18 @@ export class DependencyGraphService {
         }
 
         const edges = await this.buildEdges(root, files, (status, current, total) => onProgress?.(status, current, total));
+        
+        const year = new Date().getFullYear();
+        const month = new Date().getMonth() + 1;
+        const day = new Date().getDate();
+        const hours = new Date().getHours();
+        const minutes = new Date().getMinutes();
+        const seconds = new Date().getSeconds();
 
         return {
             version: 1,
             gitCommit,
-            generatedAt: new Date().toLocaleString(),
+            generatedAt: `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`,
             nodes,
             edges: this.removeDuplicateEdges(edges)
         };
@@ -189,8 +196,14 @@ export class DependencyGraphService {
         }
 
         graph.gitCommit = gitCommit;
-        graph.generatedAt =
-            new Date().toISOString();
+        const generatedAt = new Date();
+        const fullyear = generatedAt.getFullYear();
+        const month = generatedAt.getMonth() + 1;
+        const day = generatedAt.getDate();
+        const hours = generatedAt.getHours();
+        const minutes = generatedAt.getMinutes();
+        const seconds = generatedAt.getSeconds();
+        graph.generatedAt = `${fullyear}/${month}/${day} ${hours}:${minutes}:${seconds}`;
 
         graph.edges =
             this.removeDuplicateEdges(

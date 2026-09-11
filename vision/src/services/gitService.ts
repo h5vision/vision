@@ -22,6 +22,7 @@ export class GitService implements vscode.Disposable {
     private initializePromise?: Promise<void>;
     private lastCommit?: string;
     private stateChangeListener?: vscode.Disposable;
+    private repositorySearchCancelled = false;
 
     constructor() {}
 
@@ -69,15 +70,28 @@ export class GitService implements vscode.Disposable {
     private async waitRepositoryReady(): Promise<void> {
         if (!this.git) { return; }
 
+        this.repositorySearchCancelled = false;
+
+        vscode.window.showInformationMessage("Git repository 확인 중... Git repository가 없습니까?", "없음")
+            .then((selection) => {
+                if (selection === "없음") {
+                    this.repositorySearchCancelled = true;
+                }
+            });
+
         this.repository = await waitUntil(
-            () => this.git?.repositories[0], 20 * 1000, 100
+            () => this.git?.repositories[0], 25 * 1000, 100,
+            () => this.repositorySearchCancelled
         );
-        
+
+
+        if (!this.repository ) { return; }
+
         const head = await waitUntil(
             () => this.git?.repositories[0]?.state.HEAD,
         );
 
-        if (!this.repository || !head) {
+        if (!head) {
             return;
         }
 

@@ -43,7 +43,7 @@ export class ChatHandler {
             meta: "RAG 검색 완료",
             stage: `${model_id?.split(':')[0]} 답변 생성 중`,
             delta: "답변 전송 중",
-            done: `ollama의 ${model_id?.split(':')[0]}에 의해 생성된 답변`,
+            done: `Server의 ${model_id?.split(':')[0]}에 의해 생성된 답변`,
             error: "답변 실패"
         };
 
@@ -52,7 +52,6 @@ export class ChatHandler {
         // const commitId = vscode.workspace.getConfiguration("vision").get<string>("commitId", ' ');
         if (vscode.workspace.getConfiguration("vision").get<boolean>("questionProject.isExist", false)) {
             project_id = vscode.workspace.getConfiguration("vision").get<string>("questionProject.pid", ' ');
-            branch = 'None';
         } else {
             project_id = vscode.workspace.getConfiguration("vision").get<string>("projectId", ' ');
             branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');

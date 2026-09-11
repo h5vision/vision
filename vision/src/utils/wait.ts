@@ -16,12 +16,17 @@ export function sleep(ms: number): Promise<void> {
 export async function waitUntil<T>(
     getter: () => T | undefined | Promise<T | undefined>,
     timeout: number = 5000,
-    interval: number = 100
+    interval: number = 100,
+    isCancelled?: () => boolean
 ): Promise<T | undefined> {
 
     const start = Date.now();
 
     while (Date.now() - start < timeout) {
+
+        if (isCancelled?.()) {
+            return undefined;
+        }
 
         const value = await getter();
 

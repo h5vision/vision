@@ -30,7 +30,7 @@ export class ProjectInfoHandler {
 
     public async handleGitInfo(message: SidebarMessage) {
         console.log(message.command);
-        this.gitService.initialize();
+        await this.gitService.initialize();
         const repo = await this.gitService.getRepositoryInfo();
         const response = {git: this.gitService.exists(), repository: repo};
         this.view.webview.postMessage({
@@ -57,13 +57,11 @@ export class ProjectInfoHandler {
                 "questionProject",
                 {
                     isExist: false, 
-                    pid: repo?.rootPath.split('\\').pop()?.trim(),
-                    commit: repo?.commit,
+                    pid: repo?.rootPath.split('\\').pop()?.trim()
                 },
                 vscode.ConfigurationTarget.Global
             );
         }
-        
         console.log("Git info sent to webview:", response);
     }
 }

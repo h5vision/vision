@@ -3,6 +3,7 @@ import { DependencyGraphManager } from "../services/dependencyGraphManager";
 import { getWebviewContent } from "./sidebarContents";
 import { SidebarController } from "../controller/sidebarController";
 import { GraphProgress } from "../types/dependencyGraph";
+import { GitService } from "../services/gitService";
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
 
@@ -13,7 +14,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
     constructor( 
         private readonly extensionUri: vscode.Uri,
-        private readonly dependencyGraphManager: DependencyGraphManager
+        private readonly dependencyGraphManager: DependencyGraphManager,
+        private readonly gitService: GitService
     ) {
         this.statusDisposable =
             this.dependencyGraphManager.onStatusChanged(
@@ -38,7 +40,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             );
 
          // Controller 생성
-        const controller = new SidebarController(webviewView);
+        const controller = new SidebarController(webviewView, this.gitService);
 
         // 메시지 연결
         this.messageDisposable =

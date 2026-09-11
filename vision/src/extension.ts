@@ -44,7 +44,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	);
 
 	// SidebarProvider를 등록하여 웹뷰를 표시할 수 있도록 설정
-	const provider = new SidebarProvider(context.extensionUri, dependencyGraphManager);
+	const provider = new SidebarProvider(context.extensionUri, dependencyGraphManager, gitService);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
             "VisionAssistant.sidebar",

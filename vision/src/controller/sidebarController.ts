@@ -18,17 +18,17 @@ export class SidebarController {
     private readonly projectListHandler: ProjectListHandler;
     private readonly projectBriefHandler: ProjectBriefHandler;
     private readonly projectIndexingHandler: ProjectIndexingHandler;
-    private readonly gitService = new GitService();
 
     constructor(
-        private readonly view: vscode.WebviewView
+        private readonly view: vscode.WebviewView,
+        private readonly gitService: GitService
     ) {
         this.APIHandler = new APIHandler(view);
         this.modelInfoHandler = new ModelInfoHandler(view);
         this.projectInfoHandler = new ProjectInfoHandler(view, this.gitService);
         this.projectListHandler = new ProjectListHandler(view, this.gitService);
         this.projectBriefHandler = new ProjectBriefHandler(this.gitService);
-        this.projectIndexingHandler = new ProjectIndexingHandler(view);
+        this.projectIndexingHandler = new ProjectIndexingHandler(view, this.gitService);
     }
 
     public async handle(message: SidebarMessage) {
@@ -103,12 +103,17 @@ export class SidebarController {
                         );
                     return;
                 }
+                await vscode.window.showInformationMessage(
+                    "Chat 질문 대상 Repository가 변경되었습니다." 
+                    + `Project_id: ${message.data.name}`
+                    + `branch: ${message.data.branch}`
+                    + `commit: ${message.data.commit}`
+                );
                 await vscode.workspace.getConfiguration('vision')
                     .update("questionProject",
                         {
                             isExist: true,
-                            pid: message.data.project_id, 
-                            commit: message.data.commit
+                            pid: message.data.project_id
                         },
                         vscode.ConfigurationTarget.Global
                     );
