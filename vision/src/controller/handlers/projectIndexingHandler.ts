@@ -19,7 +19,7 @@ export class ProjectIndexingHandler {
 
         let projectId = vscode.workspace.getConfiguration("vision").get<string>("projectId", "");
         const branch = vscode.workspace.getConfiguration("vision").get<string>("branch", 'None');
-        const repo = await this.gitService.getRepositoryInfo();
+        const repo = await this.gitService.getRepositoryInfo(); 
         const remote = repo?.remote; 
         this.view.webview.postMessage({
             command: "briefStatus",
@@ -51,7 +51,7 @@ export class ProjectIndexingHandler {
                 vscode.window.showInformationMessage("프로젝트 인덱싱이 완료되었습니다.");
                 this.view.webview.postMessage({
                     command: "indexingDone"
-                });
+                }); 
             } else if (state === "running") {
                 this.view.webview.postMessage({
                     command: "indexingRunning"

@@ -170,4 +170,11 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 // 이 메서드는 확장 프로그램이 비활성화될 때 호출됩니다.
-export function deactivate() {};
+export async function deactivate() {
+	await vscode.workspace.getConfiguration("vision")
+		.update(
+			"questionProject.isActive", 
+			false, 
+			vscode.ConfigurationTarget.Global
+		);
+};
