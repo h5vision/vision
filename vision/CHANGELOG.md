@@ -1,9 +1,45 @@
 # Change Log
 
-All notable changes to the "vision" extension will be documented in this file.
+## [1.2.5] - 2026-09-14
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+- Fixed chat command `/ragonly`.
 
-## [Unreleased]
+## [1.2.4] - 2026-09-14
 
-- Initial release
+- Fixed the dependency graph webview's initial position and prevented its position from resetting whenever it is opened.
+
+## [1.2.3] - 2026-09-11
+
+- Fixed a missing `gitService.onDidRepositoryReady` event connection.
+
+## [1.2.2] - 2026-09-11
+
+- Fixed briefing status checking and display behavior.
+
+## [1.2.1] - 2026-09-11
+
+- Simplified Git Extension integration and removed unused files.
+- Simplified behavior when no Git repository is available.
+
+## [1.1.2] - 2026-09-11
+
+- Fixed extension shutdown state handling by deactivating the current project correctly.
+
+## [1.0.3] - 2026-09-10
+
+- Packaging and release metadata update.
+
+## [1.0.2] - 2026-09-10
+
+- Added a confirmation alert to verify briefing creation when requesting indexing.
+- Fixed RAG-only chat behavior.
+- Fixed briefing status handling during indexing.
+
+## [1.0.0] - 2026-09-09
+
+- Added project and commit briefing status handling, including stale-briefing indicators.
+- Added indexing requests from the extension, with controls shown only when indexing or briefing generation is needed.
+- Added support for selecting server-indexed projects and keeping chat, briefing, and indexing configuration consistent.
+- Added commit SHA comparison so the briefing for the current commit is loaded.
+- Added project and branch identifiers to chat, briefing, and indexing requests.
+- Updated the README and removed unused package features.

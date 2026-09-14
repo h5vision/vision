@@ -35,13 +35,17 @@ export class ChatHandler {
         if (request.command === 'ragonly') {
             vscode.commands.executeCommand('vision.showDependencyGraph');
         }
+        let rag = true;
+        if (request.command === 'no-rag') {
+            rag = false;
+        }
 
         let finalAnswer = "";
         let collectedDelta = "";
         let lastEvent = "";
         const eventLabels: Record<ChatStreamEventName, string> = {
             meta: "RAG 검색 완료",
-            stage: `${model_id?.split(':')[0]} 답변 생성 중`,
+            stage: rag ? "RAG 검색 완료" : `${model_id?.split(':')[0]} 답변 생성 중`,
             delta: "답변 전송 중",
             done: `Server의 ${model_id?.split(':')[0]}에 의해 생성된 답변`,
             error: "답변 실패"
@@ -68,10 +72,6 @@ export class ChatHandler {
             session_id = session.resetSessionId();
         } 
 
-        let rag = true;
-        if (request.command === 'no-rag') {
-            rag = false;
-        }
         const highlightedPaths: string[] = [];
 
         const payload = {
@@ -110,6 +110,7 @@ export class ChatHandler {
                                 const referenceFiles : Array<ReferenceDocument> = data.references;
                                 this.referenceFilesHandle(referenceFiles, highlightedPaths, stream);
                             }
+                            controller.abort();
                         }
                         return;
                     }
@@ -140,6 +141,9 @@ export class ChatHandler {
             this.historyServcie.save(project_id, session_id, 'assistant', finalAnswer);
         }
         catch (err) {
+            if (rag) {
+                return;
+            }
             if (token.isCancellationRequested) {
                 stream.progress("요청 취소됨");
                 return;
