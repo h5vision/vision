@@ -358,11 +358,11 @@
                     </div>
                     <div class="card" onclick="sendAction('project-list')">
                         <h3>🔄 프로젝트 목록</h3>
-                        <p>Local 프로젝트와 서버 DB에 인덱싱된 프로젝트 목록(<code>GET /projects?view=repos</code>)을 함께 제공합니다. 프로젝트를 펼쳐 커밋을 선택하면 RAG 질의에 사용할 프로젝트와 커밋이 바뀌며, 인덱싱 필요(<code>⚡</code>) 및 업데이트 필요(<code>⚠️</code>) 상태도 확인할 수 있습니다.</p>
+                        <p>Local 프로젝트와 서버 DB에 인덱싱된 프로젝트 목록(<code>GET /projects?view=repos</code>)을 함께 제공하며, Local과 DB 목록을 비교하여 인덱싱 필요(<code>⚡</code>) 및 업데이트 필요(<code>⚠️</code>) 상태도 확인할 수 있습니다. 프로젝트가 서버에 인덱싱되어 있지 않다면 &lt;Vision ─ 프로젝트 인덱싱&gt; 버튼을 클릭하여 인덱싱을 수행해야 합니다. 프로젝트를 펼쳐 커밋을 선택하면 해당 프로젝트 및 커밋으로 RAG 질의가 이루어집니다.</p>
                     </div>
                     <div class="card" onclick="sendAction('guide-toggle')">
                         <h3>📖 도구 및 Guide</h3>
-                        <p>Vision Guidebook 패널을 토글하고, VS Code 전역 저장소에 있는 채팅 이력 DB(<code>Chat history.db</code>) 위치를 운영체제 파일 탐색기에서 열 수 있습니다.</p>
+                        <p>Vision Guidebook 패널을 토글하여 열고 닫을 수 있습니다.</p>
                     </div>
                 </div>
             </div>
@@ -438,7 +438,7 @@
                 <ul style="margin-top: 14px;">
                     <li><strong>분석 상태 표시:</strong> 분석 대기 중, 구조 분석 중 [Node/Edge], 분석 완료, 최신 상태, 분석 실패 상태를 단계별로 안내</li>
                     <img src="{{cssUrl}}" alt="의존성 그래프 예시" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border-color);">
-                    <li><strong>웹뷰 연동:</strong> 분석 완료 후 활성화되는 **Vision - 의존성 그래프** 버튼을 통해 별도의 웹뷰 패널 오픈</li>
+                    <li><strong>웹뷰 연동:</strong> 분석 완료 후 활성화되는 &gt;Vision - 의존성 그래프&lt; 버튼을 통해 별도의 웹뷰 패널 오픈</li>
                 </ul>
             </div>
 
@@ -455,7 +455,7 @@
                 <div class="grid-cards">
                     <div class="card" onclick="sendAction('briefing-overview-click')">
                         <h3>📄 프로젝트 개요 및 요약 (Document Summary)</h3>
-                        <p><code>brief.md</code> 파일이 존재하면 마크다운 미리보기를 열고, 없으면 백엔드 `/briefing?project_id=...`에서 받아 워크스페이스에 저장한 뒤 미리보기를 제공합니다. 생성된 문서는 프로젝트 정체성, README 등 주요 문서 요약, 진입점과 기능 목록을 한 번에 확인하는 온보딩 자료입니다.</p>
+                        <p><code>brief.md</code> 파일이 존재하면 마크다운 미리보기를 열고, 없으면 백엔드 <code>/briefing?project_id=...</code>에서 받아 워크스페이스에 저장한 뒤 미리보기를 제공합니다. 생성된 문서는 프로젝트 정체성, README 등 주요 문서 요약, 진입점과 기능 목록을 한 번에 확인하는 온보딩 자료입니다.</p>
                         
                         <!-- 👇 5번 탭 첫 번째 카드에 들어가는 사진 자리 -->
                         <div style="margin-top: 14px; text-align: center;">
@@ -620,7 +620,7 @@
                                 <td><strong>Vision Chat</strong></td>
                                 <td>RAG 질의 및 SSE 응답</td>
                                 <td><code>@vision</code>이 프로젝트와 코드를 질의하며, 설정에 따라 RAG 또는 No-RAG로 처리하고 SSE 이벤트를 스트리밍합니다.</td>
-                                <td><code>/no-rag</code>, <code>/ragonly</code>, <code>/indexing</code></td>
+                                <td><code>/no-rag</code>, <code>/ragonly</code></td>
                             </tr>
                             <tr>
                                 <td><strong>Guidebook</strong></td>
