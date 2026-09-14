@@ -45,7 +45,7 @@ export class ChatHandler {
         let lastEvent = "";
         const eventLabels: Record<ChatStreamEventName, string> = {
             meta: "RAG 검색 완료",
-            stage: rag ? "RAG 검색 완료" : `${model_id?.split(':')[0]} 답변 생성 중`,
+            stage: request.command === 'ragonly' ? "RAG 검색 완료" : `${model_id?.split(':')[0]} 답변 생성 중`,
             delta: "답변 전송 중",
             done: `Server의 ${model_id?.split(':')[0]}에 의해 생성된 답변`,
             error: "답변 실패"
