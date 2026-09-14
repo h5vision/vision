@@ -103,7 +103,7 @@ export class SidebarController {
                         );
                     return;
                 }
-                await vscode.window.showInformationMessage(
+                vscode.window.showInformationMessage(
                     "Chat 질문 대상 Repository가 변경되었습니다." 
                     + `Project_id: ${message.data.name} `
                     + `branch: ${message.data.branch} `
