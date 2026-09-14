@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
     ReactFlow,
@@ -7,6 +7,8 @@ import {
     Controls,
     MiniMap,
     useReactFlow,
+    type Viewport,
+    type Node,
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
@@ -17,6 +19,11 @@ interface VSCodeApi {
     postMessage(message: unknown): void;
     getState(): unknown;
     setState(state: unknown): unknown;
+}
+
+interface WebviewState {
+    viewport?: Viewport;
+    nodePositions?: Record<string, { x: number; y: number }>;
 }
 
 interface DependencyGraphProps {
@@ -57,6 +64,11 @@ function DependencyGraphInner({
 
     const { fitView } = useReactFlow();
 
+    const [initialViewport] = useState<Viewport | undefined>(() => {
+        const savedState = vscode.getState() as WebviewState | undefined;
+        return savedState?.viewport;
+    });
+
     const [graphData, setGraphData] =
         useState<GraphData | null>(null);
 
@@ -65,6 +77,31 @@ function DependencyGraphInner({
 
     const [theme, setTheme] = useState<'light' | 'dark'>(
         getVSCodeTheme()
+    );
+
+    const handleMoveEnd = useCallback(
+        (_: unknown, viewport: Viewport) => {
+            const currentState = (vscode.getState() as WebviewState) || {};
+            vscode.setState({
+                ...currentState,
+                viewport,
+            });
+        },
+        [vscode]
+    );
+
+    const handleNodeDragStop = useCallback(
+        (_: unknown, node: Node) => {
+            const currentState = (vscode.getState() as WebviewState) || {};
+            vscode.setState({
+                ...currentState,
+                nodePositions: {
+                    ...(currentState.nodePositions || {}),
+                    [node.id]: node.position,
+                },
+            });
+        },
+        [vscode]
     );
 
     useEffect(() => {
@@ -156,11 +193,27 @@ function DependencyGraphInner({
             label: edge.type,
         }));
 
-        return createLayout(
+        const result = createLayout(
             nodes,
             edges
         );
-    }, [graphData, highlightedPaths]);
+
+        const savedState = (vscode.getState() as WebviewState) || {};
+        const savedPositions = savedState.nodePositions;
+        if (savedPositions && Object.keys(savedPositions).length > 0) {
+            result.nodes = result.nodes.map((node) => {
+                if (savedPositions[node.id]) {
+                    return {
+                        ...node,
+                        position: savedPositions[node.id],
+                    };
+                }
+                return node;
+            });
+        }
+
+        return result;
+    }, [graphData, highlightedPaths, vscode]);
 
     useEffect(() => {
         if (!highlightedPaths.size || !layout.nodes.length) {
@@ -187,7 +240,11 @@ function DependencyGraphInner({
             colorMode={theme}
             nodes={layout.nodes}
             edges={layout.edges}
+            defaultViewport={initialViewport}
+            fitView={!initialViewport}
             attributionPosition="top-left"
+            onMoveEnd={handleMoveEnd}
+            onNodeDragStop={handleNodeDragStop}
             onNodeClick={(_, node) => {
                 vscode.postMessage({
                     type: 'openFile',

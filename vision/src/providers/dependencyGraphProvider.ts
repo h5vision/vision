@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as vscode from 'vscode';
 
 import { DependencyGraphManager } from '../services/dependencyGraphManager';
@@ -26,6 +27,7 @@ export class DependencyGraphProvider {
                 vscode.ViewColumn.One,
                 {
                     enableScripts: true,
+                    retainContextWhenHidden: true,
                     localResourceRoots: [
                         vscode.Uri.joinPath(
                             this.context.extensionUri,
@@ -102,25 +104,43 @@ export class DependencyGraphProvider {
         webview: vscode.Webview
     ): string {
 
+        const assetsDir = vscode.Uri.joinPath(
+            this.context.extensionUri,
+            'webview_graph',
+            'dist',
+            'assets'
+        );
+
+        let scriptFileName = 'index-DkliLVtQ.js';
+        let styleFileName = 'index-DgIqE3F2.css';
+
+        try {
+            const files = fs.readdirSync(assetsDir.fsPath);
+            const jsFile = files.find(f => f.endsWith('.js'));
+            const cssFile = files.find(f => f.endsWith('.css'));
+            if (jsFile) {
+                scriptFileName = jsFile;
+            }
+            if (cssFile) {
+                styleFileName = cssFile;
+            }
+        } catch {
+            // fallback
+        }
+
         const scriptUri =
             webview.asWebviewUri(
                 vscode.Uri.joinPath(
-                    this.context.extensionUri,
-                    'webview_graph',
-                    'dist',
-                    'assets',
-                    'index-DkliLVtQ.js'
+                    assetsDir,
+                    scriptFileName
                 )
             );
 
         const styleUri =
             webview.asWebviewUri(
                 vscode.Uri.joinPath(
-                    this.context.extensionUri,
-                    'webview_graph',
-                    'dist',
-                    'assets',
-                    'index-DgIqE3F2.css'
+                    assetsDir,
+                    styleFileName
                 )
             );
 
