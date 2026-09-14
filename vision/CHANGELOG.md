@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.2.7] - 2026-09-14
+
+- Fixed chat command `/ragonly` (done)
+
+## [1.2.6] - 2026-09-14 <abort>
+
+- Fixed chat command `/ragonly` 
+
 ## [1.2.5] - 2026-09-14
 
 - Fixed chat command `/ragonly`.

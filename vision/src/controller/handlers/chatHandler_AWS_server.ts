@@ -110,6 +110,7 @@ export class ChatHandler {
                                 const referenceFiles : Array<ReferenceDocument> = data.references;
                                 this.referenceFilesHandle(referenceFiles, highlightedPaths, stream);
                             }
+                            controller.abort();
                         }
                         return;
                     }
@@ -140,7 +141,7 @@ export class ChatHandler {
             this.historyServcie.save(project_id, session_id, 'assistant', finalAnswer);
         }
         catch (err) {
-            if (rag) {
+            if (request.command === "ragonly") {
                 return;
             }
             if (token.isCancellationRequested) {
