@@ -2,6 +2,8 @@
 
 Vision은 Visual Studio Code 안에서 프로젝트 맥락을 이해하도록 돕는 온프레미스 지향 AI 코딩 어시스턴트 확장입니다. VS Code Chat의 `@vision` 참가자, 프로젝트 인덱싱/RAG, Git-aware 의존성 그래프, 파일 단위 질문을 하나의 개발 환경에 연결합니다.
 
+이 확장 프로그램은 [한글과컴퓨터x한국생산성본부x스나이퍼팩토리] 한컴 AI 아카데미 5기의 프로젝트를 통해 기획되고 제작되었습니다. 
+
 ## 제공 기능
 
 - **`@vision` Chat Participant**: 현재 프로젝트를 대상으로 질문하고 백엔드의 SSE 응답을 VS Code Chat에 표시합니다.
@@ -78,6 +80,10 @@ VS Code `settings.json`에서 설정할 수 있습니다.
   "vision.projectId": "None",
   "vision.commitId": "None",
   "vision.branch": "None",
+  "vision.questionProject": {
+    "isExist": false,
+    "pid": "None"
+  },
   "vision.showGuideBook": false,
   "vision.streaming": true
 }
@@ -94,7 +100,7 @@ VS Code `settings.json`에서 설정할 수 있습니다.
 | `vision.showGuideBook` | 활성화 때 Guide Book을 열지 여부 | `false` |
 | `vision.streaming` | SSE delta를 실시간으로 표시할지 여부 | `true` |
 
-`vision.streaming`은 백엔드 요청 자체를 끄는 설정이 아닙니다. 백엔드는 계속 SSE로 응답하고, 이 값이 `false`이면 확장이 `done` 이벤트까지 답변을 모아 한 번에 표시합니다. 코드의 설정 fallback은 `http://127.0.0.1:5000`이므로 endpoint 설정을 명시하는 것을 권장합니다.
+`vision.streaming`은 백엔드 요청 자체를 끄는 설정이 아닙니다. 백엔드는 계속 SSE로 응답하고, 이 값이 `false`이면 확장이 `done` 이벤트까지 답변을 모아 한 번에 표시합니다. 
 
 ## 프로젝트 인덱싱
 
