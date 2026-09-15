@@ -143,7 +143,7 @@ export async function activate(context: vscode.ExtensionContext) {
         const selection = activeEditor.selection;
         const selectedText = activeEditor.document.getText(selection).trim();
         const fileName = path.basename(activeEditor.document.uri.fsPath);
-		const dirName = path.dirname(activeEditor.document.uri.fsPath);
+		const dirName = vscode.workspace.asRelativePath(path.dirname(activeEditor.document.uri.fsPath));
 
         if (!selectedText || selectedText.length === 0) {
             await vscode.commands.executeCommand('workbench.action.chat.open', {

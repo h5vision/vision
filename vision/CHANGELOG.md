@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.2.10] - 2026-09-15
+
+- Fixed `vision: 이 파일 설명해줘` : from Abs path to relativePath
+
+## [1.2.9] - 2026-09-14
+
+## [1.2.8] - 2026-09-14
+
 ## [1.2.7] - 2026-09-14
 
 - Fixed chat command `/ragonly` (done)
