@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.0] - 2026-09-15
+
+- Docs README.md Updated
+
 ## [1.2.10] - 2026-09-15
 
 - Fixed `vision: 이 파일 설명해줘` : from Abs path to relativePath
